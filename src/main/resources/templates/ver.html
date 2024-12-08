@@ -96,7 +96,7 @@
                         <a class="nav-link active" id="pedidos-tab" data-toggle="tab" href="#pedidos" role="tab" aria-controls="pedidos" aria-selected="true">Pedidos</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="albaranes-tab" data-toggle="tab" href="#albaranes" role="tab" aria-controls="albaranes" aria-selected="false">Albaranes</a>
+                        <a class="nav-link" id="albaranes-tab" data-toggle="tab" href="#albaranes" role="tab" aria-controls="albaranes" aria-selected="false">Facturas</a>
                     </li>
                 </ul>
 
@@ -139,14 +139,14 @@
 
                     <!-- Tab para los albaranes -->
                     <div class="tab-pane fade" id="albaranes" role="tabpanel" aria-labelledby="albaranes-tab">
-                        <h4 class="mt-3">Albaranes del Cliente</h4>
+                        <h4 class="mt-3">Facturas del Cliente</h4>
                         <div class="table-responsive">
                             <!-- Tabla de Albaranes -->
                             <table id="tableAlbaran" class="table mt-2">
                                 <thead class="thead-dark">
                                 <tr>
-                                    <th>Nº Albaran</th>
-                                    <th>F. Albaran</th>
+                                    <th>Nº Factura</th>
+                                    <th>F. Factura</th>
                                     <th>Cliente</th>
                                     <th>Tipo de Pedido</th>
                                     <th>Total</th>
@@ -165,7 +165,7 @@
                                 </tr>
                                 </tbody>
                             </table>
-                            <div th:if="${#lists.isEmpty(cliente.facturas)}" class="alert alert-info my-4" th:text="'No hay Albaranes asignados para el cliente ' + ${cliente.nombre} + ' ' + ${cliente.apellido}"></div>
+                            <div th:if="${#lists.isEmpty(cliente.facturas)}" class="alert alert-info my-4" th:text="'No hay Facturas asignados para el cliente ' + ${cliente.nombre} + ' ' + ${cliente.apellido}"></div>
                             <nav th:replace="paginator-navVerFactura ::paginatorFactura"></nav>
                         </div>
                     </div>

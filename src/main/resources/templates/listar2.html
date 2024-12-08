@@ -94,7 +94,7 @@
 									<th>Crear</th>
 									<th>Crear</th>
 									<th>Editar</th>
-									<th>Eliminar</th>
+									<!--<th>Eliminar</th>-->
 								</tr>
 								</thead>
 								<tbody>
@@ -106,12 +106,12 @@
 									<td th:text="${cliente.direccion}"></td>
 									<td><a class="btn btn-success btn-sm" th:href="@{'/pedidos/form/' + ${cliente.id}}" th:text="'Pedido'"></a></td>
 									<td>
-										<a class="btn btn-success btn-sm albaran-modal-btn" data-toggle="modal" data-target="#albaranesModal" th:data-cliente-id="${cliente.id}">
-											Albaran
+										<a class="btn btn-warning btn-sm" data-toggle="modal" data-target="#albaranesModal" th:data-cliente-id="${cliente.id}">
+											Facturas
 										</a>
 									</td>
 									<td><a class="btn btn-primary btn-sm" th:href="@{/form/} + ${cliente.id}" th:text="'Editar'"></a></td>
-									<td><a class="btn btn-danger btn-sm" th:href="@{/cliente/eliminar/} + ${cliente.id}" th:text="'Eliminar'" onclick="return confirm('Estás seguro que quieres eliminar?');"></a></td>
+									<!--<td><a class="btn btn-danger btn-sm" th:href="@{/cliente/eliminar/} + ${cliente.id}" th:text="'Eliminar'" onclick="return confirm('Estás seguro que quieres eliminar?');"></a></td>-->
 								</tr>
 								</tbody>
 							</table>

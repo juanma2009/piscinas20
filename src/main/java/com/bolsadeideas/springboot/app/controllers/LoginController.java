@@ -20,7 +20,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 
 @Controller
-public class LoginController {
+public class  LoginController {
 
     Log log = LogFactory.getLog(LoginController.class);
 

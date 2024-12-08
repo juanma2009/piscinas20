@@ -124,7 +124,7 @@ public class AlbaranController {
         model.addAttribute("clientes", clienteService.findAll());
         model.addAttribute("tipos", tipos);
 
-        model.addAttribute(TITULO, "Listado de Albaranes");
+        model.addAttribute(TITULO, "Listado de Facturas");
         model.addAttribute("facturas", factura);
         model.addAttribute("page", pageRender);
         return "factura/listarFactura";
@@ -146,7 +146,7 @@ public class AlbaranController {
         log.info("uri_anterior: " + uriAnterior);
         model.addAttribute("albaran", albaran);
         model.addAttribute("uriAnterior", uriAnterior); // Pasamos la URI del controlador anterior al modelo
-        model.addAttribute(TITULO, "Detalles del Albaran");
+        model.addAttribute(TITULO, "Detalles de la Factura");
         return "albaran/ver";
     }
 
@@ -205,7 +205,7 @@ public class AlbaranController {
 
         if (itemId == null || itemId.length == 0) {
             model.addAttribute(TITULO, CREARALBARAN);
-            model.addAttribute(ERROR, "Error: La Albaran NO puede no tener líneas!");
+            model.addAttribute(ERROR, "Error: La Factura NO puede no tener líneas!");
             return ALBARANFORM;
         }
         for (int i = 0; i < itemId.length; i++) {
@@ -241,7 +241,7 @@ public class AlbaranController {
         }
         albaranService.save(albaran);
         status.setComplete();
-        flash.addFlashAttribute("success", "Albaran '" + albaran.getNumeroAlbaran() + "'" + " creado con éxito!");
+        flash.addFlashAttribute("success", "Factura '" + albaran.getNumeroAlbaran() + "'" + " creado con éxito!");
         return "redirect:/albaranes/form/" + albaran.getCliente().getId();
     }
 
@@ -258,7 +258,7 @@ public class AlbaranController {
         Albaran albaran = clienteService.findAlbaranById(id);
         if (albaran != null) {
             clienteService.deleteFactura(id);
-            flash.addFlashAttribute("success", "Albaran eliminada con éxito!");
+            flash.addFlashAttribute("success", "eliminada con éxito!");
             return "redirect:/ver/" + albaran.getCliente().getId();
         }
         flash.addFlashAttribute(ERROR, "La factura no existe en la base de datos, no se pudo eliminar!");
@@ -303,7 +303,7 @@ public class AlbaranController {
 
         //captura la candidad buscada en el filtro
         // model.addAttribute("cantidad", albaranService.findByClienteAndProveedorAndLugar(cliente, tipo, proveedor, pageable).getNumberOfElements());
-        model.addAttribute(TITULO, "Lista de Albaranes Encontradas ");
+        model.addAttribute(TITULO, "Lista de Facturas Encontradas ");
         model.addAttribute("textoR", "Resultados Encontrados: ");
         model.addAttribute("facturas", factura);
         model.addAttribute("page", pageRender);
