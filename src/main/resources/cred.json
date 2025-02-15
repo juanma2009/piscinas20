@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "joyer-448117",
+  "private_key_id": "a332f191005ce064cf54fb33522e90b82c57537c",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCUNz1K9fXe+0OK\nAARyeO345+wfvtzFDO6D10SsTAB1SgpwHlkHEWZaseKEcJLvsp6QDrOYvNLGHweY\nsdlSAwJIgcNe/MzBovgSTEkjfFUj92CpK2SmdI0gu/eqRrAAEAwI4q6iu+13sCZ0\n9ldVccgauvy6HWgbESBQHCp8j5Gcy7Fd9qQsZ1sXoxkanWsomHXErs2zAKguiLMU\nzJxBBnCLI1Zm5SNWHlmCROZhmKq7C0P9H0QvK97T6ChceWVxk0H5dDyGtnNXXpeR\nKhWpMgsXXv/Rmj/6vn6y+9Bq1bP9vStxuCp1IxhhFJXoVO45VUmq7g1adrF7qhJ6\nZqR1WF1TAgMBAAECggEAH2ZEeej5ma+pc0blqkqsP5sCjwckRiqjLRMh3U6MmkyB\nQZdsTO8GvBgLYPtoZZd1uBclPSpjjM1uEo869wDkLvAur6Tmy+72lwnKRNZGQ0RZ\nGf2zaQAwFcs8gLpQ9vJvWkKLtLYTbNPIkebOQa/FMMSEXfl04KcULWSKK7FOq+S4\niWfQNhfFiGYR7m5+GzDHA7a7sza1iAWZTdztpqzawCUmdZAifJUZlLCPZR6tXmm1\n904iY9iTO+N/CE8p9VYLl4lCU50WxMjmqcLjjyMjXRV1vvk2xEoApw/yO+xU3zxO\nM+UhVCU2FEbT/LJhlrwLB3/WpwwtT3Rg16m3qMhswQKBgQDQdZCFI5ZC8XbyEl+P\nhW4hyBUPXiVUoNCht3Lnmjv0z4w1cKJ8JVGi8SBYcpN2VjVWAvarhGBCLRBCQF/b\nCA7rbGOH5V8s5F/L6WqvAWYn9t9HbTv6KJwpNQ7GjeOqIdpopW1TK5vXw5xnsuDc\nY+xFwx2HfDZGKzk6fxvfaPrHCQKBgQC2BH4inP0h4amQo3xkMtvQLejkbSawbufo\n4jbBWDJgWgQD7Tbs3/kSufaHx/dd5bNn363WqGFsVZcD6PKhagh88pvYT6HeylN5\nql/KoOM4movpSG9HHuXWnY4qwn6Gb/ZHekpNWALSsbwtQj4v55jsPSszW6erC2A+\nWfHooBfcewKBgHyqIjCNFLqaHxErjbyOBkvrlTSoj9iph7t+sxfws/R2/pmi73kg\n9E5mt3pNowR9D86NXSk7tDk/K98DEpAxpIKEQo2tzZpSRTv0LpnUU1yJFgRoPhsf\nmCxIj7qMdl9zeWNlsxivFrcVQ378id8jXtRlmE5DKU4TYVkrVObpqDfJAoGBAJEf\noeY9H0KNZyIQh5RoTIR+pkrCkG9p7fPrsVaU2I2kF8F9uCZDKZb5uItoL12pUFLI\nsBUPaaXz1BVk/VcfcKcW1JUyYNB+pvHBmuC3SJOP/W/Bth+RjhWAx6JmMnVD/avd\n4DIsswuEdJHtWCHf2Ti6SKCJOnUQ++qa0lr0kjHTAoGBALlRP5yd/kDnhSt4d2Ad\n/hgK+nnkycao4zp3UunYNj28sve50D9MX5Vyc9vaQtWQcCdSpnYuW4+jeRv8lif6\noYv74co4xF5xCxtpKWlfcjGP781V7hRbW5pt+OPCOF4mV0aKr6c+t8S3VV3O21bp\nBuQlaMnr5RX92zHRpLOGA3VO\n-----END PRIVATE KEY-----\n",
+  "client_email": "drivejoyeria@joyer-448117.iam.gserviceaccount.com",
+  "client_id": "102066435211838582992",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/drivejoyeria%40joyer-448117.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

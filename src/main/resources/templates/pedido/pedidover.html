@@ -69,6 +69,7 @@
 
 <script>
     // Función para cargar imágenes en el carrusel
+    // Función para cargar imágenes en el carrusel
     function cargarImagenes() {
         // Obtener el valor del id del pedido pasado como long
         var id = $("#npedido").val();
@@ -84,7 +85,8 @@
 
                 // Agregar imágenes al carrusel
                 $.each(data, function (index, imgUrl) {
-                    $("#fotoMini").append('<div><img src="/fotos/' + imgUrl + '" alt="Foto"></div>');
+                    $("#fotoMini").append('<div><img src="' + imgUrl + '" alt="Foto"></div>');
+                    console.log("Imagen agregada: " + imgUrl);
                 });
 
                 // Inicializar Slick Carousel

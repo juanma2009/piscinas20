@@ -1,0 +1,11 @@
+{"web":{
+  "type": "service_account",
+  "client_id":"895636614883-9ubl2h9pl6oj17q66l9h4ji3siqb574q.apps.googleusercontent.com",
+  "project_id":"my-project-1470318760762",
+  "auth_uri":"https://accounts.google.com/o/oauth2/auth",
+  "token_uri":"https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs",
+  "client_secret":"mAM1Ua1EQUl6CzjUMUwsetUk",
+  "redirect_uris":["https://my-project-1470318760762.firebaseapp.com/__/auth/handler"],
+  "javascript_origins":["http://localhost","http://localhost:5000","https://my-project-1470318760762.firebaseapp.com"]
+}}
