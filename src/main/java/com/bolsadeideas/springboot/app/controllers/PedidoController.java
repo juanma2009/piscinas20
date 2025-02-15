@@ -1,37 +1,41 @@
 package com.bolsadeideas.springboot.app.controllers;
 
+import com.bolsadeideas.springboot.app.apigoogledrice.GoogleDriveService;
 import com.bolsadeideas.springboot.app.apisms.AppSms;
+import com.bolsadeideas.springboot.app.models.entity.*;
+import com.bolsadeideas.springboot.app.models.service.*;
+import lombok.extern.log4j.Log4j2;
 import net.sf.jasperreports.engine.*;
-import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+import org.apache.commons.io.IOUtils;
+import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
-import com.bolsadeideas.springboot.app.models.entity.*;
-import com.bolsadeideas.springboot.app.models.service.*;
 import com.bolsadeideas.springboot.app.util.paginator.PageRender;
-import lombok.extern.log4j.Log4j2;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,7 +43,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.annotation.PostConstruct;
 import javax.validation.Valid;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,32 +50,39 @@ import java.util.*;
 
 @Controller
 @RequestMapping("/pedidos")
-@SessionAttributes("pedido")
+@SessionAttributes({"pedido", "fotosTemporales"})
 @Log4j2
 public class PedidoController {
 
     @Autowired
-    private ResourceLoader resourceLoader;
-    //ACCESO A SERVICIOS
-    @Autowired
     private IClienteService clienteService;
+
     @Autowired
     private ProveedorServiceImpl proveedorService;
+
     @Autowired
     private PedidoServiceImpl pedidoService;
+
     @Autowired
     private IUploadFileService uploadFileService;
 
     @Autowired
+    private GoogleDriveService googleDriveService;
+
+    @Autowired
     private ArchivoAdjuntoService archivoAdjuntoService;
 
-    /**
-     * Se precarga con valores iniciales
-     */
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    @ModelAttribute("fotosTemporales")
+    public List<String> inicializarFotosTemporales() {
+        return new ArrayList<>();
+    }
+
     @PostConstruct
     public void init() {
-
-        // TODO document why this method is empty
+        // Inicialización necesaria al arrancar el controlador
     }
 
     //VARIABLES
@@ -83,27 +93,67 @@ public class PedidoController {
     static final String PEDIDOFORM = "/pedido/pedidoform";
     static final String CREARPEDIDO = "Crear Pedido";
 
-    @GetMapping(value = "/uploads/{filename:.+}")
-    public ResponseEntity<Resource> verFoto(@PathVariable String filename) {
-        log.info("entra en uploas");
-        Resource recurso = null;
-        try {
-            recurso = uploadFileService.load(filename);
 
-            if (recurso != null) {
-                return ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + recurso.getFilename() + "\"")
-                        .body(recurso);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (MalformedURLException e) {
-            // Manejar la excepción adecuadamente, por ejemplo, lanzar una excepción personalizada o registrarla.
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    @GetMapping("/ver/fotos/{fileId}")
+    public ResponseEntity<ByteArrayResource> verFoto(@PathVariable String fileId) {
+        try {
+            // Obtener la URL segura del archivo desde Cloudinary
+            String imageUrl = cloudinaryService.downloadImage(fileId).toString(); // Método que obtiene la URL segura de la imagen
+            log.info(imageUrl);
+            // Descargar el archivo desde Cloudinary
+            URL url = new URL(imageUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+
+            // Leer el flujo de entrada
+            InputStream in = connection.getInputStream();
+            byte[] data = IOUtils.toByteArray(in);
+            ByteArrayResource resource = new ByteArrayResource(data);
+
+            // Especificar el tipo de contenido como imagen (si se conoce el tipo)
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.IMAGE_JPEG);  // Asegúrate de que el tipo sea el correcto
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(data.length)
+                    .body(resource);
+        } catch (IOException e) {
+            // En caso de error, retornar 404
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            throw new RuntimeException("Error al descargar la imagen desde Cloudinary", e);
         }
     }
 
+
+    /*
+
+    @GetMapping("/ver/fotos/{fileId}")
+    public ResponseEntity<ByteArrayResource> verFoto(@PathVariable String fileId) {
+        try {
+            // Descargar el archivo desde Google Drive
+            InputStream in = googleDriveService.downloadFile(fileId);
+            byte[] data = IOUtils.toByteArray(in);
+            ByteArrayResource resource = new ByteArrayResource(data);
+
+            // Si conoces el mime type (por ejemplo "image/jpeg") lo puedes especificar,
+            // o bien detectarlo dinámicamente si lo tienes almacenado.
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.IMAGE_JPEG);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(data.length)
+                    .body(resource);
+        } catch (IOException e) {
+            // En caso de error, puedes retornar un 404 o el código de error que consideres apropiado
+            return ResponseEntity.notFound().build();
+        }
+    }
+*/
     @RequestMapping(value = {"/listarPedidos"}, method = RequestMethod.GET)
     public String listar(@RequestParam(name = "page", defaultValue = "0") int page, Model model) {
 
@@ -124,34 +174,25 @@ public class PedidoController {
         return "pedido/pedidolistar";
     }
 
-    /**
-     * Ver los detalles de los pedidos se debe realizar la cargar de los archivos adjuntos asociaciados al nombre de las fotos que en BD Y en el sistema operativo
-     * buscar los arhvicos con el nombre de la foto y cargarlos en la vista
-     * se debe realizar algun tipo de carga para que cargue todas las fotos que corresponde con el pedido
-     *
-     * @param id
-     * @param model
-     * @param flash
-     * @return
-     */
     @GetMapping("/ver/{id}")
     public String ver(@PathVariable(value = "id") Long id,
                       Model model,
                       RedirectAttributes flash) {
-        // Buscar el pedido por su id
         Pedido pedido = clienteService.findPedidoById(id);
         if (pedido == null) {
-            flash.addFlashAttribute(ERROR, "El pedido no existe en la base de datos!");
-            return REDIRECTLISTAR;
+            flash.addFlashAttribute("error", "El pedido no existe en la base de datos!");
+            return "redirect:/listar";
         }
 
-
-        // Cargar los archivos adjuntos asociados al pedido en la vista
         model.addAttribute("pedido", pedido);
-        //  model.addAttribute("fotos", fotos); // Pasar la lista de nombres de fotos a la vista
-        model.addAttribute(TITULO, "Detalles del Pedido");
+        // Suponiendo que ya has obtenido las URLs de las imágenes en el método cargarImagenes
+        // O bien puedes obtenerlas en este mismo método a través del servicio
+      //  List<String> fotos = archivoAdjuntoService.obtenerUrlsFotos(pedido.getNpedido());
+      //  model.addAttribute("fotos", fotos);
+        model.addAttribute("titulo", "Detalles del Pedido");
         return "pedido/pedidover";
     }
+
 
     /**
      * Cargar las imágenes asociadas a un pedido
@@ -160,45 +201,54 @@ public class PedidoController {
      * @return
      */
 
+
     @GetMapping("/cargarImagenes/{id}")
     @ResponseBody
-    public List<String> cargarImagenes(@PathVariable(value = "id") Long id) {
-        log.info("entra en cargarImagenes");
-        // Lógica para cargar las rutas de las imágenes desde el servidor
+    public List<String> cargarImagenes(@PathVariable(value = "id") Long id) throws Exception {
         List<String> urls = new ArrayList<>();
-        // Suponiendo que tienes una lista de nombres de archivos en la base de datos
+
+        // Obtener los archivos adjuntos asociados al pedido
         List<ArchivoAdjunto> archivosAdjuntos = archivoAdjuntoService.findArchivosAdjuntosByPedidoId(id);
-        log.info("archivosAdjuntos: " + archivosAdjuntos.size());
+
         for (ArchivoAdjunto archivo : archivosAdjuntos) {
-            urls.add(String.valueOf(archivo.getNombre())); // Agregar el nombre del archivo a la lista de URLs
+            if (archivo.getUrlCloudinary() != null) {  // Cambia esto a la propiedad de Cloudinary
+                // Construir la URL pública para cada archivo desde Cloudinary
+                String url = cloudinaryService.getImageUrl(archivo.getUrlCloudinary());
+                urls.add(url);
+            } else {
+                log.warn("El archivo con nombre " + archivo.getNombre() + " no tiene un Cloudinary Public ID asociado.");
+            }
         }
+
         return urls;
     }
 
-    /**
-     * Cargar las imágenes asociadas a un pedido
-     *
-     * @param nombreArchivo
-     * @return
-     */
-    @GetMapping("/fotos/{nombreArchivo}")
-    public ResponseEntity<Resource> obtenerFoto(@PathVariable String nombreArchivo) {
-        Path rutaArchivo = Paths.get("C://temp//fotos/" + nombreArchivo); // Ruta local a tus imágenes
-        Resource recurso = null;
-        try {
-            recurso = new UrlResource(rutaArchivo.toUri());
-            if (recurso.exists() || recurso.isReadable()) {
-                return ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + recurso.getFilename() + "\"")
-                        .body(recurso);
+    /*
+
+    @GetMapping("/cargarImagenes/{id}")
+    @ResponseBody
+    public List<String> cargarImagenes(@PathVariable(value = "id") Long id) {
+        List<String> urls = new ArrayList<>();
+
+        // Obtener los archivos adjuntos asociados al pedido
+        List<ArchivoAdjunto> archivosAdjuntos = archivoAdjuntoService.findArchivosAdjuntosByPedidoId(id);
+
+        for (ArchivoAdjunto archivo : archivosAdjuntos) {
+            if (archivo.getGoogleDriveFileId() != null) {
+                // Construir la URL pública para cada archivo
+                String url = "" + archivo.getGoogleDriveFileId();
+                urls.add(url);
             } else {
-                return ResponseEntity.notFound().build();
+                log.warn("El archivo con nombre " + archivo.getNombre() + " no tiene un Google Drive File ID asociado.");
             }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return ResponseEntity.notFound().build();
         }
+
+        return urls;
     }
+
+*/
+
+
 
 
     /**
@@ -239,21 +289,6 @@ public class PedidoController {
     }
 
 
-    /**
-     * Guarda los Peidos desde el formulario de pedidos con los datos del cliente.
-     *
-     * @param pedido       El objeto pedido que contiene los datos del formulario.
-     * @param result       Resultado de la validación del formulario.
-     * @param model        Modelo para la vista.
-     * @param npedido      Número del pedido.
-     * @param observacion  Observaciones del pedido.
-     * @param estado       Estado del pedido.
-     * @param tipoPedido   Tipo de pedido.
-     * @param flash        Atributos para mensajes flash.
-     * @param status       Estado de la sesión.
-     * @param fileNamesJSON Nombres de archivos en formato JSON.
-     * @return Redirección a la vista del formulario de pedidos.
-     */
     @PostMapping("/form")
     public String guardar(@ModelAttribute @Valid Pedido pedido,
                           BindingResult result,
@@ -277,25 +312,17 @@ public class PedidoController {
             guardarNuevoPedido(pedido, flash);
         }
 
-        if (!fileNamesJSON.isEmpty()) {
-            procesarArchivosAdjuntos(fileNamesJSON, pedido, flash);
-        }
-
         status.setComplete();
         return "redirect:/pedidos/form/" + pedido.getCliente().getId();
     }
-
-    private void actualizarPedidoExistente(Pedido pedidoExistente, String observacion, String estado, String tipoPedido, RedirectAttributes flash) {
+        private void actualizarPedidoExistente(Pedido pedidoExistente, String observacion, String estado, String tipoPedido, RedirectAttributes flash) {
         pedidoExistente.setObservacion(observacion);
         pedidoExistente.setEstado(estado);
         pedidoExistente.setTipoPedido(tipoPedido);
-
-
         try {
             if ("terminado".equalsIgnoreCase(pedidoExistente.getEstado()) && !pedidoExistente.getEnviadoSms()) {
                 enviarSms(pedidoExistente);
             }
-
             pedidoService.save(pedidoExistente);
             flash.addFlashAttribute("info", "Pedido actualizado con éxito");
         } catch (Exception e) {
@@ -330,79 +357,85 @@ public class PedidoController {
         }
     }
 
-    private void procesarArchivosAdjuntos(String fileNamesJSON, Pedido pedido, RedirectAttributes flash) {
-        try {
-            JSONArray jsonArray = new JSONArray(fileNamesJSON);
-            List<String> fileNamesList = new ArrayList<>();
-            for (int i = 0; i < jsonArray.length(); i++) {
-                fileNamesList.add(jsonArray.getString(i));
-            }
+    @PostMapping("/guardarFotos")
+    @ResponseStatus(HttpStatus.OK) // Indica que la respuesta será 200 OK sin vista
+    public void guardarFotos(@Valid ArchivoAdjunto archivoAdjunto,
+                             @RequestParam("npedido") String npedido,
+                             @RequestParam("files") MultipartFile foto,
+                             RedirectAttributes flash) {
+        System.out.println("npedido recibido: " + npedido);
+        String pedidoId = npedido.replaceAll("[^0-9]", "").trim();
 
-            for (String fileName : fileNamesList) {
-                guardarArchivoAdjunto(fileName, pedido, flash);
+        if (!foto.isEmpty()) {
+            try {
+                // Convertir el archivo MultipartFile a byte array
+                byte[] imageBytes = foto.getBytes();
+
+                // Subir archivo a Cloudinary
+                String fileName = "foto_" + System.currentTimeMillis(); // Puedes personalizar el nombre del archivo
+                String imageUrl = cloudinaryService.uploadImage(imageBytes, fileName);
+
+                String publicId = imageUrl.split("/v\\d+/")[1].split("\\.")[0];
+
+                // Guardar la referencia del archivo en la base de datos
+                archivoAdjunto.setNombre(foto.getOriginalFilename());
+                archivoAdjunto.setUrlCloudinary(publicId); // Guardar la URL segura proporcionada por Cloudinary
+                archivoAdjunto.setPedidoAdjunto(Long.valueOf(pedidoId));
+                archivoAdjuntoService.guardar(archivoAdjunto);
+
+                // Agregar mensaje de éxito
+                flash.addFlashAttribute("info", "Archivo subido con éxito a Cloudinary: " + foto.getOriginalFilename());
+            } catch (IOException e) {
+                flash.addFlashAttribute("error", "Error al subir el archivo a Cloudinary: " + foto.getOriginalFilename());
+                e.printStackTrace();
             }
-        } catch (JSONException e) {
-            flash.addFlashAttribute("error", "Error al procesar los archivos adjuntos: " + e.getMessage());
+        } else {
+            flash.addFlashAttribute("error", "No se seleccionó ningún archivo para subir.");
         }
     }
 
-    private void guardarArchivoAdjunto(String fileName, Pedido pedido, RedirectAttributes flash) {
-        try {
-            ArchivoAdjunto foto = new ArchivoAdjunto();
-            foto.setNombre(fileName);
-            foto.setPedido(pedido);
-            archivoAdjuntoService.guardar(foto);
-        } catch (Exception e) {
-            flash.addFlashAttribute("error", "Error al cargar el archivo: " + fileName);
-        }
-    }
+
 
 
     /**
      * Al guardar las fotos se deben guardar en archvivos adjuntos con el numero de pedido y nombre de la foto
      * por otra parte se debe guardar en la carpeta de fotos del sistema operativo el archivo para poder ser cargado poesteriormete
-     * @param pedido
+     * @param npedido
      * @param foto
      * @param flash
      * @return
      */
+    /*
     @PostMapping("/guardarFotos")
-    public String guardarFotos(@Valid ArchivoAdjunto archivoAdjunto,@Valid Pedido pedido,
-                               @RequestParam("files") MultipartFile foto,
-                               RedirectAttributes flash) {
-        // Directorio donde se guardarán las fotos
-        String directorio = "C://temp//fotos";
-
-        // Crear el directorio si no existe
-        Path pathDirectorio = Paths.get(directorio);
-        if (!Files.exists(pathDirectorio)) {
-            try {
-                Files.createDirectories(pathDirectorio);
-            } catch (Exception e) {
-                return "Error al crear el directorio";
-            }
-        }
+    @ResponseStatus(HttpStatus.OK) // Indica que la respuesta será 200 OK sin vista
+    public void guardarFotos(@Valid ArchivoAdjunto archivoAdjunto,
+                             @RequestParam("npedido") String npedido,
+                             @RequestParam("files") MultipartFile foto,
+                             RedirectAttributes flash) {
+        System.out.println("npedido recibido: " + npedido);
+        String pedidoId = npedido.replaceAll("[^0-9]", "").trim();
         if (!foto.isEmpty()) {
-
-            String rootPath = "C://temp//fotos";
-            log.info("rootPath: " + rootPath);
             try {
-                // Copiar el archivo a la carpeta uploads
-                byte[] bytes = foto.getBytes();
-                Path rutaCompleta = Paths.get(rootPath + "//" + foto.getOriginalFilename());
-                Files.write(rutaCompleta, bytes);
+                // Subir archivo a Google Drive
+                String fileId = googleDriveService.uploadFileToFolder(foto);
 
+                // Guardar la referencia del archivo en la base de datos
+                archivoAdjunto.setNombre(foto.getOriginalFilename());
+                archivoAdjunto.setGoogleDriveFileId(fileId);
+                archivoAdjunto.setPedidoAdjunto(Long.valueOf(pedidoId));
+                archivoAdjuntoService.guardar(archivoAdjunto);
 
-                flash.addFlashAttribute("info", "Has subido correctamente '" + foto.getOriginalFilename() + "'");
-                //haz que se cierre el flash a los 3 segundos
-
-
+                flash.addFlashAttribute("info", "Archivo subido con éxito a Google Drive: " + foto.getOriginalFilename());
             } catch (IOException e) {
+                flash.addFlashAttribute("error", "Error al subir el archivo a Google Drive: " + foto.getOriginalFilename());
                 e.printStackTrace();
             }
+        } else {
+            flash.addFlashAttribute("error", "No se seleccionó ningún archivo para subir.");
+        }
     }
-        return "redirect:/pedidos/form/" + pedido.getCliente().getId();
-    }
+*/
+
 
     /**
      * Eliminar los pedido que interesen
@@ -475,24 +508,79 @@ public class PedidoController {
 
         return "pedido/pedidolistar";
     }
-    //controlador que elimina las fotos del directorio de fotos
-    @GetMapping("/eliminarFoto/{fileName:.+}")
-    public String eliminarFoto(@PathVariable(value = "fileName") String fileName,@Valid Pedido pedido, RedirectAttributes flash) {
 
-            // Eliminar el archivo del directorio de fotos
-            String rootPath = "C://temp//fotos";
-            Path rutaFoto = Paths.get(rootPath + "//" + fileName);
-            if (Files.exists(rutaFoto)) {
-                try {
-                    Files.delete(rutaFoto);
-                    flash.addFlashAttribute("info", "Foto " + fileName + " eliminada con éxito!");
-                } catch (IOException e) {
-                    e.printStackTrace();
+    @GetMapping("/eliminarFoto/{fileId}")
+    public String eliminarFoto(@PathVariable("fileId") String fileId,
+                               @RequestParam("npedido") String pedidoId,
+                               RedirectAttributes flash) {
+        log.info("Llegan del front: pedidoId=" + pedidoId + ", fileId=" + fileId);
+
+        // Buscar el archivo en la base de datos relacionado con este pedido
+        ArchivoAdjunto archivo = archivoAdjuntoService.findArchivosAdjuntosByPedidoIdOne(fileId, Long.valueOf(pedidoId));
+
+        log.info("Archivo encontrado: " + archivo);
+
+        if (archivo != null) {
+            try {
+                // Eliminar de Cloudinary
+                String deleteResult = cloudinaryService.deleteImage(archivo.getUrlCloudinary()); // Aquí debes cambiar el método a obtener el publicId de Cloudinary
+
+                if ("ok".equals(deleteResult)) {
+                    // Eliminar la referencia en la base de datos
+                    archivoAdjuntoService.eliminarArchivoAdjunto(archivo);
+                    flash.addFlashAttribute("info", "Foto eliminada con éxito de Cloudinary y del pedido!");
+                } else {
+                    flash.addFlashAttribute("error", "No se encontró la imagen en Cloudinary.");
                 }
-            }
-            return "redirect:/pedidos/form/" + pedido.getCliente().getId();
 
-}
+            } catch (Exception e) {
+                flash.addFlashAttribute("error", "Error al eliminar la foto: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } else {
+            flash.addFlashAttribute("error", "No se encontró la foto asociada.");
+        }
+
+        return "redirect:/pedidos/form/" + pedidoId;
+    }
+
+
+    /*
+    @GetMapping("/eliminarFoto/{fileId}")
+    public String eliminarFoto(@PathVariable("fileId") String fileId,
+                               @RequestParam("npedido") String pedidoId,
+                               RedirectAttributes flash) {
+log.info("llegan del front"+pedidoId+fileId);
+        // Buscar el pedido en la base de datos
+
+
+        // Buscar el archivo en la base de datos relacionado con este pedido
+        ArchivoAdjunto archivo = archivoAdjuntoService.findArchivosAdjuntosByPedidoIdOne(fileId, pedidoId);
+
+        log.info(archivo);
+        if (archivo != null) {
+            try {
+                // Eliminar de Google Drive
+                googleDriveService.deleteFile(archivo.getGoogleDriveFileId());
+
+                // Eliminar la referencia en la base de datos
+                archivoAdjuntoService.eliminarArchivoAdjunto(archivo);
+
+                flash.addFlashAttribute("info", "Foto eliminada con éxito de Google Drive y del pedido!");
+            } catch (Exception e) {
+                flash.addFlashAttribute("error", "Error al eliminar la foto: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } else {
+            flash.addFlashAttribute("error", "No se encontró la foto asociada.");
+        }
+
+        return "redirect:/pedidos/form/" + pedidoId;
+    }
+*/
+
+
+
     @RequestMapping(value = "/formEditar/{id}")
     public String editar(@PathVariable(value = "id") Long id, Map<String, Object> model, RedirectAttributes flash) {
 

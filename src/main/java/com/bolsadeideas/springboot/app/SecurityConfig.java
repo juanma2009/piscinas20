@@ -8,6 +8,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.*;
+import org.springframework.security.web.firewall.HttpFirewall;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
 
 @Configuration
 @EnableWebSecurity
@@ -63,5 +65,14 @@ public class SecurityConfig {
     @Bean
     public TwoFactorAuthenticationFilter twoFactorAuthenticationFilter() {
         return new TwoFactorAuthenticationFilter();
+    }
+
+
+
+    @Bean
+    public HttpFirewall allowDoubleSlashes() {
+        StrictHttpFirewall firewall = new StrictHttpFirewall();
+        firewall.setAllowUrlEncodedDoubleSlash(true);
+        return firewall;
     }
 }
