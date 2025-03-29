@@ -28,7 +28,9 @@
 </style>
 <style>
 
-
+    .tab-content {
+        margin-top: 20cm; /* Ajusta el valor según lo necesites */
+    }
     #fileListContainer {
         background-color: white;
         border: 1px solid #ccc;
@@ -58,83 +60,200 @@
         <div id="messege"></div>
 
         <div class="card bg-light">
-            <div class="card-header" th:text="${titulo}"></div>
+            <div class="card-header"> <!-- Cabecera de la tarjeta -->
+                <div class="card-header bg-primary text-white text-center">
+                <div  th:text="${titulo}"></div> <!-- Título de la tarjeta -->
+                </div>
+                <!-- Botones de navegación -->
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="btn-group" role="group" aria-label="Botones de navegación">
+                            <a th:href="@{/pedidos/listarPedidos}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-list"></i> Ver Pedidos
+                            </a>
+                            <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-images"></i> Galería de Fotos
+                            </a>
+                            <a th:href="@{'/ver/' + ${pedido.cliente.id}}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-user"></i> Información del Cliente
+                            </a>
+                            <a th:href="@{/listar}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-images"></i> Ver Clientes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="card-body">
-
                 <form id="pedidoForm" th:action="@{/pedidos/form/}" enctype="multipart/form-data" th:object="${pedido}" method="post">
+                    <!-- Navegación de pestañas -->
+                    <ul class="nav nav-tabs" id="pedidoTab" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="detalles-tab" data-toggle="tab" href="#detalles" role="tab" aria-controls="detalles" aria-selected="true">
+                                Informacion General
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="detalles-adicionales-tab" data-toggle="tab" href="#detalles-adicionales" role="tab" aria-controls="detalles-adicionales" aria-selected="false">
+                                Detalles Adicionales
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="comentario-tab" data-toggle="tab" href="#comentario" role="tab" aria-controls="comentario" aria-selected="false">
+                                Comentario
+                            </a>
+                        </li>
+                    </ul>
 
-                    <!-- Pedido Fields -->
-                    <div class="form-group row">
-                        <label class="col-sm-2 col-form-label">Nº Pedido</label>
-                        <div class="col-sm-4">
-                            <input type="text" th:if="${pedido.npedido != null}" th:field="*{npedido}" id="npedido" class="form-control" readonly="readonly" th:value="${pedido.npedido}" />
-                            <input type="text" th:unless="${pedido.npedido != null}" readonly="readonly" th:value="${numeroPedido}" name="npedido" id="npedido" class="form-control"/>
-                            <small class="form-text text-danger" th:if="${#fields.hasErrors('npedido')}" th:errors="*{npedido}"></small>
+                    <!-- Contenido de las pestañas -->
+                    <div class="tab-content" id="pedidoTabContent">
+                        <!-- Pestaña Información General -->
+                        <div class="tab-pane fade show active" id="detalles" role="tabpanel" aria-labelledby="detalles-tab">
+                            <!-- Nueva fila: Cliente, Nº Pedido y Estado -->
+                            <div class="row">
+                                <!-- Cliente -->
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="cliente">Cliente</label>
+                                        <input name="cliente" th:value="${pedido.cliente.nombre} + ' ' + ${pedido.cliente.apellido}" class="form-control" disabled />
+                                    </div>
+                                </div>
+                                <!-- Nº Pedido -->
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="npedido">Nº Pedido</label>
+                                        <input type="text" th:if="${pedido.npedido != null}" th:field="*{npedido}" id="npedido" class="form-control" readonly />
+                                        <input type="text" th:unless="${pedido.npedido != null}" readonly th:value="${numeroPedido}" name="npedido" id="npedido" class="form-control"/>
+                                        <small class="form-text text-danger" th:if="${#fields.hasErrors('npedido')}" th:errors="*{npedido}"></small>
+                                    </div>
+                                </div>
+                                <!-- Estado -->
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="estado">Estado</label>
+                                        <select name="estado" class="form-control" th:field="*{estado}">
+                                            <option th:each="estado : ${estados}" th:value="${estado}" th:text="${estado}"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Resto de campos en Información General -->
+                            <div class="row">
+                                <!-- Fecha sin el estado es finalizdo salga el campo fecha terminado-->
+                                <!-- Contenedor para Fecha: se le asigna un id para poder manipularlo -->
+                                <div class="col-md-4" id="fechaFieldContainer">
+                                    <div class="form-group">
+                                        <label for="fecha">Fecha Finalizado</label>
+                                        <input type="date" name="fecha" class="form-control" th:field="*{fechaFinalizdo}" />
+                                    </div>
+                                </div>
+                                <!-- Empleado -->
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="empleado">Empleado</label>
+                                        <select name="empleado" class="form-control" th:field="*{empleado}">
+                                            <option th:each="empleado : ${empleado}" th:value="${empleado}" th:text="${empleado}"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- Referencia -->
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="ref">Referencia</label>
+                                        <input name="ref" th:value="${pedido.ref}" class="form-control" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- Servicio -->
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="tipoPedido">Servicio</label>
+                                        <select name="tipoPedido" class="form-control" th:field="*{tipoPedido}">
+                                            <option th:each="tipoPedido : ${tipoPedido}" th:value="${tipoPedido}" th:text="${tipoPedido}" th:selected="${pedido.tipoPedido == tipoPedido}"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- Metal -->
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="grupo">Metal</label>
+                                        <select name="grupo" class="form-control" th:field="*{grupo}">
+                                            <option th:each="grupo : ${grupo}" th:value="${grupo}" th:text="${grupo}"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- Subgrupo -->
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="subgrupo">Subgrupo</label>
+                                        <select name="subgrupo" class="form-control" th:field="*{subgrupo}">
+                                            <option th:each="subgrupo : ${subgrupo}" th:value="${subgrupo}" th:text="${subgrupo}"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botón para añadir fotos -->
+                            <div class="form-group text-center mt-3">
+                                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#addPhotoModal">
+                                    <i class="fas fa-camera"></i> Añadir Fotos
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Pestaña Detalles Adicionales -->
+                        <div class="tab-pane fade" id="detalles-adicionales" role="tabpanel" aria-labelledby="detalles-adicionales-tab">
+                            <div class="row">
+                                <!-- Peso -->
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label for="peso">Peso</label>
+                                        <input name="peso" th:value="${pedido.peso}" class="form-control"/>
+                                    </div>
+                                </div>
+                                <!-- Horas -->
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label for="horas">Horas</label>
+                                        <input name="horas" th:value="${pedido.horas}" class="form-control"/>
+                                    </div>
+                                </div>
+                                <!-- Cobrado -->
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label for="cobrado">Cobrado</label>
+                                        <input name="cobrado" th:value="${pedido.cobrado}" class="form-control"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pestaña Comentario -->
+                        <div class="tab-pane fade" id="comentario" role="tabpanel" aria-labelledby="comentario-tab">
+                            <div class="form-group">
+                                <label for="observacion">Observaciones</label>
+                                <textarea id="observacion" name="observacion" class="form-control" th:text="${pedido.observacion}"></textarea>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Cliente and Estado fields -->
-                    <div class="form-group row">
-                        <label for="cliente" class="col-sm-2 col-form-label" th:text="'Cliente'"></label>
-                        <div class="col-sm-4">
-                            <input name="cliente" th:value="${pedido.cliente.nombre} + ' ' + ${pedido.cliente.apellido}" class="form-control" disabled='disabled' />
-                        </div>
-                    </div>
-
-                    <!-- Estado dropdown -->
-                    <div class="form-group row">
-                        <label for="estado" class="col-sm-2 col-form-label" th:text="'Estado '"></label>
-                        <div class="col-sm-4">
-                            <select name="estado" class="form-control" th:field="*{estado}">
-                                <option th:each="estado : ${estados}" th:value="${estado}" th:text="${estado}" th:selected="${pedido.estado == estado}"></option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Servicio (tipoPedido) dropdown -->
-                    <div class="form-group row">
-                        <label for="tipoPedido" class="col-sm-2 col-form-label" th:text="'Servicio'"></label>
-                        <div class="col-sm-4">
-                            <select name="tipoPedido" class="form-control" th:field="*{tipoPedido}">
-                                <option th:each="tipoPedido : ${tipoPedido}" th:value="${tipoPedido}" th:text="${tipoPedido}" th:selected="${pedido.tipoPedido == tipoPedido}"></option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Observación field -->
-                    <div class="form-group row">
-                        <label for="observacion" class="col-sm-2 col-form-label" th:text="'Observación'"></label>
-                        <div class="col-sm-6">
-                            <textarea id="observacion" name="observacion" class="form-control" th:text="${pedido.observacion}"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="form-group row">
-                    <!-- Botón para abrir el modal -->
-                        <div class="col-sm-6">
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addPhotoModal">
-                        Añadir Fotos
-                    </button>
-                        </div>
-                    </div>
-
-                    <!-- File list container -->
+                    <!-- Contenedor de archivos -->
                     <div id="fileListContainer" class="file-list-container"></div>
                     <input type="hidden" name="fileNamesJSON" id="fileNamesJSON" multiple />
 
-                    <!-- Form buttons -->
-                    <div class="form-group row">
-                        <div class="col-sm-6">
-                            <input type="submit" th:value="${titulo}" class="btn btn-primary" />
-                            <button type="reset" class="btn badge-dark">Resetear</button>
-                            <a th:href="@{/pedidos/listarPedidos}" class="btn btn-warning">Listar Pedidos</a>
-                        </div>
+                    <!-- Botones del formulario -->
+                    <div class="form-group">
+                        <input type="submit" th:value="${titulo}" class="btn btn-primary" />
+                        <button type="reset" class="btn btn-secondary">Resetear</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Modal for file upload -->
+            <!-- Modal for file upload -->
         <div class="modal fade" id="addPhotoModal" tabindex="-1" role="dialog" aria-labelledby="addPhotoModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
@@ -156,7 +275,7 @@
 
                             <div class="form-group row">
                                 <div class="col-sm-2 d-flex justify-content-start">
-                                    <button class="btn btn-primary mr-2" id="submit" type="submit">Guardar</button>
+                                     <button class="btn btn-primary mr-2" id="submit" type="submit">Guardar</button>
                                 </div>
                             </div>
                         </form>
@@ -170,8 +289,39 @@
         </div>
 
     </div>
+    <!-- Se incluye CKEditor para que el textarea de observaciones disponga de una barra de herramientas -->
+    <script src="https://cdn.ckeditor.com/ckeditor5/35.0.1/classic/ckeditor.js"></script>
+    <script>
+        <!-- Controla que salga la fecha si el estado a cambiado FINALIZADO -->
+        document.addEventListener("DOMContentLoaded", function() {
+            const estadoSelect = document.querySelector('select[name="estado"]');
+            const fechaContainer = document.getElementById('fechaFieldContainer');
 
+            function toggleFechaField() {
+                // Comprueba si el valor del select es "terminado"
+                if(estadoSelect.value === 'FINALIZADO') {
+                    fechaContainer.style.display = 'block';
+                } else {
+                    fechaContainer.style.display = 'none';
+                }
+            }
+
+            // Ejecuta la función al cargar la página
+            toggleFechaField();
+
+            // Escucha los cambios en el select para actualizar la visibilidad
+            estadoSelect.addEventListener('change', toggleFechaField);
+        });
+
+        ClassicEditor
+            .create(document.querySelector('#observacion'))
+            .catch(error => {
+                console.error(error);
+            });
+    </script>
     <script th:inline="javascript">
+
+
         $(document).ready(function() {
 
             // Function to handle form submission and file uploading
@@ -253,7 +403,7 @@
                         var fileRow = $('<tr>').append(
                             $('<td>').text(fileName),
                             $('<td>').append(
-                                $('<img>').attr('src', fileURL).css('max-width', '100px')
+                                $('<img>').attr('src', fileURL).css('max-width', '50px')
                             ),
                             $('<td>').append(
                                 $('<button>').text('Eliminar').addClass('btn btn-danger').click(function () {

@@ -8,19 +8,26 @@ import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class PedidoServiceImpl implements PedidoService {
+
+	@Autowired
+	private EntityManager entityManager;
 
 	@Autowired
 	private ResourceLoader resourceLoader;
@@ -57,10 +64,61 @@ public class PedidoServiceImpl implements PedidoService {
 	}
 
 	@Override
-	@Transactional(readOnly=true)
-	public Page<Pedido> findByCliente(String cliente,String estado,Pageable pageable) {
-		return pedidoDao.findByClienteOrEstado(cliente,estado, pageable);
+	public Page<Pedido> findByCliente(String cliente, String estado, Pageable pageable) {
+		return null;
 	}
+
+
+	public  Page<Pedido> buscarPedidos(String cliente,String tipoPedido, String estado, String grupo,
+											  String subgrupo, Date fechaDesde, Date fechaHasta, Pageable pageable)
+	{
+
+		CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+		CriteriaQuery<Pedido> cq = cb.createQuery(Pedido.class);
+		Root<Pedido> pedido = cq.from(Pedido.class);
+
+		List<Predicate> predicates = new ArrayList<>();
+
+		if (cliente != null && !cliente.isEmpty()) {
+			predicates.add(cb.like(cb.lower(pedido.get("cliente").get("nombre")), "%" + cliente.toLowerCase() + "%"));
+		}
+		if (tipoPedido != null && !tipoPedido.isEmpty()) {
+			predicates.add(cb.equal(pedido.get("tipoPedido"),tipoPedido));
+		}
+		if (estado != null && !estado.isEmpty()) {
+			predicates.add(cb.like(cb.lower(pedido.get("estado")), "%" + estado.toLowerCase() + "%"));
+		}
+		if (grupo != null && !grupo.isEmpty()) {
+			predicates.add(cb.equal(pedido.get("grupo"), grupo));
+		}
+		if (subgrupo != null && !subgrupo.isEmpty()) {
+			predicates.add(cb.equal(pedido.get("subgrupo"), subgrupo));
+		}
+		if (fechaDesde != null) {
+			predicates.add(cb.greaterThanOrEqualTo(pedido.get("dfecha"), fechaDesde));
+		}
+		if (fechaHasta != null) {
+			predicates.add(cb.lessThanOrEqualTo(pedido.get("dfecha"), fechaHasta));
+		}
+
+		cq.where(predicates.toArray(new Predicate[0]));
+
+		TypedQuery<Pedido> query = entityManager.createQuery(cq);
+		query.setFirstResult((int) pageable.getOffset());
+		query.setMaxResults(pageable.getPageSize());
+
+		List<Pedido> pedidos = query.getResultList();
+
+		// Contar total de registros para la paginación
+		CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+		Root<Pedido> countRoot = countQuery.from(Pedido.class);
+		countQuery.select(cb.count(countRoot)).where(predicates.toArray(new Predicate[0]));
+		Long totalRegistros = entityManager.createQuery(countQuery).getSingleResult();
+
+		return new PageImpl<>(pedidos, pageable, totalRegistros);
+	}
+
+
 
 	@Override
 	public Pedido obtenerUltimoNumeroPedido() {

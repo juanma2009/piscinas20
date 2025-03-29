@@ -3,17 +3,29 @@ package com.bolsadeideas.springboot.app.models.dao;
 
 import com.bolsadeideas.springboot.app.models.entity.Pedido;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.query.Param;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 
 public interface PedidoDao extends PagingAndSortingRepository<Pedido, Long> {
 
-	//todo añadir los campos de buscqueda para el pedido
-	@Query("select p from Pedido p where p.cliente.nombre =?1 and p.estado like %?2% ")
-	public Page<Pedido> findByClienteOrEstado(String cliente, String estado, Pageable pageable);
+
+
+
 
 	@Query("select p from Pedido p where p.cliente.nombre =?1 and p.estado = ?2")
 	public Iterable<Pedido> findByClienteOrEstadoReport(String cliente, String estado);

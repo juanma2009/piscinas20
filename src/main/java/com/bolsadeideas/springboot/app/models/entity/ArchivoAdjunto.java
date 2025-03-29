@@ -1,9 +1,11 @@
 package com.bolsadeideas.springboot.app.models.entity;
 
 import lombok.*;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.Date;
 
 @Data
 @Entity
@@ -20,13 +22,16 @@ public class ArchivoAdjunto implements Serializable {
 
     private String nombre;
 
+    @Temporal(TemporalType.DATE)  // @Temporal(TemporalType.DATE)
+    private Date fecha;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "npedido")
     private Pedido pedido;
-
+/*
     @Column(name = "google_drive_file_id")
     private String googleDriveFileId; // Campo para el ID en Google Drive
-
+*/
     private String urlCloudinary;
 
     private String setUrlDrive;

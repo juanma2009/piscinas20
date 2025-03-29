@@ -278,7 +278,7 @@ public class FacturaController {
                          //@RequestParam(name = "hasta")String hasta,
                          Model model) {
 
-//paginacion de las busquedas totales
+        //paginacion de las busquedas totales
         Pageable pageRequest = PageRequest.of(page, 10);
         Page<Factura> factura = clienteService.findByClienteAndProveedorAndTipo(cliente, tipo, pageRequest);
         log.info("NOMBRE DEL Cliente " + cliente.toString());
