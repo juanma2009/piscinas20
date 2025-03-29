@@ -69,6 +69,18 @@
         .desc:after {
             content: " ↓";
         }
+        body {
+            width: 100vw;
+            min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
+            overflow-x: hidden;
+            background-color: #f9f9f9; /* opcional: fondo más suave */
+        }
+        html, body {
+            height: 100%; /* Asegura que el contenido cubra toda la pantalla */
+            margin: 0; /* Elimina márgenes por defecto */
+            padding: 0; /* Elimina el padding por defecto */
+            overflow: hidden; /* Oculta el scroll si no es necesario */
+        }
     </style>
 </head>
 <body>
@@ -77,8 +89,30 @@
     <div class="container py-8">
       <div class="scroll-container">
         <div class="card bg-light">
-            <div class="card-header" th:text="${titulo}"></div>
+            <div class="card-header">
+                <div class="card-header bg-primary text-white text-center"> <h2>Detalles del Pedido</h2></div>
+                <!-- Botones de navegación -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="btn-group" role="group" aria-label="Botones de navegación">
+                            <a th:href="@{/pedidos/listarPedidos}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-list"></i> Ver Pedidos
+                            </a>
+                            <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-images"></i> Galería de Fotos
+                            </a>
+                            <a th:href="@{/listar}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-images"></i> Ver Clientes
+                            </a>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
             <div class="card-body">
+
                 <h4 class="card-title">
                     <!-- Botones para crear facturas, albaranes y pedidos -->
                 </h4>

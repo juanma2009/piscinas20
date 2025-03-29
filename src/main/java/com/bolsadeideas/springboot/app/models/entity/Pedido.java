@@ -3,6 +3,7 @@ package com.bolsadeideas.springboot.app.models.entity;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -26,6 +27,7 @@ public class Pedido implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     private Cliente cliente;
 
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     @Temporal(TemporalType.DATE)
     private Date dfecha;
 
@@ -39,6 +41,23 @@ public class Pedido implements Serializable {
     private Boolean facturado = false;//defecto es false
 
     private Boolean enviadoSms = false;//defecto es false
+
+    private String grupo;
+
+    private String subgrupo;
+
+    private Double peso;
+
+    private String ref;
+
+    private String horas;
+
+    private String cobrado;
+
+    private String empleado;
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private Date fechaFinalizdo;
 
     //fecha de envio de sms
     @Temporal(TemporalType.DATE)
@@ -57,14 +76,28 @@ public class Pedido implements Serializable {
         dfecha = new Date();
     }
 
-    public Cliente getCliente() {
-        return cliente;
-    }
+    // Relación con Comentario
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comentario> comentarios = new ArrayList<>();
 
     public String getClientes() {
       return  this.cliente != null ? this.cliente.getNombre():"---";
 
+
     }
+
+
+    // Métodos para agregar y eliminar comentarios
+    public void addComentario(Comentario comentario) {
+        comentarios.add(comentario);
+        comentario.setPedido(this);
+    }
+
+    public void removeComentario(Comentario comentario) {
+        comentarios.remove(comentario);
+        comentario.setPedido(null);
+    }
+
 
 }
 

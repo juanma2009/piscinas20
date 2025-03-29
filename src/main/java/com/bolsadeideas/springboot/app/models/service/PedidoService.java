@@ -5,11 +5,12 @@ import com.bolsadeideas.springboot.app.models.entity.Pedido;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Date;
 import java.util.List;
 
 
 public interface PedidoService {
-	
+
 	public Iterable<Pedido> findAll();
 
 	public Page<Pedido> findAll(Pageable pageable);
@@ -24,7 +25,8 @@ public interface PedidoService {
 	
 	public Page<Pedido> findByCliente(String cliente,String estado, Pageable pageable);
 
-	public Pedido obtenerUltimoNumeroPedido();
+
+    public Pedido obtenerUltimoNumeroPedido();
 
 	public List<Pedido> findAllPedidos();
 

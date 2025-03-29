@@ -78,7 +78,7 @@ public class ClienteController {
         }
 
         // Paginación para el listado de pedidos
-        Pageable pageRequestPedido = PageRequest.of(pagePedido, 4);
+        Pageable pageRequestPedido = PageRequest.of(pagePedido,4);
         Page<Pedido> pedido = pedidoService.findAllByCliente(id, pageRequestPedido);
         PageRender<Pedido> pageRenderPedido = new PageRender<>("/ver/" + id, pedido);
 
@@ -102,7 +102,7 @@ public class ClienteController {
     @RequestMapping(value = {"/listar", "/"}, method = RequestMethod.GET)
     public String listar(@RequestParam(name = "page", defaultValue = "0") int page, Model model) {
 
-        Pageable pageRequest = PageRequest.of(page, 4);
+        Pageable pageRequest = PageRequest.of(page, Integer.MAX_VALUE);
 
         Page<Cliente> clientes = clienteService.findAll(pageRequest);
 

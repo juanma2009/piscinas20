@@ -4,70 +4,259 @@
 
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .card-header.bg-white {
+            background-color: white !important;
+        }
+
+        .card-header bg-primary text-white {
+            width: 100%;
+            height: 100px;
+            border-radius: 10px 10px 0 0;
+        }
+        /* Establecer un padding y margen general para todas las secciones internas */
+        .container-fluid,
+        .card,
+        .card-body,
+        .card-header,
+        section.content-header {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Asegura que las tarjetas no queden pegadas entre sí o a los bordes */
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Control uniforme para las tablas */
+        .table {
+            margin-bottom: 1rem;
+        }
+
+        /* Espaciado entre botones */
+        .btn-group .btn {
+            margin-right: 0.5rem;
+        }
+
+        /* Botones pequeños con padding uniforme */
+        .btn-sm {
+            padding: 0.4rem 0.75rem;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #0062cc, #004085); /* Gradiente de azul */
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            text-transform: uppercase; /* Texto en mayúsculas */
+            font-size: 1.25rem; /* Aumentar el tamaño de la fuente */
+            border-radius: 8px 8px 0 0; /* Bordes redondeados */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra ligera */
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card-header:hover {
+            background-color: #0056b3; /* Tono más oscuro de azul */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
+        }
+
+        body {
+            width: 100vw;
+            min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
+            overflow-x: hidden;
+            background-color: #f9f9f9; /* opcional: fondo más suave */
+        }
+        html, body {
+            height: 100%; /* Asegura que el contenido cubra toda la pantalla */
+            margin: 0; /* Elimina márgenes por defecto */
+            padding: 0; /* Elimina el padding por defecto */
+            overflow: hidden; /* Oculta el scroll si no es necesario */
+        }
+        .nav-tabs .nav-link.active {
+            color: #007bff !important; /* azul Bootstrap */
+            border-color: #007bff #007bff #fff;
+        }
+        .list-group-item {
+            border: none;
+        }
+
+    </style>
 </head>
 <body>
 <div layout:fragment="content">
-    <div class="scroll-container">
-    <div class="container py-4">
-        <div class="card bg-light">
-            <div class="card-header">
-                <h2>Detalles del Pedido</h2>
-                <!-- Botones de volver -->
-                <div class="row justify-content-left mt-4">
-                    <div class="col-md-6">
-                        <div class="text-left">
-                            <div class="btn-group" role="group" aria-label="Botones de volver">
-                                <!-- Botón para listar albaranes -->
-                                <a th:href="@{/pedidos/listarPedidos}" class="btn btn-primary btn-sm mr-2">
-                                    Listar Pedidos</a>
-                                <!-- Botón para ver detalles de cliente -->
-                                <a th:href="@{'/ver/' + ${pedido.cliente.id}}" class="btn btn-primary btn-sm">
-                                    Detalles del clientes</a>
+        <div class="container-fluid py-4 px-4">
+            <section class="content-header">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <i class="fas fa-info-circle"></i> Detalles del Pedidos <!-- Título de la tarjeta -->
+                    </div>
+                    <!-- Botones de navegación -->
+                    <div class="row justify-content-between align-items-center">
+                        <div class="col-md-8">
+                            <div class="btn-group btn-group-toggle">
+                                <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary">
+                                    <i class="fas fa-list"></i> Pedidos
+                                </a>
+                                <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary">
+                                    <i class="fas fa-images"></i> Galería
+                                </a>
+                                <a th:href="@{/listar}" class="btn btn-outline-primary">
+                                    <i class="fas fa-user"></i> Clientes
+                                </a>
+
+                                <a th:href="@{/form}" class="btn btn-outline-primary">
+                                    <i class="fas fa-user-plus"></i> Nuevo Cliente
+                                </a>
                             </div>
                         </div>
                     </div>
-                </div>
 
-            </div>
 
-            <div class="card-body">
-                <ul class="list-group my-2">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6 class="list-group-item active" th:text="${titulo} + ' ' + ${pedido.npedido}"></h6>
-                            <p><strong>Cliente:</strong> <span th:text="${pedido.cliente.nombre}"></span></p>
-                            <p><strong>Estado del Pedido:</strong> <span th:text="${pedido.estado}"></span></p>
-                            <p><strong>Tipo de Pedido:</strong> <span th:text="${pedido.tipoPedido}"></span></p>
-                            <p><strong>Fecha de Pedido:</strong> <span th:text="${#dates.format(pedido.dfecha, 'dd/MM/yyyy')}"></span></p>
-                            <p><strong>Observaciones:</strong> <span th:text="${pedido.observacion}"></span></p>
+                <div class="card-body">
+                    <!-- Pestañas de navegación -->
+                    <ul class="nav nav-tabs" id="pedidoTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="informacion-tab" data-toggle="tab" href="#informacion" role="tab" aria-controls="informacion" aria-selected="true">Información General</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="detalles-tab" data-toggle="tab" href="#detalles" role="tab" aria-controls="detalles" aria-selected="false">Detalles Técnicos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="fotos-tab" data-toggle="tab" href="#fotos" role="tab" aria-controls="fotos" aria-selected="false">Fotos</a>
+                        </li>
+
+
+                    </ul>
+                    <div class="tab-content" id="pedidoTabsContent">
+                        <!-- Información General -->
+                        <div class="tab-pane fade show active" id="informacion" role="tabpanel" aria-labelledby="informacion-tab">
+                            <ul class="list-group my-2">
+                                <li class="list-group-item">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <strong>Cliente:</strong>
+                                            <div th:text="${pedido.cliente.nombre}"></div>
+                                        </div>
+                                        <div class="col-md-4">
+                                                <strong>Nº Cliente</strong>
+                                            <div th:text="${pedido.cliente.id}"></div>
+                                        </div>
+                                        <div class="col-md-4">
+                                        <strong>Nº Pedido</strong>
+                                        <div th:text="${pedido.npedido}"></div>
+                                    </div>
+                                        <div class="col-md-4">
+                                            <strong>Referencia:</strong>
+                                            <div th:text="${pedido.ref}"></div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Empleado:</strong>
+                                            <div th:text="${pedido.empleado}"></div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <strong>Estado del Pedido:</strong>
+                                            <div th:text="${pedido.estado}"></div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Fecha de Pedido:</strong>
+                                            <div th:text="${#dates.format(pedido.dfecha, 'dd/MM/yyyy')}"></div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <strong>Horas:</strong>
+                                            <div th:text="${pedido.horas}"></div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Cobrado:</strong>
+                                            <div th:text="${pedido.cobrado}"></div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <!-- Observaciones -->
+                                <li class="list-group-item" th:if="${pedido.observacion != null and !#strings.isEmpty(pedido.observacion)}">
+                                    <div class="form-group">
+                                        <label><strong>Observaciones:</strong></label>
+                                        <div th:utext="${pedido.observacion}" class="form-control-plaintext"></div>
+                                    </div>
+                                </li>
+
+
+
+                            </ul>
+
                             <input type="hidden" th:field="*{pedido.npedido}" id="npedido" class="form-control" readonly="readonly"
                                    th:value="${pedido.npedido}"/>
                         </div>
+
+                        <!-- Detalles Técnicos -->
+                        <div class="tab-pane fade" id="detalles" role="tabpanel" aria-labelledby="detalles-tab">
+                            <!-- Aquí puedes agregar más detalles técnicos, si es necesario -->
+                             <ul class="list-group my-2">
+                                <li class="list-group-item">
+                                    <strong>Tipo de Pedido:</strong>
+                                    <div th:text="${pedido.tipoPedido}"></div>
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Metal:</strong>
+                                    <div th:text="${pedido.grupo}"></div>
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Tipo de Joya:</strong>
+                                    <div th:text="${pedido.subgrupo}"></div>
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Peso:</strong>
+                                    <div th:text="${pedido.peso}"></div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Fotos del Pedido -->
+                        <div class="tab-panel fade" id="fotos" role="tabpanel" aria-labelledby="fotos-tab">
+                            <div class="list-group-item">
+
+                                <div id="fotoMini">
+                                    <!-- Imágenes se cargarán aquí -->
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
-                </ul>
-                <input type="hidden" th:field="*{pedido.npedido}" id="npedido" class="form-control" readonly="readonly"
-                       th:value="${pedido.npedido}"/>
-
-            </div>
-
-            <!-- Carrusel de fotos -->
-
-            <div class="list-group-item">
-                <h6>Fotos añadidas</h6>
-                <div id="fotoMini">
-                    <!-- Imágenes se cargarán aquí -->
                 </div>
-
             </div>
         </div>
-      </div>
-    </div>
+        </div>
+
+
 </div>
 </body>
 
 </html>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        ClassicEditor
+            .create(document.querySelector('#observacion'), {
+                toolbar: [], // Desactiva la barra de herramientas
+                isReadOnly: true, // Hace el editor solo lectura
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    });
+</script>
+<script src="https://cdn.ckeditor.com/ckeditor5/35.3.0/classic/ckeditor.js"></script>
 
 <script>
+
     // Función para cargar imágenes en el carrusel
     // Función para cargar imágenes en el carrusel
     function cargarImagenes() {
@@ -147,19 +336,17 @@
 <style>
     /* Estilo para la imagen que se hace zoom hacia la parte de la imagen */
     .zoomed {
-        transform: scale(2); /* Hace que la imagen se amplíe al doble */
-        transition: transform 0.5s; /* Agrega una transición suave */
-        z-index: 1000; /* Asegura que la imagen ampliada esté por encima de las demás */
-        position: fixed; /* Fija la imagen en la pantalla */
-        background-color: rgba(0, 0, 0, 0.8); /* Fondo oscuro */
-        /* Centrar la imagen */
-        top: 75%;
-        left: 55%; /* Centra horizontalmente */
-        transform-origin: center center; /* Establece el punto de transformación en el centro */
-        margin: -25% 0 0 -25%; /* Desplaza la imagen hacia arriba y hacia la izquierda en la mitad del ancho y alto */
-        overflow: auto; /* Ajusta el desbordamiento */
-        width: 50%; /* Ocupa el 50% del ancho de la ventana */
-        height: 50%; /* Ocupa el 50% del alto de la ventana */
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(2);
+        transition: transform 0.5s;
+        z-index: 1000;
+        max-width: 50vw;  /* Asegura que la imagen no ocupe más del 80% del ancho */
+        max-height: 50vh; /* Asegura que la imagen no ocupe más del 80% de la altura */
+        width: auto;      /* Ajusta el ancho automáticamente para mantener la proporción */
+        height: auto;     /* Ajusta la altura automáticamente para mantener la proporción */
+        object-fit: contain; /* Asegura que la imagen mantenga su proporción sin deformarse */
     }
 
 
@@ -167,12 +354,13 @@
 
     @media (max-width: 745px) {
         .zoomed {
-            width: 45vw; /* Ocupa el 95% del ancho de la ventana en pantallas muy pequeñas */
-            height: 45vh; /* La altura máxima no supera el 95% de la altura de la ventana */
+            max-width: 50vw;  /* Asegura que la imagen no ocupe más del 80% del ancho */
+            max-height: 50vh; /* Asegura que la imagen no ocupe más del 80% de la altura */
+
             /* Centrar la imagen */
             top: 82%;
             left: 52%; /* Centra horizontalmente */
-            z-index: 1500; /* Asegura que la imagen ampliada esté por encima de las demás */
+            z-index: 1000; /* Asegura que la imagen ampliada esté por encima de las demás */
             overflow: auto; /* Ajusta el desbordamiento */
             transition: transform 0.5s; /* Agrega una transición suave */
 
@@ -181,8 +369,8 @@
 
     /* Estilo para las imágenes en el carrusel */
     #fotoMini img {
-        width: 100px;
-        height: 100px;
+        width: 200px;
+        height: 200px;
         margin: 0 5px; /* Espacio entre las imágenes */
         transition: transform 0.1s; /* Transición suave */
         cursor: pointer; /* Cambia el cursor al pasar sobre la imagen */
@@ -232,5 +420,30 @@
             height: 80px;
         }
     }
+    /* Ajuste para pantallas pequeñas (hasta 768px) */
+    @media (max-width: 768px) {
+        #fotoMini img {
+            width: 150px; /* Reduce el tamaño de las imágenes */
+            height: 150px; /* Reduce el tamaño de las imágenes */
+            margin: 0 4px; /* Ajusta el espacio entre imágenes */
+        }
+    }
+
+    /* Ajuste para pantallas medianas (hasta 576px) */
+    @media (max-width: 576px) {
+        #fotoMini img {
+            width: 120px; /* Reduce el tamaño de las imágenes aún más */
+            height: 120px; /* Reduce el tamaño de las imágenes aún más */
+            margin: 0 3px; /* Ajusta el espacio entre imágenes */
+        }
+    }
+
+    /* Ajuste para pantallas muy pequeñas (hasta 400px) */
+    @media (max-width: 400px) {
+        #fotoMini img {
+            width: 100px; /* Reduce el tamaño de las imágenes aún más */
+            height: 100px; /* Reduce el tamaño de las imágenes aún más */
+            margin: 0 2px; /* Ajusta el espacio entre imágenes */
+        }
 
 </style>

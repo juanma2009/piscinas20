@@ -1,21 +1,26 @@
 package com.bolsadeideas.springboot.app.controllers;
 
 
+import com.bolsadeideas.springboot.app.apigoogledrice.GoogleDriveService;
 import com.bolsadeideas.springboot.app.models.dto.PedidoDtos;
 import com.bolsadeideas.springboot.app.models.dto.mapper.PedidoMapper;
+import com.bolsadeideas.springboot.app.models.entity.ArchivoAdjunto;
+import com.bolsadeideas.springboot.app.models.entity.Cliente;
 import com.bolsadeideas.springboot.app.models.entity.Pedido;
-import com.bolsadeideas.springboot.app.models.service.PedidoServiceImpl;
+import com.bolsadeideas.springboot.app.models.service.*;
+import com.bolsadeideas.springboot.app.util.paginator.PageRender;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Generated;
-import java.util.List;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Generated(
@@ -26,28 +31,97 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/pedido/")
 public class RestPedidoController {
 
+
+    @Autowired
+    private IClienteService clienteService;
+
+    @Autowired
+    private ProveedorServiceImpl proveedorService;
+
     @Autowired
     private PedidoServiceImpl pedidoService;
 
     @Autowired
+    private IUploadFileService uploadFileService;
+
+    @Autowired
+    private GoogleDriveService googleDriveService;
+
+    @Autowired
+    private ArchivoAdjuntoService archivoAdjuntoService;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+
+    @Autowired
     private PedidoMapper pedidoMapper;
+    @RequestMapping(value = {"/listarPedidos"}, method = RequestMethod.GET)
+    @ResponseBody
+    public Map<String, Object> listar(@RequestParam(name = "page", defaultValue = "0") int page) {
+        Pageable pageRequest = PageRequest.of(page, Integer.MAX_VALUE);
+        Page<Pedido> pedidos = pedidoService.findAll(pageRequest);
 
-    @GetMapping("/listarPedidos/{clienteId}")
-    public ResponseEntity<List<PedidoDtos>>listar(@PathVariable(value = "clienteId") Long clienteId) {
+        List<Map<String, Object>> pedidosData = pedidos.getContent().stream().map(p -> {
+            Map<String, Object> pedidoData = new HashMap<>();
+            pedidoData.put("npedido", p.getNpedido());
+            pedidoData.put("cliente", p.getCliente().getNombre()); // ✅ Siempre como String
+            pedidoData.put("tipoPedido", p.getTipoPedido());
+            pedidoData.put("estado", p.getEstado());
+            pedidoData.put("fecha", p.getDfecha());
+            pedidoData.put("grupo", p.getGrupo());
+            pedidoData.put("subgrupo", p.getSubgrupo());
+            return pedidoData;
+        }).collect(Collectors.toList());
 
-        // Obtener los albaranes  de un cliente
-        Page<Pedido> pedido =  pedidoService.findPedidoByIdClienteAndFinalizados(clienteId, PageRequest.of(0, 100));
+        Map<String, Object> response = new HashMap<>();
+        response.put("recordsTotal", pedidos.getTotalElements());
+        response.put("recordsFiltered", pedidos.getTotalElements());
+        response.put("data", pedidosData); // ✅ Misma estructura que en `buscar()`
 
-        // Convertir las facturas a DTOs
-        List<PedidoDtos> albaranDTOs = pedido.getContent().stream()
-                .map(pedidoMapper::toPedidoDto)
-                .collect(Collectors.toList());
-
-        if (albaranDTOs.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        // Enviar en JSON
-        return ResponseEntity.ok(albaranDTOs);
+        return response;
     }
+
+    @PostMapping("/buscar")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> buscar(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "cliente", defaultValue = "") String cliente,
+            @RequestParam(name = "estado", defaultValue = "") String estado,
+            @RequestParam(name = "tipoPedido", defaultValue = "") String tipoPedido,
+            @RequestParam(name = "grupo", defaultValue = "") String grupo,
+            @RequestParam(name = "subgrupo", defaultValue = "") String subgrupo,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
+            Pageable pageable) {
+
+        Date fechaDesdeDate = (fechaDesde != null) ? Date.from(fechaDesde.atStartOfDay(ZoneId.systemDefault()).toInstant()) : null;
+        Date fechaHastaDate = (fechaHasta != null) ? Date.from(fechaHasta.atStartOfDay(ZoneId.systemDefault()).toInstant()) : null;
+
+        Pageable pageRequest = PageRequest.of(page, 6);
+        Page<Pedido> pedidos = pedidoService.buscarPedidos(cliente, tipoPedido, estado, grupo, subgrupo, fechaDesdeDate, fechaHastaDate, pageRequest);
+
+        List<Map<String, Object>> pedidosData = pedidos.getContent().stream().map(p -> {
+            Map<String, Object> pedidoData = new HashMap<>();
+            pedidoData.put("npedido", p.getNpedido());
+            pedidoData.put("cliente", p.getCliente().getNombre()); // ✅ Siempre como String
+            pedidoData.put("tipoPedido", p.getTipoPedido());
+            pedidoData.put("estado", p.getEstado());
+            pedidoData.put("fecha", p.getDfecha());
+            pedidoData.put("grupo", p.getGrupo());
+            pedidoData.put("subgrupo", p.getSubgrupo());
+            return pedidoData;
+        }).collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("draw", page);
+        response.put("recordsTotal", pedidos.getTotalElements());
+        response.put("recordsFiltered", pedidos.getTotalElements());
+        response.put("data", pedidosData); // ✅ Misma estructura que en `listar()`
+
+        return ResponseEntity.ok(response);
+    }
+
+
+
 }
