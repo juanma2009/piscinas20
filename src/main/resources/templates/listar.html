@@ -157,35 +157,37 @@
 		}
 	}
 
-	@media screen and (max-width: 1200px) {
+
+
+	@media screen and (min-width: 1268px) {
+
+		.dataTables_scrollBody {
+			width: 100% !important; /* Asegura que ocupe todo el ancho */
+			max-width: none !important; /* Evita restricciones */
+			overflow-x: auto; /* Permite desplazamiento horizontal si es necesario */
+			display: block; /* Asegura que se comporte como un bloque */
+		}
+
+		.dataTables_scrollBody table {
+			width: 100% !important; /* Hace que la tabla se expanda al máximo */
+			min-width: 1200px; /* Evita que las columnas se compriman demasiado */
+		}
+
+		.card-header, .card, .container-fluid {
+			width: 100%; /* Asegura que ocupen toda la anchura disponible */
+			max-width: none; /* Elimina cualquier límite de ancho */
+			padding: 0 10px; /* Ajusta el margen interno si es necesario */
+		}
+
 		.table-responsive-md {
+			overflow-x: auto;
 			display: block;
 			width: 100%;
 		}
 
-		th, td {
-			font-size: 12px;
-			padding: 6px;
-		}
-
-		.btn {
-			padding: 5px 10px;
-			font-size: 12px;
-		}
-	}
-
-	@media screen and (min-width: 1200px) {
-		.card-header {
-			width: 100%; /* Asegura que ocupe todo el espacio disponible */
-			max-width: none; /* Elimina cualquier restricción */
-			padding: 0 20px; /* Opcional: agrega un poco de margen interno */
-		}
-
 		table {
 			font-size: 16px;
-		}
-		.card{
-			width: 900px; /* Asegura que ocupe todo el espacio disponible */
+			width: 1000px; /* Hace que la tabla ocupe toda la anchura disponible */
 		}
 	}
 
@@ -201,7 +203,7 @@
 </head>
 <body>
 <div layout:fragment="content">
-	<div class="container container-fluid py-4 px-4">
+	<div class="container container-fluid">
 		<section class="content-header">
 				<div class="card">
 					<div class="card-header bg-primary text-white">
