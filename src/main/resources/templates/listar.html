@@ -157,11 +157,10 @@
 		}
 	}
 
-	@media screen and (max-width: 1268px) {
+	@media screen and (max-width: 1258px) {
 		.table-responsive-md {
 			display: block;
 			width: 100%;
-
 		}
 
 		th, td {
@@ -174,15 +173,22 @@
 			font-size: 12px;
 		}
 	}
-	@media screen and (min-width: 1268px) {
-		.container-fluid {
-			max-width: 100%;
+
+	@media screen and (min-width: 1258px) {
+		.card-header {
+			width: 100%; /* Asegura que ocupe todo el espacio disponible */
+			max-width: none; /* Elimina cualquier restricción */
+			padding: 0 20px; /* Opcional: agrega un poco de margen interno */
 		}
 
 		table {
 			font-size: 16px;
 		}
+		.card{
+			width: 900px; /* Asegura que ocupe todo el espacio disponible */
+		}
 	}
+
 
 
 
