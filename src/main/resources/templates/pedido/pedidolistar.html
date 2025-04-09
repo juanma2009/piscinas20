@@ -17,6 +17,15 @@
         .estado-Terminado { background-color: #d4edda; }
 
 
+        .card-header.bg-white {
+            background-color: white !important;
+        }
+
+        .card-header bg-primary text-white {
+            width: 100%;
+            height: 100px;
+            border-radius: 10px 10px 0 0;
+        }
         /* Establecer un padding y margen general para todas las secciones internas */
         .container-fluid,
         .card,
@@ -47,14 +56,6 @@
         .btn-sm {
             padding: 0.4rem 0.75rem;
         }
-
-        /* Clase auxiliar para usar en columnas o contenedores */
-        .margen-patron {
-            margin-top: 1rem;
-            margin-bottom: 1rem;
-            padding: 1rem;
-        }
-
 
         .card-header {
             background: linear-gradient(135deg, #0062cc, #004085); /* Gradiente de azul */
@@ -91,34 +92,75 @@
             padding: 0; /* Elimina el padding por defecto */
             overflow: hidden; /* Oculta el scroll si no es necesario */
         }
-        /* Contenedor de la tabla */
-        .table-container {
-            width: 100%;
-            padding: 10px;
-        }
-
-        /* Estilo general para la tabla */
-        table {
-            width: 100%; /* La tabla ocupará el 100% del ancho del contenedor */
-            border-collapse: collapse;
-        }
-
-        /* Estilo para las celdas de la tabla */
-        th, td {
-            border: 1px solid #ddd; /* Bordes suaves */
-            padding: 8px;
-            text-align: left;
-        }
-
-        /* Cuando la tabla se expanda y necesite scroll, solo aparecerá dentro de ella */
-        .table-container {
-            max-height: 80vh; /* Limita la altura máxima del contenedor de la tabla */
-            overflow-y: auto; /* El scroll solo se activa si es necesario (solo en la tabla) */
-        }
-        /* Estilo para el contenedor de la tabla */
+        /* Hace la tabla responsiva */
         .table-responsive {
-            max-height: 70vh;  /* Limita la altura máxima al 70% de la altura de la ventana */
-            overflow-y: auto;  /* Solo mostrará el scroll vertical si la tabla excede la altura máxima */
+            width: 100%;
+            overflow-x: auto;  /* Permite scroll horizontal si es necesario */
+            -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en móviles */
+        }
+
+        /* Ajuste general de la tabla */
+        .table td, .table th {
+            white-space: nowrap; /* Evita que el contenido de las celdas se corte */
+            font-size: 14px;
+            padding: 8px;
+        }
+        Estilos base (ya definidos para escritorio)
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table td,
+        .table th {
+            white-space: nowrap;
+            font-size: 14px;
+            padding: 8px;
+        }
+
+        @media screen and (min-width: 1268px) {
+
+            html, body {
+                overflow-x: hidden;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            .container-fluid {
+                width: 100%;
+                max-width: 100vw;
+                padding: 0;
+                margin: 0 auto;
+                overflow-x: hidden;
+            }
+
+            /* Contenedor scrollable de la tabla */
+            .dataTables_scrollBody {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 290px; /* 🔹 Altura fija de la tabla visible */
+
+                overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
+                overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
+                display: block;
+            }
+
+            /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
+            .dataTables_scrollBody table {
+                width: 100% !important;
+                max-width: 100%;
+                min-width: auto !important;
+                table-layout: auto;
+
+            }
+            .dataTables_scrollBody
+
+            th, td {
+                padding: 10px;
+                white-space: nowrap;
+            }
         }
 
     </style>
@@ -126,7 +168,7 @@
 
 <body class="hold-transition sidebar-mini">
 <div layout:fragment="content">
-    <div class="container-fluid py-4 px-4">
+    <div class="container container-fluid">
         <section class="content-header">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
@@ -144,17 +186,18 @@
                                     <a th:href="@{/form}" class="btn btn-outline-primary">
                                         <i class="fas fa-user-plus"></i> Nuevo Cliente
                                     </a>
+                                    <button type="button" class="btn btn-outline-primary" id="toggleBusqueda">
+                                        Mostrar Filtros
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
 
                     <div class="card-body">
-                        <button type="button" class="btn btn-secondary mb-2" id="toggleBusqueda">
-                            Mostrar Filtros
-                        </button>
 
-                        <form id="formBusqueda" method="post" th:action="@{'/api/pedido/buscar'}" class="row g-3">
+
+                        <form id="formBusqueda" method="post" th:action="@{'/api/pedido/buscar'}" class="row g-2">
                             <div class="col-md-3">
                                 <label for="cliente" class="form-label">Cliente</label>
                                 <select id="cliente" name="cliente" class="form-control">
