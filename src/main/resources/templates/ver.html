@@ -3,39 +3,47 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="admin/admin_layout">
 <head>
+    <!-- jQuery (necesario para DataTables) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+    <!-- DataTables JS -->
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-dt@1.10.20/css/jquery.dataTables.min.css">
     <meta charset="utf-8" />
-    <title>Detalle del Cliente</title>
+    <title>Spring Boot + JPA + Datatables</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="/dist/leaflet.awesome-markers.css">
-    <link rel="stylesheet" href="/stylePage.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <link rel="stylesheet" href="../css/table.css">
+    <!--  Bootstrap  -->
+    <link rel="stylesheet" href="cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js">
+    <link rel="stylesheet" href="cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
+    <!-- Plugin Leaflet.awesome-markers  -->
+    <link rel="stylesheet" href="../dist/leaflet.awesome-markers.css">
+    <link rel="stylesheet" href="../css/table.css">
+    <!-- CSS AdminLTE y FontAwesome -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <!--  Bootstrap  -->
+    <link rel="stylesheet"
+          href="cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js">
+    <!-- Plugin Leaflet.awesome-markers  -->
+    <link rel="stylesheet" href="../dist/leaflet.awesome-markers.css">
+
+    <!--  Bootstrap  -->
+    <link rel="stylesheet"
+          href="cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js">
     <style>
-        /* Estilos generales para el contenedor con scroll */
-        .scroll-container {
-            max-height: 100vh;
-            overflow-y: auto;
-            padding: 1rem;
-        }
 
-        /* Estilos para mejorar la responsividad */
-        @media (max-width: 770px) {
-            .list-group-item {
-                font-size: 0.8rem;
-            }
-            table {
 
-                font-size: 0.8rem;
-            }
-            .nav-link {
-                font-size: 0.8rem;
-            }
-            .table-responsive {
-                overflow-x: auto;
-                font-size: 0.7rem;
-            }
-        }
+
             /*hacer las letras mas pequeñas*/
         .list-group-item {
             font-size: 1rem;
@@ -69,6 +77,60 @@
         .desc:after {
             content: " ↓";
         }
+        .card-header.bg-white {
+            background-color: white !important;
+        }
+
+        .card-header bg-primary text-white {
+            width: 100%;
+            height: 100px;
+            border-radius: 10px 10px 0 0;
+        }
+        /* Establecer un padding y margen general para todas las secciones internas */
+        .container-fluid,
+        .card,
+        .card-body,
+        .card-header,
+        section.content-header {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Asegura que las tarjetas no queden pegadas entre sí o a los bordes */
+
+
+        /* Control uniforme para las tablas */
+        .table {
+            margin-bottom: 1rem;
+        }
+
+        /* Espaciado entre botones */
+        .btn-group .btn {
+            margin-right: 0.5rem;
+        }
+
+        /* Botones pequeños con padding uniforme */
+        .btn-sm {
+            padding: 0.4rem 0.75rem;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #0062cc, #004085); /* Gradiente de azul */
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            text-transform: uppercase; /* Texto en mayúsculas */
+            font-size: 1.25rem; /* Aumentar el tamaño de la fuente */
+            border-radius: 8px 8px 0 0; /* Bordes redondeados */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra ligera */
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card-header:hover {
+            background-color: #0056b3; /* Tono más oscuro de azul */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
+        }
+
         body {
             width: 100vw;
             min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
@@ -81,51 +143,109 @@
             padding: 0; /* Elimina el padding por defecto */
             overflow: hidden; /* Oculta el scroll si no es necesario */
         }
+        .nav-tabs .nav-link.active {
+            color: #007bff !important; /* azul Bootstrap */
+            border-color: #007bff #007bff #fff;
+        }
+        .list-group-item {
+            border: none;
+        }
+        @media screen and (min-width: 1268px) {
+
+            html, body {
+                overflow-x: hidden;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            .container-fluid {
+                width: 100%;
+                max-width: 100vw;
+                padding: 0;
+                margin: 0 auto;
+                overflow-x: hidden;
+            }
+            .tab-content {
+                margin-top: 20px;
+            }
+
+            /* Contenedor scrollable de la tabla */
+            .dataTables_scrollBody {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 220px; /* 🔹 Altura fija de la tabla visible */
+
+                overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
+                overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
+                display: block;
+            }
+
+            /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
+            .dataTables_scrollBody table {
+                width: 100% !important;
+                max-width: 100%;
+                min-width: auto !important;
+                table-layout: auto;
+
+            }
+
+            .dataTables_scrollBody {
+
+                th, td {
+                    padding: 10px;
+                    white-space: nowrap;
+                }
+            }
+        }
+
     </style>
 </head>
 <body>
 
 <div layout:fragment="content">
-    <div class="container py-8">
-      <div class="scroll-container">
-        <div class="card bg-light">
-            <div class="card-header">
-                <div class="card-header bg-primary text-white text-center"> <h2>Detalles del Pedido</h2></div>
+    <div class="container container-fluid">
+
+    <section class="content-header">
+
+          <div class="card">
+
+              <div class="card-header bg-primary text-white">
+                  <i class="fas fa-user">
+                  </i> Detalles del Cliente <!-- Título de la tarjeta -->
+              </div>
                 <!-- Botones de navegación -->
-                <div class="row mt-4">
-                    <div class="col-md-6">
-                        <div class="btn-group" role="group" aria-label="Botones de navegación">
-                            <a th:href="@{/pedidos/listarPedidos}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-list"></i> Ver Pedidos
+                <div class="row justify-content-between align-items-center">
+                    <div class="col-md-8">
+                        <div class="btn-group btn-group-toggle">
+                            <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary">
+                                <i class="fas fa-list"></i> Pedidos
                             </a>
-                            <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-images"></i> Galería de Fotos
+                            <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary">
+                                <i class="fas fa-images"></i> Galería
                             </a>
-                            <a th:href="@{/listar}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-images"></i> Ver Clientes
+                            <a th:href="@{/listar}" class="btn btn-outline-primary">
+                                <i class="fas fa-user"></i> Clientes
                             </a>
 
+                            <a th:href="@{/form}" class="btn btn-outline-primary">
+                                <i class="fas fa-user-plus"></i> Nuevo Cliente
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
-
+        <!-- Campo oculto que contiene el id del cliente -->
+        <input type="hidden" id="clienteId" th:value="${cliente.id}" />
 
             <div class="card-body">
 
-                <h4 class="card-title">
-                    <!-- Botones para crear facturas, albaranes y pedidos -->
-                </h4>
-                <ul class="list-group">
-                    <li class="list-group-item active" th:text="'Datos del Cliente'"></li>
-                    <li class="list-group-item" th:text="'Dirección: '+${cliente.direccion}"></li>
-                    <li class="list-group-item" th:text="'Teléfono: '+${cliente.telefono}"></li>
-                    <li class="list-group-item" th:text="'Email: '+ ${cliente.email}"></li>
-                    <li class="list-group-item" th:text="'Fecha de Alta: '+${cliente.createAt}"></li>
-                </ul>
-                <br>
+
                 <!-- Pestañas para Pedidos y Albaranes -->
                 <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link" id="cliente-tab" data-toggle="tab" href="#cliente" role="tab" aria-controls="cliente" aria-selected="false">Detalles</a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link active" id="pedidos-tab" data-toggle="tab" href="#pedidos" role="tab" aria-controls="pedidos" aria-selected="true">Pedidos</a>
                     </li>
@@ -138,78 +258,237 @@
                 <div class="tab-content" id="myTabContent">
                     <!-- Tab para los pedidos -->
                     <div class="tab-pane fade show active" id="pedidos" role="tabpanel" aria-labelledby="pedidos-tab">
-                        <h4 class="mt-3">Pedidos del Cliente</h4>
                         <div class="table-responsive">
                             <!-- Tabla de Pedidos -->
-                            <table id="table" class="table mt-2">
-                                <thead class="thead-dark">
-                                <tr>
-                                    <th>Nº Pedido</th>
-                                    <th>Cliente</th>
-                                    <th>Estado</th>
-                                    <th>Tipo de Pedido</th>
-                                    <th>F. Pedido</th>
-                                    <th>Ver</th>
-                                    <th>Editar</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <!-- Contenido de la tabla de pedidos -->
-                                <tr th:each="pedido:${pedido}">
-                                    <td th:text="${pedido.npedido}"></td>
-                                    <td th:text="${pedido.cliente.nombre}"></td>
-                                    <td th:text="${pedido.estado}"></td>
-                                    <td th:text="${pedido.tipoPedido}"></td>
-                                    <td th:text="${#dates.format(pedido.dfecha, 'dd/MM/yyyy')}"></td>
-                                    <td><a class="btn btn-primary btn-sm" th:href="@{'/pedidos/ver/' + ${pedido.npedido}}" th:text="'detalle'"></a></td>
-                                    <td><a class="btn btn-primary btn-sm" th:href="@{'/pedidos/formEditar/' + ${pedido.npedido}}" th:text="'Editar'"></a></td>
-                                </tr>
-                                </tbody>
-                            </table>
-                            <div th:if="${#lists.isEmpty(cliente.pedido)}" class="alert alert-info my-4" th:text="'No hay Pedidos asignados para el cliente ' + ${cliente.nombre} + ' ' + ${cliente.apellido}"></div>
-                            <nav th:replace="paginator-navVerPedido ::paginatorPedido"></nav>
+                            <!-- Incluye Font Awesome para los íconos -->
+                            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+                            <div class="table-responsive">
+                                <table id="table" class="table table-bordered table-striped">
+                                    <thead class="thead-dark">
+                                    <tr>
+                                        <th>N° Pedido</th>
+                                        <th>Tipo de Pedido</th>
+                                        <th>Estado</th>
+                                        <th>Grupo</th>
+                                        <th>SubGrupo</th>
+                                        <th>Precio</th>
+                                        <th>Fecha</th>
+
+                                        <th>Acciones</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+
+
                         </div>
                     </div>
-
+                    <div class="tab-pane fade" id="cliente" role="tabpanel" aria-labelledby="cliente-tab">
+                   <h4 class="card-title">
+                    <!-- Botones para crear facturas, albaranes y pedidos -->
+                </h4>
+                    <ul class="list-group">
+                        <li class="list-group-item active" th:text="'Datos del Cliente'"></li>
+                        <li class="list-group-item" th:text="'Dirección: '+${cliente.direccion}"></li>
+                        <li class="list-group-item" th:text="'Teléfono: '+${cliente.telefono}"></li>
+                        <li class="list-group-item" th:text="'Email: '+ ${cliente.email}"></li>
+                        <li class="list-group-item" th:text="'Fecha de Alta: '+${cliente.createAt}"></li>
+                    </ul>
+                    <br>
+                    </div>
                     <!-- Tab para los albaranes -->
                     <div class="tab-pane fade" id="albaranes" role="tabpanel" aria-labelledby="albaranes-tab">
-                        <h4 class="mt-3">Facturas del Cliente</h4>
                         <div class="table-responsive">
                             <!-- Tabla de Albaranes -->
-                            <table id="tableAlbaran" class="table mt-2">
+                            <table id="tableAlbaran" class="table table-striped table-bordered mt-2">
                                 <thead class="thead-dark">
                                 <tr>
                                     <th>Nº Factura</th>
                                     <th>F. Factura</th>
-                                    <th>Cliente</th>
                                     <th>Tipo de Pedido</th>
                                     <th>Total</th>
-                                    <th>Ver</th>
+                                    <th>Acciones</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                <!-- Contenido de la tabla de albaranes -->
-                                <tr th:each="factura:${factura}">
-                                    <td th:text="${factura.id}"></td>
-                                    <td th:text ="${factura.dfechaAlbaran}"></td>
-                                    <td th:text="${factura.cliente.nombre}"></td>
-                                    <td th:text="${factura.tipoPedido}"></td>
-                                    <td th:text="${#numbers.formatDecimal(factura.subTotal, 0, 'DEFAULT', 2, 'DEFAULT')}+' €'"></td>
-                                    <td><a class="btn btn-primary btn-sm" th:href="@{'/facturas/ver/' + ${factura.id}}" th:text="'Ver'"></a></td>
-                                </tr>
+                                <!-- Aquí se cargan las filas con los datos desde el backend -->
                                 </tbody>
                             </table>
-                            <div th:if="${#lists.isEmpty(cliente.facturas)}" class="alert alert-info my-4" th:text="'No hay Facturas asignados para el cliente ' + ${cliente.nombre} + ' ' + ${cliente.apellido}"></div>
-                            <nav th:replace="paginator-navVerFactura ::paginatorFactura"></nav>
                         </div>
                     </div>
+
                 </div>
 
             </div>
-        </div>
-    </div>
-    </div>
-</div>
 
+
+    </section>
+</div>
+</div>
 </body>
 </html>
+<script>
+
+
+        let tablaFacturasCargada = false;
+
+        function cargarTablaFacturas() {
+            $('#tableAlbaran').DataTable({
+                ajax: {
+                    url: '/api/factura/listarPorCliente',
+                    type: 'GET',
+                    data: function (d) {
+                        d.clienteId = $('#clienteId').val(); // Aseguramos que sea "clienteId"
+                        console.log("Enviando clienteId:", d.clienteId); // Log para depuración
+                    },
+                    dataSrc: function (json) {
+                        console.log("Facturas del cliente:", json);
+                        if (json.data) return json.data;
+                        if (json.factura?.content) return json.factura.content;
+                        return [];
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error al cargar facturas:", error);
+                        console.error("Respuesta del servidor:", xhr.responseText);
+                    }
+                },
+                columns: [
+                    { data: 'id', title: 'N° Factura' },
+                    {
+                        data: 'dfechaAlbaran',
+                        title: 'F. Factura',
+                        render: function (data) {
+                            if (!data) return '';
+                            const date = new Date(data);
+                            return date.toLocaleDateString('es-ES'); // dd/mm/yyyy
+                        }
+                    },
+                    { data: 'tipoPedido', title: 'Tipo de Pedido' },
+                    {
+                        data: 'subTotal',
+                        title: 'Total',
+                        render: function (data) {
+                            return parseFloat(data).toFixed(2) + ' €';
+                        }
+                    },
+                    {
+                        data: 'id',
+                        title: 'Acciones',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+                        render: function (data) {
+                            return `
+
+          <a href="/facturas/ver/${data}" class="btn btn-info btn-sm" title="Ver factura">
+            <i class="fas fa-eye"></i>
+          </a>
+          <a href="/facturas/formEditar/${data}" class="btn btn-warning btn-sm" title="Editar factura">
+            <i class="fas fa-pencil-alt"></i>
+          </a>
+
+      `;
+                        }
+                    }
+                ],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+                },
+                paging: true,
+                searching: true,
+                ordering: true,
+                lengthMenu: [5, 10, 15, 25],
+                pageLength: 5,
+                displayLength: 5,
+                fixedHeader: true,
+                scrollY: "300px",
+                scrollCollapse: true,
+                responsive: true
+            });
+        }
+
+
+
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        const target = $(e.target).attr("href");
+        if (target === '#albaranes' && !tablaFacturasCargada) {
+        cargarTablaFacturas();
+        tablaFacturasCargada = true;
+    }
+    });
+
+
+        $(document).ready(function() {
+            const idcliente = $('#clienteId').val();
+
+            $('#table').DataTable({
+                ajax: {
+                    url: '/api/pedido/listarPedidosClientes',
+                    type: 'GET',
+                    data: d => { d.idCliente = idcliente; },
+                    dataSrc: json => json.data
+                        ?? json.pedido?.content
+                        ?? [],
+                },
+                columns: [
+                    { data: 'npedido',        title: 'N° Pedido'      },
+                    { data: 'tipoPedido',     title: 'Tipo de Pedido' },
+                    { data: 'estado',         title: 'Estado'         },
+                    { data: 'grupo',         title: 'Grupo'         },
+                    { data: 'subgrupo',         title: 'SubGrupo'         },
+                    {
+                        data: 'cobrado',
+                        title: 'Precio',
+                        render: function(data) {
+                            console.log(data);
+                            // Si no hay valor o es cero, mostramos 'Sin cobrar'
+                            if (data === null || data === undefined || parseFloat(data) === 0) {
+                                return 'Sin cobrar';
+                            }
+                            // Si hay valor, lo formateamos con dos decimales y símbolo €
+                            return parseFloat(data).toFixed(2) + ' €';
+                        }
+                    },
+                    {
+                        data: 'fecha',
+                        title: 'Fecha',
+                        render: fecha => fecha
+                            ? new Date(fecha).toLocaleDateString('es-ES')
+                            : ''
+                    },
+                    {
+                        data: 'npedido',
+                        title: 'Acciones',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+                        render: id => `
+          <div class="btn-group" role="group" aria-label="Acciones">
+            <a href="/pedidos/ver/${id}"       class="btn btn-info btn-sm"   title="Ver pedido">
+              <i class="fas fa-eye"></i>
+            </a>
+            <a href="/pedidos/formEditar/${id}" class="btn btn-warning btn-sm" title="Editar pedido">
+              <i class="fas fa-pencil-alt"></i>
+            </a>
+          </div>`
+                    }
+                ],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+                },
+                paging:       true,
+                searching:    true,
+                ordering:     true,
+                lengthMenu:  [5, 10, 15, 25],
+                pageLength:    5,
+                fixedHeader:  true,
+                scrollY:    "300px",
+                scrollCollapse: true,
+                responsive:   true
+            });
+        });
+
+</script>
+

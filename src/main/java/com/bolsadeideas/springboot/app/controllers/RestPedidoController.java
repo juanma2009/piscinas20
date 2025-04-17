@@ -9,6 +9,7 @@ import com.bolsadeideas.springboot.app.models.entity.Cliente;
 import com.bolsadeideas.springboot.app.models.entity.Pedido;
 import com.bolsadeideas.springboot.app.models.service.*;
 import com.bolsadeideas.springboot.app.util.paginator.PageRender;
+import org.apache.commons.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,7 +32,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/pedido/")
 public class RestPedidoController {
 
-
+    Log logger = org.apache.commons.logging.LogFactory.getLog(getClass());
     @Autowired
     private IClienteService clienteService;
 
@@ -56,6 +57,7 @@ public class RestPedidoController {
 
     @Autowired
     private PedidoMapper pedidoMapper;
+
     @RequestMapping(value = {"/listarPedidos"}, method = RequestMethod.GET)
     @ResponseBody
     public Map<String, Object> listar(@RequestParam(name = "page", defaultValue = "0") int page) {
@@ -71,9 +73,10 @@ public class RestPedidoController {
             pedidoData.put("fecha", p.getDfecha());
             pedidoData.put("grupo", p.getGrupo());
             pedidoData.put("subgrupo", p.getSubgrupo());
+            pedidoData.put("cobrado", p.getCobrado());
             return pedidoData;
         }).collect(Collectors.toList());
-
+        logger.info(pedidosData);
         Map<String, Object> response = new HashMap<>();
         response.put("recordsTotal", pedidos.getTotalElements());
         response.put("recordsFiltered", pedidos.getTotalElements());
@@ -81,6 +84,39 @@ public class RestPedidoController {
 
         return response;
     }
+
+    @RequestMapping(value = {"/listarPedidosClientes"}, method = RequestMethod.GET)
+    @ResponseBody
+    public Map<String, Object> listarPorCliente(
+            @RequestParam(name = "idCliente") Long idCliente,
+            @RequestParam(name = "page", defaultValue = "0") int page) {
+
+        Pageable pageRequest = PageRequest.of(page, Integer.MAX_VALUE);
+        Page<Pedido> pedidos = pedidoService.findAllByCliente(idCliente, pageRequest);
+
+        List<Map<String, Object>> pedidosData = pedidos.getContent().stream().map(p -> {
+            Map<String, Object> pedidoData = new HashMap<>();
+            pedidoData.put("npedido", p.getNpedido());
+            pedidoData.put("cliente", p.getCliente().getNombre());
+            pedidoData.put("tipoPedido", p.getTipoPedido());
+            pedidoData.put("estado", p.getEstado());
+            pedidoData.put("fecha", p.getDfecha());
+            pedidoData.put("grupo", p.getGrupo());
+            pedidoData.put("subgrupo", p.getSubgrupo());
+            pedidoData.put("cobrado", p.getCobrado());
+
+            return pedidoData;
+        }).collect(Collectors.toList());
+        // Crear la respuesta
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("recordsTotal", pedidos.getTotalElements());
+        response.put("recordsFiltered", pedidos.getTotalElements());
+        response.put("data", pedidosData);
+        logger.info("respopne lista depedidos"+response);
+        return response;
+    }
+
 
     @PostMapping("/buscar")
     @ResponseBody
