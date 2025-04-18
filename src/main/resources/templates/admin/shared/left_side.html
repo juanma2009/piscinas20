@@ -16,7 +16,9 @@
     <link rel="stylesheet" href="dist/css/adminlte.min.css">
     <link rel="stylesheet" href="/style.css">
 
+<style>
 
+</style>
 </head>
 <body class="hold-transition sidebar-mini">
 <div class="menu-icon" onclick="toggleMenu()">☰</div>
@@ -56,6 +58,11 @@
                         <li class="nav-item">
                             <a class="nav-link" th:href="@{'/users'}">
                                 Listar usuarios <span class="badge badge-secondary" th:text="${countCliente}"></span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/configuracion/configuracion'}">
+                                Configuración de Fomularios <span class="badge badge-secondary"></span>
                             </a>
                         </li>
 

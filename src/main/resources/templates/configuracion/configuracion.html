@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuración de Listados</title>
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+            rel="stylesheet">
+</head>
+<body>
+<div class="container mt-4">
+    <h2>Configuración de Listados</h2>
+
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" id="configTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="pedido-tab" data-bs-toggle="tab"
+                    data-bs-target="#pedido" type="button" role="tab">
+                Pedidos
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="factura-tab" data-bs-toggle="tab"
+                    data-bs-target="#factura" type="button" role="tab">
+                Facturas
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="user-tab" data-bs-toggle="tab"
+                    data-bs-target="#user" type="button" role="tab">
+                Users
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab panes -->
+    <div class="tab-content mt-3" id="configTabsContent">
+        <!-- PEDIDOS -->
+        <div class="tab-pane fade show active" id="pedido" role="tabpanel">
+            <h4>Configuración Pedidos</h4>
+            <!-- SERVICIOS -->
+            <div class="mb-4">
+                <h5>Servicios</h5>
+                <form th:action="@{/configuracion/pedido/servicio}" method="post" class="row g-2">
+                    <div class="col-auto">
+                        <input type="text" name="nombre" class="form-control" placeholder="Nuevo servicio">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">Añadir</button>
+                    </div>
+                </form>
+                <ul class="list-group mt-2">
+                    <li class="list-group-item" th:each="s : ${servicios}"
+                        th:text="${s.nombre}">Servicio A</li>
+                </ul>
+            </div>
+            <!-- METALES -->
+            <div class="mb-4">
+                <h5>Metales</h5>
+                <form th:action="@{/configuracion/pedido/metal}" method="post" class="row g-2">
+                    <div class="col-auto">
+                        <input type="text" name="nombre" class="form-control" placeholder="Nuevo metal">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">Añadir</button>
+                    </div>
+                </form>
+                <ul class="list-group mt-2">
+                    <li class="list-group-item" th:each="m : ${metales}"
+                        th:text="${m.nombre}">Metal X</li>
+                </ul>
+            </div>
+            <!-- SUBGRUPOS -->
+            <div class="mb-4">
+                <h5>Subgrupos</h5>
+                <form th:action="@{/configuracion/pedido/subgrupo}" method="post" class="row g-2">
+                    <div class="col-auto">
+                        <input type="text" name="nombre" class="form-control" placeholder="Nuevo subgrupo">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">Añadir</button>
+                    </div>
+                </form>
+                <ul class="list-group mt-2">
+                    <li class="list-group-item" th:each="sg : ${subgrupos}"
+                        th:text="${sg.nombre}">Subgrupo 1</li>
+                </ul>
+            </div>
+            <!-- ESTADOS -->
+            <div class="mb-4">
+                <h5>Estados</h5>
+                <form th:action="@{/configuracion/pedido/estado}" method="post" class="row g-2">
+                    <div class="col-auto">
+                        <input type="text" name="nombre" class="form-control" placeholder="Nuevo estado">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">Añadir</button>
+                    </div>
+                </form>
+                <ul class="list-group mt-2">
+                    <li class="list-group-item" th:each="e : ${estados}"
+                        th:text="${e.nombre}">Pendiente</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- FACTURAS (vacío de momento) -->
+        <div class="tab-pane fade" id="factura" role="tabpanel">
+            <h4>Configuración Facturas</h4>
+            <!-- Aquí podrías repetir un bloque parecido al de Pedidos -->
+            <p>Aquí podrás gestionar listas específicas para facturas…</p>
+        </div>
+
+        <!-- USERS (vacío de momento) -->
+        <div class="tab-pane fade" id="user" role="tabpanel">
+            <h4>Configuración Users</h4>
+            <p>Aquí podrás gestionar listas específicas para usuarios…</p>
+        </div>
+    </div>
+</div>
+
+<script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+</script>
+</body>
+</html>
