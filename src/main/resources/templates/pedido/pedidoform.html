@@ -8,7 +8,14 @@
     <link rel="stylesheet" href="cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
     <meta name="_csrf" th:content="${_csrf.token}" />
     <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        // Mapa que llevaste en el model como tiposPorPieza
+        var tiposPorPieza = /*[[${tiposPorPieza}]]*/ {};
+        /*]]>*/
+    </script>
 
 
 <style>
@@ -206,35 +213,34 @@
 <body>
 
 <div layout:fragment="content">
-    <div class="container container-fluid">
-        <div id="messege"></div>
+    <div id="messege"></div>
 
-        <section class="content-header">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
+    <section class="content-header">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
                 <div  th:text="${titulo}"></div> <!-- Título de la tarjeta -->
-                </div>
-                <!-- Botones de navegación -->
-                <div class="row justify-content-between align-items-center">
-                    <div class="col-md-8">
-                        <div class="btn-group btn-group-toggle">
-                            <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary">
-                                <i class="fas fa-list"></i> Pedidos
-                            </a>
-                            <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary">
-                                <i class="fas fa-images"></i> Galería
-                            </a>
-                            <a th:href="@{/listar}" class="btn btn-outline-primary">
+            </div>
+            <!-- Botones de navegación -->
+            <div class="row justify-content-between align-items-center">
+                <div class="col-md-8">
+                    <div class="btn-group btn-group-toggle">
+                        <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary">
+                            <i class="fas fa-list"></i> Pedidos
+                        </a>
+                        <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary">
+                            <i class="fas fa-images"></i> Galería
+                        </a>
+                        <a th:href="@{/listar}" class="btn btn-outline-primary">
                             <i class="fas fa-user"></i> Clientes
-                             </a>
-                            <a th:href="@{/form}" class="btn btn-outline-primary">
-                                <i class="fas fa-user-plus"></i> Nuevo Cliente
-                            </a>
-                        </div>
+                        </a>
+                        <a th:href="@{/form}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-plus"></i> Nuevo Cliente
+                        </a>
                     </div>
                 </div>
-                <div> </div>
-             <div class="container-fluid mt-3">
+            </div>
+            <div> </div>
+            <div class="container-fluid mt-3">
                 <form id="pedidoForm" th:action="@{/pedidos/form/}" enctype="multipart/form-data" th:object="${pedido}" method="post">
                     <!-- Navegación de pestañas -->
                     <ul class="nav nav-tabs" id="pedidoTab" role="tablist">
@@ -269,36 +275,16 @@
                                         <input name="cliente" th:value="${pedido.cliente.nombre} + ' ' + ${pedido.cliente.apellido}" class="form-control" disabled />
                                     </div>
                                 </div>
-                                <!-- Nº Pedido -->
-                                <div class="col-md-4">
+                                <!-- Nº Pedido esta oculto pero sigueenviado el numero al servicio-->
+                                <div class="col-md-4" hidden>
                                     <div class="form-group">
                                         <label for="npedido">Nº Pedido</label>
-                                        <input type="text" th:if="${pedido.npedido != null}" th:field="*{npedido}" id="npedido" class="form-control" readonly />
-                                        <input type="text" th:unless="${pedido.npedido != null}" readonly th:value="${numeroPedido}" name="npedido" id="npedido" class="form-control"/>
+                                        <input type="hidden" th:if="${pedido.npedido != null}" th:field="*{npedido}" id="npedido" class="form-control" />
+                                        <input type="hidden" th:unless="${pedido.npedido != null}" th:value="${numeroPedido}" name="npedido" id="npedido" class="form-control" />
                                         <small class="form-text text-danger" th:if="${#fields.hasErrors('npedido')}" th:errors="*{npedido}"></small>
                                     </div>
                                 </div>
-                                <!-- Estado -->
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="estado">Estado</label>
-                                        <select name="estado" class="form-control" th:field="*{estado}">
-                                            <option th:each="estado : ${estados}" th:value="${estado}" th:text="${estado}"></option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <!-- Resto de campos en Información General -->
-                            <div class="row">
-                                <!-- Fecha sin el estado es finalizdo salga el campo fecha terminado-->
-                                <!-- Contenedor para Fecha: se le asigna un id para poder manipularlo -->
-                                <div class="col-md-4" id="fechaFieldContainer">
-                                    <div class="form-group">
-                                        <label for="fecha">Fecha Finalizado</label>
-                                        <input type="date" name="fecha" class="form-control" th:field="*{fechaFinalizdo}" />
-                                    </div>
-                                </div>
                                 <!-- Empleado -->
                                 <div class="col-md-4">
                                     <div class="form-group">
@@ -308,6 +294,34 @@
                                         </select>
                                     </div>
                                 </div>
+
+                            </div>
+
+                            <!-- Resto de campos en Información General -->
+                            <div class="row">
+                                <!-- Estado -->
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="estado">Estado</label>
+                                        <select name="estado" class="form-control" th:field="*{estado}">
+                                            <option th:each="estado : ${estados}" th:value="${estado}" th:text="${estado}"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- Fecha sin el estado es finalizdo salga el campo fecha Finalizado-->
+                                <div class="col-md-4" id="">
+                                    <div class="form-group">
+                                        <label for="fechaEntrega">Fecha Entregado</label>
+                                        <input type="date" name="fechaEntrega" class="form-control" th:field="*{fechaEntrega}" />
+                                    </div>
+                                </div>
+                                <div class="col-md-4" id="fechaFieldContainer">
+                                    <div class="form-group">
+                                        <label for="fechaFinalizado">Fecha Finalizado</label>
+                                        <input type="date" name="fechaFinalizado" class="form-control" th:field="*{fechaFinalizado}" />
+                                    </div>
+                                </div>
+
                                 <!-- Referencia -->
                                 <div class="col-md-4">
                                     <div class="form-group">
@@ -315,81 +329,111 @@
                                         <input name="ref" th:value="${pedido.ref}" class="form-control" />
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="row">
                                 <!-- Servicio -->
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="tipoPedido">Servicio</label>
-                                        <select name="tipoPedido" class="form-control" th:field="*{tipoPedido}">
-                                            <option th:each="tipoPedido : ${tipoPedido}" th:value="${tipoPedido}" th:text="${tipoPedido}" th:selected="${pedido.tipoPedido == tipoPedido}"></option>
+                                        <select id="tipoPedido" name="tipoPedido" class="form-control" th:field="*{tipoPedido}">
+                                            <option th:each="s : ${servicios}"
+                                                    th:value="${s}"
+                                                    th:text="${s}"
+                                                    th:selected="${pedido.tipoPedido == s}">
+                                            </option>
                                         </select>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div class="row">
+
+
+
                                 <!-- Metal -->
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="grupo">Metal</label>
-                                        <select name="grupo" class="form-control" th:field="*{grupo}">
-                                            <option th:each="grupo : ${grupo}" th:value="${grupo}" th:text="${grupo}"></option>
+                                        <select id="grupo" name="grupo" class="form-control" th:field="*{grupo}">
+                                            <option th:each="m : ${metales}"
+                                                    th:value="${m}"
+                                                    th:text="${m}">
+                                            </option>
                                         </select>
                                     </div>
                                 </div>
-                                <!-- Subgrupo -->
+
+                                <!-- Pieza -->
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="subgrupo">Subgrupo</label>
-                                        <select name="subgrupo" class="form-control" th:field="*{subgrupo}">
-                                            <option th:each="subgrupo : ${subgrupo}" th:value="${subgrupo}" th:text="${subgrupo}"></option>
+                                        <label for="pieza">Pieza</label>
+                                        <select id="pieza" name="pieza" class="form-control" th:field="*{pieza}"
+                                                onchange="actualizarTipos()">
+                                            <option value="">-- Selecciona Pieza --</option>
+                                            <option th:each="p : ${piezas}"
+                                                    th:value="${p}"
+                                                    th:text="${p}"
+                                                    th:selected="${pedido.pieza == p}">
+                                            </option>
                                         </select>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Botón para añadir fotos -->
-                            <div class="form-group text-center mt-3">
-                                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#addPhotoModal">
-                                    <i class="fas fa-camera"></i> Añadir Fotos
-                                </button>
-                            </div>
+                                <!-- Tipo (dinámico) -->
+                                <div class="col-md-4" id="container-tipo">
+                                    <div class="form-group">
+                                        <label for="tipo">Tipo</label>
+                                        <select id="tipo" name="tipo" class="form-control" th:field="*{tipo}">
+                                            <option value="">-- Primero elige Pieza --</option>
+                                        </select>
+                                   </div>
+                               </div>
                         </div>
 
-                        <!-- Pestaña Detalles Adicionales -->
-                        <div class="tab-pane fade" id="detalles-adicionales" role="tabpanel" aria-labelledby="detalles-adicionales-tab">
-                            <div class="row">
-                                <!-- Peso -->
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label for="peso">Peso</label>
-                                        <input name="peso" th:value="${pedido.peso}" class="form-control"/>
-                                    </div>
-                                </div>
-                                <!-- Horas -->
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label for="horas">Horas</label>
-                                        <input name="horas" th:value="${pedido.horas}" class="form-control"/>
-                                    </div>
-                                </div>
-                                <!-- Cobrado -->
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label for="cobrado">Cobrado</label>
-                                        <input name="cobrado" th:value="${pedido.cobrado}" class="form-control"/>
-                                    </div>
+                        <!-- Botón para añadir fotos -->
+                        <div class="form-group text-center mt-3">
+                            <button type="button" class="btn btn-info" data-toggle="modal" data-target="#addPhotoModal">
+                                <i class="fas fa-camera"></i> Añadir Fotos
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pestaña Detalles Adicionales -->
+                    <div class="tab-pane fade" id="detalles-adicionales" role="tabpanel" aria-labelledby="detalles-adicionales-tab">
+                        <div class="row">
+                            <!-- Peso -->
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="peso">Peso</label>
+                                    <input name="peso" th:value="${pedido.peso}" class="form-control"/>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Pestaña Comentario -->
-                        <div class="tab-pane fade" id="comentario" role="tabpanel" aria-labelledby="comentario-tab">
-                            <div class="form-group">
-                                <label for="observacion">Observaciones</label>
-                                <textarea id="observacion" name="observacion" class="form-control" th:text="${pedido.observacion}"></textarea>
+                            <!-- Horas -->
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="horas">Horas</label>
+                                    <input name="horas" th:value="${pedido.horas}" class="form-control"/>
+                                </div>
+                            </div>
+                            <!-- Cobrado -->
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="cobrado">Cobrado</label>
+                                    <input name="cobrado" th:value="${pedido.cobrado}" class="form-control"/>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Pestaña Comentario -->
+                    <div class="tab-pane fade" id="comentario" role="tabpanel" aria-labelledby="comentario-tab">
+                        <div class="form-group">
+                            <label for="observacion">Observaciones</label>
+                            <textarea id="observacion" name="observacion" class="form-control" th:text="${pedido.observacion}"></textarea>
+                        </div>
+                    </div>
+
+
+
+
 
                     <!-- Contenedor de archivos -->
 
@@ -400,11 +444,13 @@
                         <input type="submit" th:value="${titulo}" class="btn btn-primary" />
                         <button type="reset" class="btn btn-secondary">Resetear</button>
                     </div>
+
                 </form>
             </div>
+
         </div>
 
-            <!-- Modal for file upload -->
+        <!-- Modal for file upload -->
         <div class="modal fade" id="addPhotoModal" tabindex="-1" role="dialog" aria-labelledby="addPhotoModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
@@ -438,156 +484,194 @@
                 </div>
             </div>
         </div>
-    <!-- Se incluye CKEditor para que el textarea de observaciones disponga de una barra de herramientas -->
-    <script src="https://cdn.ckeditor.com/ckeditor5/35.0.1/classic/ckeditor.js"></script>
-    <script>
-        <!-- Controla que salga la fecha si el estado a cambiado FINALIZADO -->
-        document.addEventListener("DOMContentLoaded", function() {
-            const estadoSelect = document.querySelector('select[name="estado"]');
-            const fechaContainer = document.getElementById('fechaFieldContainer');
 
-            function toggleFechaField() {
-                // Comprueba si el valor del select es "terminado"
-                if(estadoSelect.value === 'FINALIZADO') {
-                    fechaContainer.style.display = 'block';
-                } else {
-                    fechaContainer.style.display = 'none';
-                }
+
+<!-- Se incluye CKEditor para que el textarea de observaciones disponga de una barra de herramientas -->
+<script src="https://cdn.ckeditor.com/ckeditor5/35.0.1/classic/ckeditor.js"></script>
+<script>
+    <!-- Controla que salga la fecha si el estado a cambiado FINALIZADO -->
+    document.addEventListener("DOMContentLoaded", function() {
+        const estadoSelect = document.querySelector('select[name="estado"]');
+        const fechaContainer = document.getElementById('fechaFieldContainer');
+
+        function toggleFechaField() {
+            // Comprueba si el valor del select es "terminado"
+            if(estadoSelect.value === 'Finalizado') {
+                fechaContainer.style.display = 'block';
+            } else {
+                fechaContainer.style.display = 'none';
+            }
+        }
+
+        // Ejecuta la función al cargar la página
+        toggleFechaField();
+
+        // Escucha los cambios en el select para actualizar la visibilidad
+        estadoSelect.addEventListener('change', toggleFechaField);
+    });
+
+    ClassicEditor
+        .create(document.querySelector('#observacion'))
+        .catch(error => {
+            console.error(error);
+        });
+</script>
+<script th:inline="javascript">
+
+
+    $(document).ready(function() {
+
+        // Function to handle form submission and file uploading
+        $('#uploadForm').submit(function (event) {
+            event.preventDefault(); // Prevent default form submission
+
+            // Gather file names
+            var selectedFiles = document.getElementById('files').files;
+            var fileNamesList = [];
+            for (var i = 0; i < selectedFiles.length; i++) {
+                fileNamesList.push(selectedFiles[i].name);
             }
 
-            // Ejecuta la función al cargar la página
-            toggleFechaField();
+            // Update the hidden input with the file names (if exists)
+            var existingFileNames = $('#fileNamesJSON').val();
+            if (existingFileNames) {
+                var existingFileNamesArray = JSON.parse(existingFileNames);
+                fileNamesList = existingFileNamesArray.concat(fileNamesList);
+            }
+            $('#fileNamesJSON').val(JSON.stringify(fileNamesList));
 
-            // Escucha los cambios en el select para actualizar la visibilidad
-            estadoSelect.addEventListener('change', toggleFechaField);
+            // Prepare form data for AJAX request
+            var formData = new FormData(this);
+
+            // ✅ Get the npedido value from the hidden input
+            var npedido = $('input[name="npedido"]').val();
+
+            // ✅ Ensure npedido is included in the FormData
+            formData.append('npedido', npedido);
+            console.log(npedido)
+            // AJAX request to upload files
+            $.ajax({
+                type: $(this).attr('method'),
+                url: $(this).attr('action'),
+                data: formData,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    console.log('Archivos subidos con éxito.');
+
+                    // Update file list on the page
+                    updateFileList(selectedFiles);
+                    // $('#files').val(''); // Clear file input
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error al subir los archivos: ', error);
+                }
+            });
         });
-
-        ClassicEditor
-            .create(document.querySelector('#observacion'))
-            .catch(error => {
-                console.error(error);
-            });
-    </script>
-    <script th:inline="javascript">
-
-
-        $(document).ready(function() {
-
-            // Function to handle form submission and file uploading
-            $('#uploadForm').submit(function (event) {
-                event.preventDefault(); // Prevent default form submission
-
-                // Gather file names
-                var selectedFiles = document.getElementById('files').files;
-                var fileNamesList = [];
-                for (var i = 0; i < selectedFiles.length; i++) {
-                    fileNamesList.push(selectedFiles[i].name);
-                }
-
-                // Update the hidden input with the file names (if exists)
-                var existingFileNames = $('#fileNamesJSON').val();
-                if (existingFileNames) {
-                    var existingFileNamesArray = JSON.parse(existingFileNames);
-                    fileNamesList = existingFileNamesArray.concat(fileNamesList);
-                }
-                $('#fileNamesJSON').val(JSON.stringify(fileNamesList));
-
-                // Prepare form data for AJAX request
-                var formData = new FormData(this);
-
-                // ✅ Get the npedido value from the hidden input
-                var npedido = $('input[name="npedido"]').val();
-
-                // ✅ Ensure npedido is included in the FormData
-                formData.append('npedido', npedido);
-                console.log(npedido)
-                // AJAX request to upload files
-                $.ajax({
-                    type: $(this).attr('method'),
-                    url: $(this).attr('action'),
-                    data: formData,
-                    cache: false,
-                    contentType: false,
-                    processData: false,
-                    success: function (response) {
-                        console.log('Archivos subidos con éxito.');
-
-                        // Update file list on the page
-                        updateFileList(selectedFiles);
-                        // $('#files').val(''); // Clear file input
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Error al subir los archivos: ', error);
-                    }
-                });
-            });
 
 // Function to update file list on the page
-            function updateFileList(selectedFiles) {
-                if (selectedFiles.length > 0) {
-                    var fileListContainer = $('#fileListContainer');
+        function updateFileList(selectedFiles) {
+            if (selectedFiles.length > 0) {
+                var fileListContainer = $('#fileListContainer');
 
-                    // Asegurarse de que la tabla está vacía antes de agregar nuevos elementos
-                   var table = $('#fileListTable');
-                  //  table.empty(); // Limpiar tabla antes de agregar archivos
+                // Asegurarse de que la tabla está vacía antes de agregar nuevos elementos
+                var table = $('#fileListTable');
+                //  table.empty(); // Limpiar tabla antes de agregar archivos
 
-                    // Añadir cabecera de la tabla si no está presente
-                    if (table.find('thead').length === 0) {
-                        var tableHeader = $('<thead>').append(
-                            $('<tr>').append(
-                                $('<th>').text('Archivo'),
-                                $('<th>').text('Vista Previa'),
-                                $('<th>').text('Acciones')
-                            )
-                        );
-                        table.append(tableHeader);
-                    }
-
-                    // Añadir los archivos seleccionados a la tabla
-                    var tbody = $('<tbody>'); // Crear un nuevo cuerpo de tabla
-                    for (var i = 0; i < selectedFiles.length; i++) {
-                        var fileName = selectedFiles[i].name;
-                        var fileURL = URL.createObjectURL(selectedFiles[i]);
-
-                        var fileRow = $('<tr>').append(
-                            $('<td>').text(fileName),
-                            $('<td>').append(
-                                $('<img>').attr('src', fileURL).css('max-width', '50px')
-                            ),
-                            $('<td>').append(
-                                $('<button>').text('Eliminar').addClass('btn btn-danger').click(function () {
-                                    var fileNameToDelete = $(this).closest('tr').find('td').eq(0).text();
-                                    var npedido = $('input[name="npedido"]').val();
-                                    console.log(npedido);
-                                    eliminarArchivo(fileNameToDelete,npedido); // Llamada para eliminar el archivo en backend
-                                    $(this).closest('tr').remove(); // Eliminar la fila de la tabla
-                                })
-                            )
-                        );
-                        tbody.append(fileRow); // Añadir la fila a la tabla
-                    }
-
-                    table.append(tbody); // Añadir el cuerpo de la tabla con las filas
+                // Añadir cabecera de la tabla si no está presente
+                if (table.find('thead').length === 0) {
+                    var tableHeader = $('<thead>').append(
+                        $('<tr>').append(
+                            $('<th>').text('Archivo'),
+                            $('<th>').text('Vista Previa'),
+                            $('<th>').text('Acciones')
+                        )
+                    );
+                    table.append(tableHeader);
                 }
+
+                // Añadir los archivos seleccionados a la tabla
+                var tbody = $('<tbody>'); // Crear un nuevo cuerpo de tabla
+                for (var i = 0; i < selectedFiles.length; i++) {
+                    var fileName = selectedFiles[i].name;
+                    var fileURL = URL.createObjectURL(selectedFiles[i]);
+
+                    var fileRow = $('<tr>').append(
+                        $('<td>').text(fileName),
+                        $('<td>').append(
+                            $('<img>').attr('src', fileURL).css('max-width', '50px')
+                        ),
+                        $('<td>').append(
+                            $('<button>').text('Eliminar').addClass('btn btn-danger').click(function () {
+                                var fileNameToDelete = $(this).closest('tr').find('td').eq(0).text();
+                                var npedido = $('input[name="npedido"]').val();
+                                console.log(npedido);
+                                eliminarArchivo(fileNameToDelete,npedido); // Llamada para eliminar el archivo en backend
+                                $(this).closest('tr').remove(); // Eliminar la fila de la tabla
+                            })
+                        )
+                    );
+                    tbody.append(fileRow); // Añadir la fila a la tabla
+                }
+
+                table.append(tbody); // Añadir el cuerpo de la tabla con las filas
             }
+        }
 
-            // Función para eliminar el archivo en el backend
+        // Función para eliminar el archivo en el backend
 
-            function eliminarArchivo(fileName, npedido) {
-                $.ajax({
-                    url: '/pedidos/eliminarFoto/' + fileName + '?npedido=' + npedido, // Agregar npedido como parámetro
-                    type: 'GET',
-                    success: function (response) {
-                        alert('Archivo eliminado con éxito: ' + fileName + ' del pedido: ' + npedido);
-                    },
+        function eliminarArchivo(fileName, npedido) {
+            $.ajax({
+                url: '/pedidos/eliminarFoto/' + fileName + '?npedido=' + npedido, // Agregar npedido como parámetro
+                type: 'GET',
+                success: function (response) {
+                    alert('Archivo eliminado con éxito: ' + fileName + ' del pedido: ' + npedido);
+                },
 
-                });
-            }
+            });
+        }
 
+    });
+    function actualizarTipos() {
+        var pieza = document.getElementById('pieza').value;
+        var contTipo = document.getElementById('container-tipo');
+        var selectTipo = document.getElementById('tipo');
+        var lista = tiposPorPieza[pieza] || [];
+
+        // Si la pieza no tiene múltiples tipos, ocultamos todo el contenedor
+        if (lista.length <= 1 && ['Pulsera','Broche','Otros'].indexOf(pieza) !== -1) {
+            contTipo.style.display = 'none';
+            return;
+        } else {
+            contTipo.style.display = 'block';
+        }
+
+        // Limpiar opciones
+        selectTipo.innerHTML = '<option value="">-- Selecciona Tipo --</option>';
+
+        // Rellenar con los nuevos
+        lista.forEach(function(t) {
+            var opt = document.createElement('option');
+            opt.value = t;
+            opt.text  = t;
+            selectTipo.add(opt);
         });
+    }
 
-    </script>
-</section>
+    // Al cargar la página, forzar llenado si ya hay valor en pedido.pieza
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.getElementById('pieza').value) {
+            actualizarTipos();
+            // Y si ya existe pedido.tipo, seleccionarlo:
+            var tipoActual = /*[[${pedido.tipo}]]*/ '';
+            if (tipoActual) {
+                document.getElementById('tipo').value = tipoActual;
+            }
+        }
+    });
+</script>
+    </section>
 </div>
 </body>
 </html>

@@ -3,80 +3,19 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="admin/admin_layout">
 <head>
-    <!-- jQuery (necesario para DataTables) -->
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-
-    <!-- DataTables JS -->
-    <script src="https://cdn.jsdelivr.net/npm/datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
-
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-dt@1.10.20/css/jquery.dataTables.min.css">
-    <meta charset="utf-8" />
-    <title>Spring Boot + JPA + Datatables</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
     <link rel="stylesheet" href="../css/table.css">
-    <!--  Bootstrap  -->
-    <link rel="stylesheet" href="cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js">
-    <link rel="stylesheet" href="cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
-    <!-- Plugin Leaflet.awesome-markers  -->
-    <link rel="stylesheet" href="../dist/leaflet.awesome-markers.css">
-    <link rel="stylesheet" href="../css/table.css">
-    <!-- CSS AdminLTE y FontAwesome -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
-    <!--  Bootstrap  -->
-    <link rel="stylesheet"
-          href="cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js">
-    <!-- Plugin Leaflet.awesome-markers  -->
-    <link rel="stylesheet" href="../dist/leaflet.awesome-markers.css">
-
-    <!--  Bootstrap  -->
-    <link rel="stylesheet"
-          href="cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js">
+    <link rel="stylesheet" href="../css/table.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
 
+        .estado-Pendiente { background-color: #f8d7da; }
+        .estado-Realizando { background-color: #fff3cd; }
+        .estado-Terminado { background-color: #d4edda; }
 
 
-            /*hacer las letras mas pequeñas*/
-        .list-group-item {
-            font-size: 1rem;
-        }
-        .table-responsive {
-            overflow-x: auto;
-            font-size: 1rem;
-        }
-
-        .nav-tabs {
-            margin-bottom: 1rem;
-        }
-
-        table {
-            width: 100%;
-
-        }
-
-        .thead-dark th {
-            cursor: pointer;
-        }
-
-        .sorting {
-            background-color: #D4D4D4;
-        }
-
-        .asc:after {
-            content: ' ↑';
-        }
-
-        .desc:after {
-            content: " ↓";
-        }
         .card-header.bg-white {
             background-color: white !important;
         }
@@ -97,7 +36,10 @@
         }
 
         /* Asegura que las tarjetas no queden pegadas entre sí o a los bordes */
-
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
 
         /* Control uniforme para las tablas */
         .table {
@@ -137,19 +79,45 @@
             overflow-x: hidden;
             background-color: #f9f9f9; /* opcional: fondo más suave */
         }
+        body {
+            width: 100vw;
+            min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
+            overflow-x: hidden;
+            background-color: #f9f9f9; /* opcional: fondo más suave */
+        }
         html, body {
             height: 100%; /* Asegura que el contenido cubra toda la pantalla */
             margin: 0; /* Elimina márgenes por defecto */
             padding: 0; /* Elimina el padding por defecto */
             overflow: hidden; /* Oculta el scroll si no es necesario */
         }
-        .nav-tabs .nav-link.active {
-            color: #007bff !important; /* azul Bootstrap */
-            border-color: #007bff #007bff #fff;
+        /* Hace la tabla responsiva */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;  /* Permite scroll horizontal si es necesario */
+            -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en móviles */
         }
-        .list-group-item {
-            border: none;
+
+        /* Ajuste general de la tabla */
+        .table td, .table th {
+            white-space: nowrap; /* Evita que el contenido de las celdas se corte */
+            font-size: 14px;
+            padding: 8px;
         }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table td,
+        .table th {
+            white-space: nowrap;
+            font-size: 14px;
+            padding: 8px;
+        }
+
         @media screen and (min-width: 1268px) {
 
             html, body {
@@ -166,15 +134,12 @@
                 margin: 0 auto;
                 overflow-x: hidden;
             }
-            .tab-content {
-                margin-top: 20px;
-            }
 
             /* Contenedor scrollable de la tabla */
             .dataTables_scrollBody {
                 width: 100% !important;
                 max-width: 100% !important;
-                height: 220px; /* 🔹 Altura fija de la tabla visible */
+                height: 290px; /* 🔹 Altura fija de la tabla visible */
 
                 overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
                 overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
@@ -189,17 +154,16 @@
                 table-layout: auto;
 
             }
+            .dataTables_scrollBody
 
-            .dataTables_scrollBody {
-
-                th, td {
-                    padding: 10px;
-                    white-space: nowrap;
-                }
+            th, td {
+                padding: 10px;
+                white-space: nowrap;
             }
         }
 
     </style>
+
 </head>
 <body>
 
@@ -238,90 +202,72 @@
         <!-- Campo oculto que contiene el id del cliente -->
         <input type="hidden" id="clienteId" th:value="${cliente.id}" />
 
-            <div class="card-body">
+        <div class="card-body">
+            <!-- Pestañas para Detalles, Pedidos y Facturas -->
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="cliente-tab" data-toggle="tab" href="#cliente" role="tab" aria-controls="cliente" aria-selected="true">Detalles</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="pedidos-tab" data-toggle="tab" href="#pedidos" role="tab" aria-controls="pedidos" aria-selected="false">Pedidos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="albaranes-tab" data-toggle="tab" href="#albaranes" role="tab" aria-controls="albaranes" aria-selected="false">Facturas</a>
+                </li>
+            </ul>
 
+            <!-- Contenido de las pestañas -->
+            <div class="tab-content" id="myTabContent">
 
-                <!-- Pestañas para Pedidos y Albaranes -->
-                <ul class="nav nav-tabs" id="myTab" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link" id="cliente-tab" data-toggle="tab" href="#cliente" role="tab" aria-controls="cliente" aria-selected="false">Detalles</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" id="pedidos-tab" data-toggle="tab" href="#pedidos" role="tab" aria-controls="pedidos" aria-selected="true">Pedidos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="albaranes-tab" data-toggle="tab" href="#albaranes" role="tab" aria-controls="albaranes" aria-selected="false">Facturas</a>
-                    </li>
-                </ul>
-
-                <!-- Contenido de las pestañas -->
-                <div class="tab-content" id="myTabContent">
-                    <!-- Tab para los pedidos -->
-                    <div class="tab-pane fade show active" id="pedidos" role="tabpanel" aria-labelledby="pedidos-tab">
-                        <div class="table-responsive">
-                            <!-- Tabla de Pedidos -->
-                            <!-- Incluye Font Awesome para los íconos -->
-                            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-
-                            <div class="table-responsive">
-                                <table id="table" class="table table-bordered table-striped">
-                                    <thead class="thead-dark">
-                                    <tr>
-                                        <th>N° Pedido</th>
-                                        <th>Tipo de Pedido</th>
-                                        <th>Estado</th>
-                                        <th>Grupo</th>
-                                        <th>SubGrupo</th>
-                                        <th>Precio</th>
-                                        <th>Fecha</th>
-
-                                        <th>Acciones</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-
-
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="cliente" role="tabpanel" aria-labelledby="cliente-tab">
-                   <h4 class="card-title">
-                    <!-- Botones para crear facturas, albaranes y pedidos -->
-                </h4>
+                <!-- Tab: Detalles (activa por defecto) -->
+                <div class="tab-pane fade show active" id="cliente" role="tabpanel" aria-labelledby="cliente-tab">
+                    <h4 class="card-title">
+                        <!-- Botones para crear facturas, albaranes y pedidos -->
+                    </h4>
                     <ul class="list-group">
                         <li class="list-group-item active" th:text="'Datos del Cliente'"></li>
-                        <li class="list-group-item" th:text="'Dirección: '+${cliente.direccion}"></li>
-                        <li class="list-group-item" th:text="'Teléfono: '+${cliente.telefono}"></li>
-                        <li class="list-group-item" th:text="'Email: '+ ${cliente.email}"></li>
-                        <li class="list-group-item" th:text="'Fecha de Alta: '+${cliente.createAt}"></li>
+                        <li class="list-group-item" th:text="'Nombre: ' + ${cliente.nombre + cliente.apellido}"></li>
+                        <li class="list-group-item" th:text="'Dirección: ' + ${cliente.direccion}"></li>
+                        <li class="list-group-item" th:text="'Teléfono: ' + ${cliente.telefono}"></li>
+                        <li class="list-group-item" th:text="'Email: ' + ${cliente.email}"></li>
+                        <li class="list-group-item" th:text="'Fecha de Alta: ' + ${cliente.createAt}"></li>
                     </ul>
                     <br>
-                    </div>
-                    <!-- Tab para los albaranes -->
-                    <div class="tab-pane fade" id="albaranes" role="tabpanel" aria-labelledby="albaranes-tab">
-                        <div class="table-responsive">
-                            <!-- Tabla de Albaranes -->
-                            <table id="tableAlbaran" class="table table-striped table-bordered mt-2">
-                                <thead class="thead-dark">
-                                <tr>
-                                    <th>Nº Factura</th>
-                                    <th>F. Factura</th>
-                                    <th>Tipo de Pedido</th>
-                                    <th>Total</th>
-                                    <th>Acciones</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <!-- Aquí se cargan las filas con los datos desde el backend -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                </div>
 
+                <!-- Tab: Pedidos -->
+                <div class="tab-pane fade" id="pedidos" role="tabpanel" aria-labelledby="pedidos-tab">
+                    <div class="table-responsive">
+                        <table id="table" class="table table-bordered table-striped">
+                            <thead class="thead-dark">
+                            <tr>
+                                <!-- Encabezados de la tabla aquí -->
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab: Facturas -->
+                <div class="tab-pane fade" id="albaranes" role="tabpanel" aria-labelledby="albaranes-tab">
+                    <div class="table-responsive">
+                        <table id="tableAlbaran" class="table table-striped table-bordered mt-2">
+                            <thead class="thead-dark">
+                            <tr>
+                                <!-- Encabezados de la tabla aquí -->
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <!-- Datos cargados dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
             </div>
+        </div>
+
 
 
     </section>
@@ -332,7 +278,7 @@
 <script>
 
 
-        let tablaFacturasCargada = false;
+        let tablaFacturasCargada = true;
 
         function cargarTablaFacturas() {
             $('#tableAlbaran').DataTable({
@@ -427,68 +373,91 @@
                 ajax: {
                     url: '/api/pedido/listarPedidosClientes',
                     type: 'GET',
-                    data: d => { d.idCliente = idcliente; },
+                    data: d => {
+                        d.idCliente = idcliente;
+                    },
                     dataSrc: json => json.data
                         ?? json.pedido?.content
                         ?? [],
                 },
-                columns: [
-                    { data: 'npedido',        title: 'N° Pedido'      },
-                    { data: 'tipoPedido',     title: 'Tipo de Pedido' },
-                    { data: 'estado',         title: 'Estado'         },
-                    { data: 'grupo',         title: 'Grupo'         },
-                    { data: 'subgrupo',         title: 'SubGrupo'         },
+                "columns": [
+                    {"data": "ref", "title": "N° Referencia"},
+                    {"data": "cliente", "title": "Cliente"},
+                    {"data": "tipoPedido", "title": "T.Pedido"},
+                    {"data": "estado", "title": "Estado"},
                     {
-                        data: 'cobrado',
-                        title: 'Precio',
-                        render: function(data) {
-                            console.log(data);
-                            // Si no hay valor o es cero, mostramos 'Sin cobrar'
-                            if (data === null || data === undefined || parseFloat(data) === 0) {
-                                return 'Sin cobrar';
-                            }
-                            // Si hay valor, lo formateamos con dos decimales y símbolo €
-                            return parseFloat(data).toFixed(2) + ' €';
+                        "data": "fechaEntrega",
+                        "title": "F.Entrega",
+
+                        "render": function (data, type, row) {
+                            if (!data) return ""; // Evitar errores si la fecha es nula
+                            const fecha = new Date(data);
+                            const dia = String(fecha.getDate()).padStart(2, '0');
+                            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                            const anio = fecha.getFullYear();
+                            return `${dia}-${mes}-${anio}`;
                         }
                     },
                     {
-                        data: 'fecha',
-                        title: 'Fecha',
-                        render: fecha => fecha
-                            ? new Date(fecha).toLocaleDateString('es-ES')
-                            : ''
-                    },
-                    {
-                        data: 'npedido',
-                        title: 'Acciones',
-                        orderable: false,
-                        searchable: false,
-                        className: 'text-center',
-                        render: id => `
-          <div class="btn-group" role="group" aria-label="Acciones">
-            <a href="/pedidos/ver/${id}"       class="btn btn-info btn-sm"   title="Ver pedido">
-              <i class="fas fa-eye"></i>
-            </a>
-            <a href="/pedidos/formEditar/${id}" class="btn btn-warning btn-sm" title="Editar pedido">
-              <i class="fas fa-pencil-alt"></i>
-            </a>
-          </div>`
+                        "data": "fechaFinalizado",
+                        "title": "F.Finalizado",
+                        "render": function (data, type, row) {
+                            if (!data) return "";
+                            const fecha = new Date(data);
+                            const dia = String(fecha.getDate()).padStart(2, '0');
+                            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                            const anio = fecha.getFullYear();
+                            return `${dia}-${mes}-${anio}`;
+                        }
                     }
+                    ,
+
+
+                    {"data": "metal", "title": "Metal"},
+                    {"data": "pieza", "title": "Pieza"},
+                    {"data": "tipo", "title": "Tipo"},
+                    {"data": "cobrado", "title": "Cobrado"},
+                    /* {
+                         "data": "imageUrl",
+                         "title": "Imagen",
+                        /* "render": function(data) {
+                             return `<img src="${data}" width="50" height="50" onerror="this.src='/img/default.jpg'">`;
+                         }
+                     },*/
+                    {
+                        "data": "npedido",
+                        "title": "Acciones",
+                        "render": function (data) {
+                            return `
+            <a href="/pedidos/ver/${data}" class="btn btn-info btn-sm" title="Ver pedido">
+                <i class="fas fa-eye"></i>
+            </a>
+            <a href="/pedidos/formEditar/${data}" class="btn btn-warning btn-sm" title="Editar pedido">
+                <i class="fas fa-pencil-alt"></i>
+            </a>
+        `;
+                        }
+                    }
+
+
                 ],
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
                 },
-                paging:       true,
-                searching:    true,
-                ordering:     true,
-                lengthMenu:  [5, 10, 15, 25],
-                pageLength:    5,
-                fixedHeader:  true,
-                scrollY:    "300px",
-                scrollCollapse: true,
-                responsive:   true
+                "paging": true,
+                "searching": true,
+                "ordering": true,
+                "lengthMenu": [5, 10, 15, 25],
+                "pageLength": 5,
+                "displayLength": 5,// Valor por defecto en el selector "Mostrar"
+                "fixedHeader": true,   // Mantiene el encabezado y controles fijos
+                "scrollY": "300px",    // Establece la altura de la tabla con scroll vertical
+                "scrollCollapse": true, // Asegura que el espacio de scroll se adapte si hay pocas filas
+                "responsive": true   //
+
             });
         });
+
 
 </script>
 

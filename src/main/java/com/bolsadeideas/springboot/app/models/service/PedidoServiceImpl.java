@@ -43,6 +43,7 @@ public class PedidoServiceImpl implements PedidoService {
 
 	@Transactional
 	public Pedido save(Pedido  pedido) {
+
 		return pedidoDao.save(pedido);
 	}
 
@@ -70,7 +71,7 @@ public class PedidoServiceImpl implements PedidoService {
 
 
 	public  Page<Pedido> buscarPedidos(String cliente,String tipoPedido, String estado, String grupo,
-											  String subgrupo, Date fechaDesde, Date fechaHasta, Pageable pageable)
+											  String pieza,String tipo,String ref, Date fechaDesde, Date fechaHasta, Pageable pageable)
 	{
 
 		CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -91,14 +92,20 @@ public class PedidoServiceImpl implements PedidoService {
 		if (grupo != null && !grupo.isEmpty()) {
 			predicates.add(cb.equal(pedido.get("grupo"), grupo));
 		}
-		if (subgrupo != null && !subgrupo.isEmpty()) {
-			predicates.add(cb.equal(pedido.get("subgrupo"), subgrupo));
+		if (pieza != null && !pieza.isEmpty()) {
+			predicates.add(cb.equal(pedido.get("pieza"), pieza));
+		}
+		if (tipo != null && !tipo.isEmpty()) {
+			predicates.add(cb.equal(pedido.get("tipo"), tipo));
+		}
+		if (ref != null && !ref.isEmpty()) {
+			predicates.add(cb.equal(pedido.get("ref"), ref));
 		}
 		if (fechaDesde != null) {
-			predicates.add(cb.greaterThanOrEqualTo(pedido.get("dfecha"), fechaDesde));
+			predicates.add(cb.greaterThanOrEqualTo(pedido.get("fechaEntrega"), fechaDesde));
 		}
 		if (fechaHasta != null) {
-			predicates.add(cb.lessThanOrEqualTo(pedido.get("dfecha"), fechaHasta));
+			predicates.add(cb.lessThanOrEqualTo(pedido.get("fechaEntrega"), fechaHasta));
 		}
 
 		cq.where(predicates.toArray(new Predicate[0]));

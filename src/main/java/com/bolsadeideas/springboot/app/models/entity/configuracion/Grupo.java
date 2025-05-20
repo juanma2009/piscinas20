@@ -1,6 +1,5 @@
 package com.bolsadeideas.springboot.app.models.entity.configuracion;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,15 +10,17 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
-@Getter
 @Setter
+@Getter
+@AllArgsConstructor
 @Entity
-public class Servicio {
+@NoArgsConstructor
+public class Grupo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
+    private Long id;
     private String nombre;
     private String description;
 
