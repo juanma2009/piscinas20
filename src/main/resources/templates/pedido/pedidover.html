@@ -8,6 +8,8 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <link rel="stylesheet" href="cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
     <meta name="_csrf" th:content="${_csrf.token}" />
     <meta name="_csrf_header" th:content="${_csrf.headerName}" />
     <style>
@@ -210,18 +212,30 @@
                                             <strong>Empleado:</strong>
                                             <div th:text="${pedido.empleado}"></div>
                                         </div>
+                                        <div class="col-md-4">
+                                            <strong>Estado del Pedido:</strong>
+                                            <div th:text="${pedido.estado}"></div>
+                                        </div>
                                     </div>
                                 </li>
                                 <li class="list-group-item">
                                     <div class="row">
                                         <div class="col-md-4">
-                                            <strong>Estado del Pedido:</strong>
-                                            <div th:text="${pedido.estado}"></div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <strong>Fecha de Pedido:</strong>
+                                            <strong>Fecha de Registro:</strong>
                                             <div th:text="${#dates.format(pedido.dfecha, 'dd/MM/yyyy')}"></div>
                                         </div>
+                                        <div class="col-md-4">
+                                            <strong>Fecha de Entrega:</strong>
+                                            <div th:text="${#dates.format(pedido.fechaEntrega, 'dd/MM/yyyy')}"></div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Fecha de Finalizdo:</strong>
+                                            <div th:text="${#dates.format(pedido.fechaFinalizado, 'dd/MM/yyyy')}"></div>
+                                        </div>
+<!--                                        <div class="col-md-4">-->
+<!--                                            <strong>Fecha de Envio SMS:</strong>-->
+<!--                                            <div th:text="${#dates.format(pedido.fechaEnvioSms, 'dd/MM/yyyy')}"></div>-->
+<!--                                        </div>-->
                                     </div>
                                 </li>
                                 <li class="list-group-item">
@@ -254,26 +268,44 @@
 
                         <!-- Detalles Técnicos -->
                         <div class="tab-pane fade" id="detalles" role="tabpanel" aria-labelledby="detalles-tab">
-                            <!-- Aquí puedes agregar más detalles técnicos, si es necesario -->
-                             <ul class="list-group my-2">
-                                <li class="list-group-item">
-                                    <strong>Tipo de Pedido:</strong>
-                                    <div th:text="${pedido.tipoPedido}"></div>
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>Metal:</strong>
-                                    <div th:text="${pedido.grupo}"></div>
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>Tipo de Joya:</strong>
-                                    <div th:text="${pedido.subgrupo}"></div>
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>Peso:</strong>
-                                    <div th:text="${pedido.peso}"></div>
-                                </li>
-                            </ul>
+                            <div class="row my-2">
+                                <div class="col-md-4">
+                                    <div class="list-group-item">
+                                        <strong>Tipo de Servicio:</strong>
+                                        <div th:text="${pedido.tipoPedido}"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="list-group-item">
+                                        <strong>Peso:</strong>
+                                        <div th:text="${pedido.peso}"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row my-2">
+                                <div class="col-md-4">
+                                    <div class="list-group-item">
+                                        <strong>Metal:</strong>
+                                        <div th:text="${pedido.grupo}"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="list-group-item">
+                                        <strong>Tipo de Pieza:</strong>
+                                        <div th:text="${pedido.pieza}"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="list-group-item">
+                                        <strong>Tipo de Joya:</strong>
+                                        <div th:text="${pedido.tipo}"></div>
+                                    </div>
+                                </div>
+
+                            </div>
                         </div>
+
 
                         <!-- Fotos del Pedido -->
                         <div class="tab-panel fade" id="fotos" role="tabpanel" aria-labelledby="fotos-tab">

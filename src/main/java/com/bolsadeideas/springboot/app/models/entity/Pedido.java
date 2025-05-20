@@ -46,6 +46,10 @@ public class Pedido implements Serializable {
 
     private String subgrupo;
 
+    private String pieza;
+
+    private String tipo;
+
     private Double peso;
 
     private String ref;
@@ -57,7 +61,10 @@ public class Pedido implements Serializable {
     private String empleado;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private Date fechaFinalizdo;
+    private Date fechaFinalizado;
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private Date fechaEntrega;
 
     //fecha de envio de sms
     @Temporal(TemporalType.DATE)
