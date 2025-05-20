@@ -4,6 +4,9 @@ import com.bolsadeideas.springboot.app.apigoogledrice.GoogleDriveService;
 import com.bolsadeideas.springboot.app.apisms.AppSms;
 import com.bolsadeideas.springboot.app.models.entity.*;
 import com.bolsadeideas.springboot.app.models.service.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import lombok.extern.log4j.Log4j2;
 import net.sf.jasperreports.engine.*;
 import org.apache.commons.io.IOUtils;
@@ -161,21 +164,33 @@ public class PedidoController {
         // Obtener todos los clientes para el filtro
         model.addAttribute("clientes", clienteService.findAll());
 
-        // Listar estados posibles del pedido
-        List<String> estados = Arrays.asList("PENDIENTE", "REALIZANDO", "TERMINADO");
+
+        List<String> estados = Arrays.asList("Finalizado","Pendiente");
         model.addAttribute("estados", estados);
+        //todo añadir al metodo editar los nuevos campos metal,pieza,tipo
 
-        // Tipos de pedido
-        List<String> tipoPedidos = Arrays.asList("NUEVO DISEÑO", "REPARACION", "REPLICA", "MODIFICADO");
-        model.addAttribute("tipoPedidos", tipoPedidos);
-
-        // Grupos de metales
-        List<String> grupo = Arrays.asList("ORO", "PLATA", "DIAMANTES", "ORO BLANCO", "ORO ROJO", "ORO ROSA", "ORO AMARILLO");
-        model.addAttribute("grupo", grupo);
-
-        // Subgrupos (tipos de joyas)
-        List<String> subgrupo = Arrays.asList("ANILLO", "COLGANTE", "PENDIENTE", "PULSERAS", "SELLO");
-        model.addAttribute("subgrupo", subgrupo);
+// 1. Listado de Servicio
+        List<String> servicios = Arrays.asList("Pedido", "Compostela");
+        model.addAttribute("servicios", servicios);
+// 2. Listado de Metal
+        List<String> metales = Arrays.asList("Oro Amarillo","Oro Blanco","Oro Rosa","Plata","Platino","Otro");
+        model.addAttribute("metales", metales);
+// 3. Listado de Pieza (padre de Tipos)
+        List<String> piezas = Arrays.asList("Anillo","Colgante","Pulsera","Pendientes","Aro","Broche","Otros" );
+        model.addAttribute("piezas", piezas);
+// 4. Mapa de Tipos según Pieza
+        Map<String, List<String>> tiposPorPieza = new HashMap<>();
+        tiposPorPieza.put("Anillo", Arrays.asList("Anillo","Alianzas","1/2 Alianzas","Solitarios","Sello" ));
+        tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra","Sin Piedra" ));
+// Pulsera: tendrá solo “Pulsera” pero escondemos el select en el front
+        tiposPorPieza.put("Pulsera", List.of("Pulsera"));
+        tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente","Criollas","1/2 Criolla","Aretes","Largos"));
+        tiposPorPieza.put("Aro", Arrays.asList("Aro","Aro Entorcillado","Cierre caja","Aros"));
+// Broche y Otros: solo una opción y ocultamos el listbox en el front
+        tiposPorPieza.put("Broche", List.of("Broche"));
+        tiposPorPieza.put("Otros", List.of("Otros"));
+        model.addAttribute("tiposPorPieza", tiposPorPieza);
+        model.addAttribute("tiposPorPieza", tiposPorPieza);
 
         /*
         // Obtener imágenes de cada pedido utilizando el servicio de Cloudinary
@@ -210,7 +225,7 @@ public class PedidoController {
         return "pedido/pedidolistar";
     }
 
- /// muestar ls fotos de lso peidos
+ /// muestar ls fotos de los pedidos
  ///
  @RequestMapping(value = {"/listarFotosPedidos"}, method = RequestMethod.GET)
  public String listarFotos(@RequestParam(name = "page", defaultValue = "0") int page, Model model) {
@@ -224,21 +239,31 @@ public class PedidoController {
      // Obtener todos los clientes para el filtro
      model.addAttribute("clientes", clienteService.findAll());
 
-     // Listar estados posibles del pedido
-     List<String> estados = Arrays.asList("PENDIENTE", "REALIZANDO", "TERMINADO");
+     List<String> estados = Arrays.asList("Finalizado","Pendiente");
      model.addAttribute("estados", estados);
+     //todo añadir al metodo editar los nuevos campos metal,pieza,tipo
 
-     // Tipos de pedido
-     List<String> tipoPedidos = Arrays.asList("NUEVO DISEÑO", "REPARACION", "REPLICA", "MODIFICADO");
-     model.addAttribute("tipoPedidos", tipoPedidos);
-
-     // Grupos de metales
-     List<String> grupo = Arrays.asList("ORO", "PLATA", "DIAMANTES", "ORO BLANCO", "ORO ROJO", "ORO ROSA", "ORO AMARILLO");
-     model.addAttribute("grupo", grupo);
-
-     // Subgrupos (tipos de joyas)
-     List<String> subgrupo = Arrays.asList("ANILLO", "COLGANTE", "PENDIENTE", "PULSERAS", "SELLO");
-     model.addAttribute("subgrupo", subgrupo);
+// 1. Listado de Servicio
+     List<String> servicios = Arrays.asList("Pedido", "Compostela");
+     model.addAttribute("servicios", servicios);
+// 2. Listado de Metal
+     List<String> metales = Arrays.asList("Oro Amarillo","Oro Blanco","Oro Rosa","Plata","Platino","Otro");
+     model.addAttribute("metales", metales);
+// 3. Listado de Pieza (padre de Tipos)
+     List<String> piezas = Arrays.asList("Anillo","Colgante","Pulsera","Pendientes","Aro","Broche","Otros" );
+     model.addAttribute("piezas", piezas);
+// 4. Mapa de Tipos según Pieza
+     Map<String, List<String>> tiposPorPieza = new HashMap<>();
+     tiposPorPieza.put("Anillo", Arrays.asList("Anillo","Alianzas","1/2 Alianzas","Solitarios","Sello" ));
+     tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra","Sin Piedra" ));
+// Pulsera: tendrá solo “Pulsera” pero escondemos el select en el front
+     tiposPorPieza.put("Pulsera", List.of("Pulsera"));
+     tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente","Criollas","1/2 Criolla","Aretes","Largos"));
+     tiposPorPieza.put("Aro", Arrays.asList("Aro","Aro Entorcillado","Cierre caja","Aros"));
+// Broche y Otros: solo una opción y ocultamos el listbox en el front
+     tiposPorPieza.put("Broche", List.of("Broche"));
+     tiposPorPieza.put("Otros", List.of("Otros"));
+     model.addAttribute("tiposPorPieza", tiposPorPieza);
 /*
      if(!busquedaRealizada){
      // Obtener imágenes de cada pedido utilizando el servicio de Cloudinary
@@ -376,26 +401,46 @@ public class PedidoController {
         pedido.setCliente(cliente);
 
         log.info(numeroPedido);
-        List<String> tipoPedido = Arrays.asList("NUEVO DISEÑO","REPARACION","REPLICA","MODIFICADO" );
-        model.put("tipoPedido", tipoPedido);
         //List<String> estados = Arrays.asList("PENDIENTE", "REALIZANDO", "TERMINADO" ); EN LA VERSION NORRMAL SE PONDRA ESTE
-        List<String> estados = Arrays.asList("FINALIZADO","PENDIENTE");
+        List<String> estados = Arrays.asList("Finalizado","Pendiente");
         model.put("estados", estados);
-        List<String> grupo = Arrays.asList("ORO", "PLATA", "DIAMANTES","ORO BLANCO","ORO ROJO","ORO ROSA","ORO AMARILLO");
-        model.put("grupo", grupo);
-        List<String> subgrupo = Arrays.asList("ANILLO", "COLGANTE", "PENDIENTE","PULSERAS","SELLO");
-        model.put("subgrupo", subgrupo);
+        //todo añadir al metodo editar los nuevos campos metal,pieza,tipo
 
-        List<String> empleado = Arrays.asList("JUAN", "PEDRO", "MARIA","JUANA","JUANITA");
+// 1. Listado de Servicio
+        List<String> servicios = Arrays.asList("Pedido", "Compostela");
+        model.put("servicios", servicios);
+// 2. Listado de Metal
+        List<String> metales = Arrays.asList("Oro Amarillo","Oro Blanco","Oro Rosa","Plata","Platino","Otro");
+        model.put("metales", metales);
+// 3. Listado de Pieza (padre de Tipos)
+        List<String> piezas = Arrays.asList("Anillo","Colgante","Pulsera","Pendientes","Aro","Broche","Otros" );
+        model.put("piezas", piezas);
+// 4. Mapa de Tipos según Pieza
+        Map<String, List<String>> tiposPorPieza = new HashMap<>();
+        tiposPorPieza.put("Anillo", Arrays.asList("Anillo","Alianzas","1/2 Alianzas","Solitarios","Sello" ));
+        tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra","Sin Piedra" ));
+// Pulsera: tendrá solo “Pulsera” pero escondemos el select en el front
+        tiposPorPieza.put("Pulsera", List.of("Pulsera"));
+        tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente","Criollas","1/2 Criolla","Aretes","Largos"));
+        tiposPorPieza.put("Aro", Arrays.asList("Aro","Aro Entorcillado","Cierre caja","Aros"));
+// Broche y Otros: solo una opción y ocultamos el listbox en el front
+        tiposPorPieza.put("Broche", List.of("Broche"));
+        tiposPorPieza.put("Otros", List.of("Otros"));
+        model.put("tiposPorPieza", tiposPorPieza);
+
+// Empleados
+        List<String> empleado = List.of("Anselmo");
         model.put("empleado", empleado);
-
+//Pedido
         model.put("numeroPedido", numeroPedido.getNpedido()+1);
         model.put("pedido", pedido);
+// Proveedor
         model.put("proveedores", proveedorService.findAll());
         model.put(TITULO, CREARPEDIDO);
         return "pedido/pedidoform";
     }
 
+//todo añadir los nuevos campos metal,pieza,tipo
 
     @PostMapping("/form")
     public String guardar(@ModelAttribute @Valid Pedido pedido,
@@ -406,24 +451,33 @@ public class PedidoController {
                           @RequestParam("estado") String estado,
                           @RequestParam("tipoPedido") String tipoPedido,
                           @RequestParam("grupo") String grupo,
-                          @RequestParam("subgrupo") String subgrupo,
+                          @RequestParam("pieza") String pieza,
                           @RequestParam(name ="peso",required = false) String peso,
                           @RequestParam(name ="horas",required = false) String horas,
                           @RequestParam(name ="cobrado",required = false) String cobrado,
-                          @RequestParam(name = "fecha",required = false) Date fechaFinalizado,
+                          @RequestParam(name = "fechaFinalizado", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaFinalizado,
+                          @RequestParam(name = "fechaEntrega", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaEntrega,
                           @RequestParam(name = "empleado",required = false) String empleado,
                           @RequestParam(name = "ref",required = false) String ref,
                           RedirectAttributes flash,
                           SessionStatus status,
                           @RequestParam("fileNamesJSON") String fileNamesJSON) {
+
+        System.out.println("Fecha Finalizado received: " + fechaFinalizado);
+        System.out.println("Fecha Entregado received: " + fechaEntrega);
         if (result.hasErrors()) {
             model.addAttribute(TITULO, CREARPEDIDO);
             return PEDIDOFORM;
         }
+        Double pesoDouble = null;
+        if (peso != null && !peso.trim().isEmpty()) {
+            pesoDouble = Double.valueOf(peso);
+        }
 
+        //todo mirar porque al guardar sin datos en los regsitros de actuaizar el pedio sale empty String "Problema era por el peso no esta validando"
         Pedido pedidoExistente = pedidoService.findOne(npedido);
         if (pedidoExistente != null) {
-            actualizarPedidoExistente(pedidoExistente, observacion, estado, tipoPedido,grupo,subgrupo, Double.valueOf(peso),horas,cobrado,fechaFinalizado,empleado,ref, flash);
+            actualizarPedidoExistente(pedidoExistente, observacion, estado, tipoPedido,grupo,pieza, pesoDouble,horas,cobrado,fechaEntrega,fechaFinalizado,empleado,ref, flash);
         } else {
             guardarNuevoPedido(pedido, flash);
         }
@@ -431,20 +485,24 @@ public class PedidoController {
         status.setComplete();
         return "redirect:/pedidos/form/" + pedido.getCliente().getId();
     }
-        private void actualizarPedidoExistente(Pedido pedidoExistente, String observacion, String estado, String tipoPedido, String grupo, String subgrupo, Double peso, String horas, String cobrado, Date fecha, String empleado, String ref, RedirectAttributes flash) {
+
+//todo añadir los nuevos campos metal,pieza,tipo
+        private void actualizarPedidoExistente(Pedido pedidoExistente, String observacion, String estado, String tipoPedido, String grupo, String pieza, Double peso, String horas, String cobrado,Date fechaEntrega, Date fechaFinalizado,  String empleado, String ref, RedirectAttributes flash) {
         pedidoExistente.setObservacion(observacion);
         pedidoExistente.setEstado(estado);
         pedidoExistente.setTipoPedido(tipoPedido);
         pedidoExistente.setGrupo(grupo);
-        pedidoExistente.setSubgrupo(subgrupo);
+        pedidoExistente.setSubgrupo(pieza);
         pedidoExistente.setPeso(peso);
         pedidoExistente.setHoras(horas);
         pedidoExistente.setCobrado(cobrado);
-        pedidoExistente.setFechaFinalizdo(fecha);
+        pedidoExistente.setFechaFinalizado(fechaFinalizado);
+        pedidoExistente.setFechaEntrega(fechaEntrega);
         pedidoExistente.setRef(ref);
         pedidoExistente.setEmpleado(empleado);
 
         try {
+            //todo poner si tiene activado el envio de sms, que hay que implementar todavia en el registro del cliente
             if ("terminado".equalsIgnoreCase(pedidoExistente.getEstado()) && !pedidoExistente.getEnviadoSms()) {
                 enviarSms(pedidoExistente);
             }
@@ -603,6 +661,8 @@ public class PedidoController {
      * @param model
      * @return
      */
+    //todo añadir los nuevos campos metal,pieza,tipo
+
     @PostMapping("/buscar")
     public String buscar(
             @RequestParam(name = "page", defaultValue = "0") int page,
@@ -610,7 +670,9 @@ public class PedidoController {
             @RequestParam(name = "estado", defaultValue = "") String estado,
             @RequestParam(name = "tipoPedido", defaultValue = "") String tipoPedido,
             @RequestParam(name = "grupo", defaultValue = "") String grupo,
-            @RequestParam(name = "subgrupo", defaultValue = "") String subgrupo,
+            @RequestParam(name = "pieza", defaultValue = "") String pieza,
+            @RequestParam(name = "tipo", defaultValue = "") String tipo,
+            @RequestParam(name = "ref", defaultValue = "") String ref,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
             Pageable pageable, Model model) {
@@ -622,7 +684,7 @@ public class PedidoController {
 
         // Paginación de las búsquedas totales
         Pageable pageRequest = PageRequest.of(page, 6);
-        Page<Pedido> pedido = pedidoService.buscarPedidos(cliente, tipoPedido,estado, grupo, subgrupo, fechaDesdeDate, fechaHastaDate, pageRequest);
+        Page<Pedido> pedido = pedidoService.buscarPedidos(cliente, tipoPedido,estado, grupo, pieza,tipo,ref, fechaDesdeDate, fechaHastaDate, pageRequest);
         PageRender<Pedido> pageRender = new PageRender<>("listarPedidos", pedido);
 
         // Agregar la lista de imágenes de los pedidos
@@ -645,17 +707,31 @@ public class PedidoController {
         model.addAttribute("imagenesPedidos", imagenesPedidos);
 
         // Datos estáticos (estados, grupos, subgrupos, etc.)
-        List<String> tipoPedidos = Arrays.asList("NUEVO DISEÑO", "REPARACION", "REPLICA", "MODIFICADO");
-        model.addAttribute("tipoPedidos", tipoPedidos);
-
-        // Filtros disponibles
-        List<String> estados = Arrays.asList("PENDIENTE", "REALIZANDO", "TERMINADO","FINALIZADO");
+        List<String> estados = Arrays.asList("Finalizado","Pendiente");
         model.addAttribute("estados", estados);
-        List<String> grupos = Arrays.asList("ORO", "PLATA", "DIAMANTES", "ORO BLANCO", "ORO ROJO", "ORO ROSA", "ORO AMARILLO");
-        model.addAttribute("grupo", grupos);
-        List<String> subgrupos = Arrays.asList("ANILLO", "COLGANTE", "PENDIENTE", "PULSERAS", "SELLO");
-        model.addAttribute("subgrupo", subgrupos);
+        //todo añadir al metodo editar los nuevos campos metal,pieza,tipo
 
+// 1. Listado de Servicio
+        List<String> servicios = Arrays.asList("Pedido", "Compostela");
+        model.addAttribute("servicios", servicios);
+// 2. Listado de Metal
+        List<String> metales = Arrays.asList("Oro Amarillo","Oro Blanco","Oro Rosa","Plata","Platino","Otro");
+        model.addAttribute("metales", metales);
+// 3. Listado de Pieza (padre de Tipos)
+        List<String> piezas = Arrays.asList("Anillo","Colgante","Pulsera","Pendientes","Aro","Broche","Otros" );
+        model.addAttribute("piezas", piezas);
+// 4. Mapa de Tipos según Pieza
+        Map<String, List<String>> tiposPorPieza = new HashMap<>();
+        tiposPorPieza.put("Anillo", Arrays.asList("Anillo","Alianzas","1/2 Alianzas","Solitarios","Sello" ));
+        tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra","Sin Piedra" ));
+// Pulsera: tendrá solo “Pulsera” pero escondemos el select en el front
+        tiposPorPieza.put("Pulsera", List.of("Pulsera"));
+        tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente","Criollas","1/2 Criolla","Aretes","Largos"));
+        tiposPorPieza.put("Aro", Arrays.asList("Aro","Aro Entorcillado","Cierre caja","Aros"));
+// Broche y Otros: solo una opción y ocultamos el listbox en el front
+        tiposPorPieza.put("Broche", List.of("Broche"));
+        tiposPorPieza.put("Otros", List.of("Otros"));
+        model.addAttribute("tiposPorPieza", tiposPorPieza);
         // Obtener los clientes para el filtro
         model.addAttribute("clientes", clienteService.findAll());
 
@@ -664,7 +740,9 @@ public class PedidoController {
         model.addAttribute("estadoSeleccionado", estado);
         model.addAttribute("grupoSeleccionado", grupo);
         model.addAttribute("tipoPedidoSeleccionado", tipoPedido);
-        model.addAttribute("subgrupoSeleccionado", subgrupo);
+        model.addAttribute("subgrupoSeleccionado", pieza);
+        //todo poner tipo
+        model.addAttribute("tipoSeleccionado", tipo);
         model.addAttribute("fechaDesdeSeleccionada", fechaDesde != null ? fechaDesde : "");
         model.addAttribute("fechaHastaSeleccionada", fechaHasta != null ? fechaHasta : "");
 
@@ -678,37 +756,39 @@ public class PedidoController {
         return "pedido/pedidolistar";
     }
 
+//todo añadir los nuevos campos metal,pieza,tipo
+
     @PostMapping("/buscarFoto")
     public String buscarFoto(
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "cliente", defaultValue = "") String cliente,
-            @RequestParam(name = "estado", defaultValue = "") String estado,
-            @RequestParam(name = "tipoPedido", defaultValue = "") String tipoPedido,
-            @RequestParam(name = "grupo", defaultValue = "") String grupo,
-            @RequestParam(name = "subgrupo", defaultValue = "") String subgrupo,
+            @RequestParam(required = false) String cliente,
+            @RequestParam(required = false) String servicios,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String grupo,
+            @RequestParam(required = false) String pieza,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) String ref,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
-            Pageable pageable, Model model) {
+            Pageable pageable,
+            Model model) throws JsonProcessingException {
 
-
-        // Si no se proporciona fecha, usa null
+        // Conversión de fechas
         Date fechaDesdeDate = (fechaDesde != null) ? Date.from(fechaDesde.atStartOfDay(ZoneId.systemDefault()).toInstant()) : null;
         Date fechaHastaDate = (fechaHasta != null) ? Date.from(fechaHasta.atStartOfDay(ZoneId.systemDefault()).toInstant()) : null;
 
-        // Paginación de las búsquedas totales
+        // Búsqueda paginada
         Pageable pageRequest = PageRequest.of(page, Integer.MAX_VALUE);
-        Page<Pedido> pedido = pedidoService.buscarPedidos(cliente, tipoPedido,estado, grupo, subgrupo, fechaDesdeDate, fechaHastaDate, pageRequest);
+        Page<Pedido> pedido = pedidoService.buscarPedidos(cliente, servicios, estado, grupo, pieza, tipo,ref, fechaDesdeDate, fechaHastaDate, pageRequest);
         PageRender<Pedido> pageRender = new PageRender<>("listarPedidos", pedido);
 
-        // Agregar la lista de imágenes de los pedidos
+        // Mapear imágenes de pedidos
         Map<Long, String> imagenesPedidos = new HashMap<>();
         for (Pedido p : pedido.getContent()) {
             List<ArchivoAdjunto> archivos = archivoAdjuntoService.findArchivosAdjuntosByPedidoId(p.getNpedido());
             if (!archivos.isEmpty()) {
-                String publicId = archivos.get(0).getUrlCloudinary();
                 try {
-                    String imageUrl = cloudinaryService.getImageUrl(publicId);
-                    imagenesPedidos.put(p.getNpedido(), imageUrl);
+                    imagenesPedidos.put(p.getNpedido(), cloudinaryService.getImageUrl(archivos.get(0).getUrlCloudinary()));
                 } catch (Exception e) {
                     imagenesPedidos.put(p.getNpedido(), "/img/default.jpg");
                 }
@@ -716,42 +796,58 @@ public class PedidoController {
                 imagenesPedidos.put(p.getNpedido(), "/img/default.jpg");
             }
         }
-        model.addAttribute("busquedaRealizada", busquedaRealizada=true);
+
+        // Añadir resultados y filtros al modelo
+        model.addAttribute("busquedaRealizada", true);
         model.addAttribute("imagenesPedidos", imagenesPedidos);
-
-        // Datos estáticos (estados, grupos, subgrupos, etc.)
-        List<String> tipoPedidos = Arrays.asList("NUEVO DISEÑO", "REPARACION", "REPLICA", "MODIFICADO");
-        model.addAttribute("tipoPedidos", tipoPedidos);
-
-        // Filtros disponibles
-        List<String> estados = Arrays.asList("PENDIENTE", "REALIZANDO", "TERMINADO","FINALIZADO");
-        model.addAttribute("estados", estados);
-        List<String> grupos = Arrays.asList("ORO", "PLATA", "DIAMANTES", "ORO BLANCO", "ORO ROJO", "ORO ROSA", "ORO AMARILLO");
-        model.addAttribute("grupo", grupos);
-        List<String> subgrupos = Arrays.asList("ANILLO", "COLGANTE", "PENDIENTE", "PULSERAS", "SELLO");
-        model.addAttribute("subgrupo", subgrupos);
-
-        // Obtener los clientes para el filtro
-        model.addAttribute("clientes", clienteService.findAll());
-
-        // Filtros seleccionados (si no se pasa nada, se deja vacío o con valor predeterminado)
-        model.addAttribute("clienteSeleccionado", cliente);
-        model.addAttribute("estadoSeleccionado", estado);
-        model.addAttribute("grupoSeleccionado", grupo);
-        model.addAttribute("tipoPedidoSeleccionado", tipoPedido);
-        model.addAttribute("subgrupoSeleccionado", subgrupo);
-        model.addAttribute("fechaDesdeSeleccionada", fechaDesde != null ? fechaDesde : "");
-        model.addAttribute("fechaHastaSeleccionada", fechaHasta != null ? fechaHasta : "");
-
-        // Otros valores
-        model.addAttribute("TITULO", "Lista de Pedidos Encontradas ");
-        model.addAttribute("textoR", "Resultados Encontrados: ");
         model.addAttribute("pedido", pedido);
         model.addAttribute("page", pageRender);
         model.addAttribute("countProveedor", proveedorService.count());
 
+        // Filtros activos
+        model.addAttribute("clienteSeleccionado", cliente);
+        model.addAttribute("servicioSeleccionado", servicios);
+        model.addAttribute("estadoSeleccionado", estado);
+        model.addAttribute("metalSeleccionado", grupo);
+        model.addAttribute("piezaSeleccionada", pieza);
+        model.addAttribute("tipoSeleccionado", tipo);
+        model.addAttribute("refSeleccionado", ref);
+        model.addAttribute("fechaDesdeSeleccionada", fechaDesde != null ? fechaDesde : "");
+        model.addAttribute("fechaHastaSeleccionada", fechaHasta != null ? fechaHasta : "");
+
+        // Cargar datos para selectores
+        List<String> estados = Arrays.asList("Finalizado","Pendiente");
+        model.addAttribute("estados", estados);
+        model.addAttribute("clientes", clienteService.findAll());
+        model.addAttribute("servicios", Arrays.asList("Pedido", "Compostela"));
+        model.addAttribute("metales", Arrays.asList("Oro Amarillo", "Oro Blanco", "Oro Rosa", "Plata", "Platino", "Otro"));
+        model.addAttribute("piezas", Arrays.asList("Anillo", "Colgante", "Pulsera", "Pendientes", "Aro", "Broche", "Otros"));
+
+        Map<String, List<String>> tiposPorPieza = new HashMap<>();
+        tiposPorPieza.put("Anillo", Arrays.asList("Anillo", "Alianzas", "1/2 Alianzas", "Solitarios", "Sello"));
+        tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra", "Sin Piedra"));
+        tiposPorPieza.put("Pulsera", List.of("Pulsera"));
+        tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente", "Criollas", "1/2 Criolla", "Aretes", "Largos"));
+        tiposPorPieza.put("Aro", Arrays.asList("Aro", "Aro Entorcillado", "Cierre caja", "Aros"));
+        tiposPorPieza.put("Broche", List.of("Broche"));
+        tiposPorPieza.put("Otros", List.of("Otros"));
+
+        log.info("Mapa de tiposPorPieza: {}", tiposPorPieza); // Usa la interpolación de cadenas
+
+        // Serializa el objeto a JSON usando ObjectMapper
+        model.addAttribute("tiposPorPieza", tiposPorPieza);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String tiposPorPiezaJson = objectMapper.writeValueAsString(tiposPorPieza);
+        model.addAttribute("tiposPorPiezaJson", tiposPorPiezaJson);
+        log.info("Mapa de tiposPorPieza: {}", tiposPorPiezaJson); // Usa la interpolación de cadenas
+        // Texto del encabezado
+        model.addAttribute("TITULO", "Lista de Pedidos Encontrados");
+        model.addAttribute("textoR", "Resultados Encontrados:");
+
         return "pedido/pedidofotolistar";
     }
+
 
     //muetra ls fotos de lso pedidos
 
@@ -826,7 +922,7 @@ log.info("llegan del front"+pedidoId+fileId);
 */
 
 
-
+//todo añadir los nuevos campos metal,pieza,tipo
     @RequestMapping(value = "/formEditar/{id}")
     public String editar(@PathVariable(value = "id") Long id, Map<String, Object> model, RedirectAttributes flash) {
 
@@ -843,20 +939,36 @@ log.info("llegan del front"+pedidoId+fileId);
             return "redirect:pedido/listar";
         }
 
-        List<String> tipoPedido = Arrays.asList("NUEVO DISEÑO","REPARACION","REPLICA","MODIFICADO" );
-        model.put("tipoPedido", tipoPedido);
-        //List<String> estados = Arrays.asList("PENDIENTE", "REALIZANDO", "TERMINADO" ); EN LA VERSION NORRMAL SE PONDRA ESTE
-        List<String> estados = Arrays.asList("FINALIZADO","PENDIENTE");
+        List<String> estados = Arrays.asList("Finalizado","Pendiente");
         model.put("estados", estados);
-        List<String> grupo = Arrays.asList("ORO", "PLATA", "DIAMANTES","ORO BLANCO","ORO ROJO","ORO ROSA","ORO AMARILLO");
-        model.put("grupo", grupo);
-        List<String> subgrupo = Arrays.asList("ANILLO", "COLGANTE", "PENDIENTE","PULSERAS","SELLO");
-        model.put("subgrupo", subgrupo);
+        //todo añadir al metodo editar los nuevos campos metal,pieza,tipo
 
-        List<String> empleado = Arrays.asList("JUAN", "PEDRO", "MARIA","JUANA","JUANITA");
+// 1. Listado de Servicio
+        List<String> servicios = Arrays.asList("Pedido", "Compostela");
+        model.put("servicios", servicios);
+// 2. Listado de Metal
+        List<String> metales = Arrays.asList("Oro Amarillo","Oro Blanco","Oro Rosa","Plata","Platino","Otro");
+        model.put("metales", metales);
+// 3. Listado de Pieza (padre de Tipos)
+        List<String> piezas = Arrays.asList("Anillo","Colgante","Pulsera","Pendientes","Aro","Broche","Otros" );
+        model.put("piezas", piezas);
+// 4. Mapa de Tipos según Pieza
+        Map<String, List<String>> tiposPorPieza = new HashMap<>();
+        tiposPorPieza.put("Anillo", Arrays.asList("Anillo","Alianzas","1/2 Alianzas","Solitarios","Sello" ));
+        tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra","Sin Piedra" ));
+// Pulsera: tendrá solo “Pulsera” pero escondemos el select en el front
+        tiposPorPieza.put("Pulsera", List.of("Pulsera"));
+        tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente","Criollas","1/2 Criolla","Aretes","Largos"));
+        tiposPorPieza.put("Aro", Arrays.asList("Aro","Aro Entorcillado","Cierre caja","Aros"));
+// Broche y Otros: solo una opción y ocultamos el listbox en el front
+        tiposPorPieza.put("Broche", List.of("Broche"));
+        tiposPorPieza.put("Otros", List.of("Otros"));
+        model.put("tiposPorPieza", tiposPorPieza);
+
+// Empleados
+        List<String> empleado = List.of("Anselmo");
         model.put("empleado", empleado);
 
-        model.put("tipoPedido", tipoPedido);
         model.put("pedido", pedido);
         model.put("titulo", "Editar Pedido");
         return "pedido/pedidoform";

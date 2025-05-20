@@ -1,126 +1,334 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="admin/admin_layout">
 <head>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <meta charset="UTF-8">
     <title>Configuración de Listados</title>
-    <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-            rel="stylesheet">
-</head>
-<body>
-<div class="container mt-4">
-    <h2>Configuración de Listados</h2>
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- AdminLTE -->
+    <link href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css" rel="stylesheet">
+    <!-- DataTables -->
+    <link rel="stylesheet" href="//cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <!-- Custom Styles -->
+    <style>
 
-    <!-- Nav tabs -->
-    <ul class="nav nav-tabs" id="configTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="pedido-tab" data-bs-toggle="tab"
-                    data-bs-target="#pedido" type="button" role="tab">
-                Pedidos
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="factura-tab" data-bs-toggle="tab"
-                    data-bs-target="#factura" type="button" role="tab">
-                Facturas
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="user-tab" data-bs-toggle="tab"
-                    data-bs-target="#user" type="button" role="tab">
-                Users
-            </button>
-        </li>
+
+        .card-header.bg-white {
+            background-color: white !important;
+        }
+
+        .card-header bg-primary text-white {
+            width: 100%;
+            height: 100px;
+            border-radius: 10px 10px 0 0;
+        }
+        /* Establecer un padding y margen general para todas las secciones internas */
+        .container-fluid,
+        .card,
+        .card-body,
+        .card-header,
+        section.content-header {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Asegura que las tarjetas no queden pegadas entre sí o a los bordes */
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Control uniforme para las tablas */
+        .table {
+            margin-bottom: 1rem;
+        }
+
+        /* Espaciado entre botones */
+        .btn-group .btn {
+            margin-right: 0.5rem;
+        }
+
+        /* Botones pequeños con padding uniforme */
+        .btn-sm {
+            padding: 0.4rem 0.75rem;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #0062cc, #004085); /* Gradiente de azul */
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            text-transform: uppercase; /* Texto en mayúsculas */
+            font-size: 1.25rem; /* Aumentar el tamaño de la fuente */
+            border-radius: 8px 8px 0 0; /* Bordes redondeados */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra ligera */
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card-header:hover {
+            background-color: #0056b3; /* Tono más oscuro de azul */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
+        }
+
+        body {
+            width: 100vw;
+            min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
+            overflow-x: hidden;
+            background-color: #f9f9f9; /* opcional: fondo más suave */
+        }
+        body {
+            width: 100vw;
+            min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
+            overflow-x: hidden;
+            background-color: #f9f9f9; /* opcional: fondo más suave */
+        }
+        html, body {
+            height: 100%; /* Asegura que el contenido cubra toda la pantalla */
+            margin: 0; /* Elimina márgenes por defecto */
+            padding: 0; /* Elimina el padding por defecto */
+            overflow: hidden; /* Oculta el scroll si no es necesario */
+        }
+        /* Hace la tabla responsiva */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;  /* Permite scroll horizontal si es necesario */
+            -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en móviles */
+        }
+
+        /* Ajuste general de la tabla */
+        .table td, .table th {
+            white-space: nowrap; /* Evita que el contenido de las celdas se corte */
+            font-size: 14px;
+            padding: 8px;
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table td,
+        .table th {
+            white-space: nowrap;
+            font-size: 14px;
+            padding: 8px;
+        }
+
+        @media screen and (min-width: 1268px) {
+
+            html, body {
+                overflow-x: hidden;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            .container-fluid {
+                width: 100%;
+                max-width: 100vw;
+                padding: 0;
+                margin: 0 auto;
+                overflow-x: hidden;
+            }
+
+            /* Contenedor scrollable de la tabla */
+            .dataTables_scrollBody {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 290px; /* 🔹 Altura fija de la tabla visible */
+
+                overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
+                overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
+                display: block;
+            }
+
+            /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
+            .dataTables_scrollBody table {
+                width: 100% !important;
+                max-width: 100%;
+                min-width: auto !important;
+                table-layout: auto;
+
+            }
+            .dataTables_scrollBody
+
+            th, td {
+                padding: 10px;
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+
+<body class="hold-transition sidebar-mini">
+<div layout:fragment="content" class="container-fluid py-4">
+    <section class="content-header">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-list mr-2"></i> Configuración de Listados
+            </div>
+            <div class="row justify-content-between align-items-center">
+                <div class="col-md-8">
+                    <div class="btn-group btn-group-toggle">
+                        <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary">
+                            <i class="fas fa-images"></i> Galería
+                        </a>
+                        <a th:href="@{/listar}" class="btn btn-outline-primary">
+                            <i class="fas fa-user"></i> Clientes
+                        </a>
+                        <a th:href="@{/form}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-plus"></i> Nuevo Cliente
+                        </a>
+                        <button type="button" class="btn btn-outline-primary" id="toggleBusqueda">
+                            Mostrar Filtros
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- Toaster -->
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+        <div id="toastContainer"></div>
+    </div>
+
+    <!-- Nav Tabs -->
+    <ul class="nav nav-tabs mb-4" id="configTabs">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#servicios">Servicios</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#metales">Metales</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#subgrupos">Subgrupos</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#estados">Estados</button></li>
     </ul>
 
-    <!-- Tab panes -->
-    <div class="tab-content mt-3" id="configTabsContent">
-        <!-- PEDIDOS -->
-        <div class="tab-pane fade show active" id="pedido" role="tabpanel">
-            <h4>Configuración Pedidos</h4>
-            <!-- SERVICIOS -->
-            <div class="mb-4">
-                <h5>Servicios</h5>
-                <form th:action="@{/configuracion/pedido/servicio}" method="post" class="row g-2">
-                    <div class="col-auto">
-                        <input type="text" name="nombre" class="form-control" placeholder="Nuevo servicio">
+    <div class="tab-content">
+        <!-- CARD BASE TEMPLATE -->
+        <template id="card-template">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+                    <h5 class="mb-0"></h5>
+                    <button class="btn btn-sm btn-outline-primary" data-action="add">
+                        <i class="fas fa-plus"></i> Añadir
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped w-100">
+                            <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
-                    <div class="col-auto">
-                        <button type="submit" class="btn btn-primary">Añadir</button>
-                    </div>
-                </form>
-                <ul class="list-group mt-2">
-                    <li class="list-group-item" th:each="s : ${servicios}"
-                        th:text="${s.nombre}">Servicio A</li>
-                </ul>
+                </div>
             </div>
-            <!-- METALES -->
-            <div class="mb-4">
-                <h5>Metales</h5>
-                <form th:action="@{/configuracion/pedido/metal}" method="post" class="row g-2">
-                    <div class="col-auto">
-                        <input type="text" name="nombre" class="form-control" placeholder="Nuevo metal">
-                    </div>
-                    <div class="col-auto">
-                        <button type="submit" class="btn btn-primary">Añadir</button>
-                    </div>
-                </form>
-                <ul class="list-group mt-2">
-                    <li class="list-group-item" th:each="m : ${metales}"
-                        th:text="${m.nombre}">Metal X</li>
-                </ul>
-            </div>
-            <!-- SUBGRUPOS -->
-            <div class="mb-4">
-                <h5>Subgrupos</h5>
-                <form th:action="@{/configuracion/pedido/subgrupo}" method="post" class="row g-2">
-                    <div class="col-auto">
-                        <input type="text" name="nombre" class="form-control" placeholder="Nuevo subgrupo">
-                    </div>
-                    <div class="col-auto">
-                        <button type="submit" class="btn btn-primary">Añadir</button>
-                    </div>
-                </form>
-                <ul class="list-group mt-2">
-                    <li class="list-group-item" th:each="sg : ${subgrupos}"
-                        th:text="${sg.nombre}">Subgrupo 1</li>
-                </ul>
-            </div>
-            <!-- ESTADOS -->
-            <div class="mb-4">
-                <h5>Estados</h5>
-                <form th:action="@{/configuracion/pedido/estado}" method="post" class="row g-2">
-                    <div class="col-auto">
-                        <input type="text" name="nombre" class="form-control" placeholder="Nuevo estado">
-                    </div>
-                    <div class="col-auto">
-                        <button type="submit" class="btn btn-primary">Añadir</button>
-                    </div>
-                </form>
-                <ul class="list-group mt-2">
-                    <li class="list-group-item" th:each="e : ${estados}"
-                        th:text="${e.nombre}">Pendiente</li>
-                </ul>
-            </div>
-        </div>
+        </template>
 
-        <!-- FACTURAS (vacío de momento) -->
-        <div class="tab-pane fade" id="factura" role="tabpanel">
-            <h4>Configuración Facturas</h4>
-            <!-- Aquí podrías repetir un bloque parecido al de Pedidos -->
-            <p>Aquí podrás gestionar listas específicas para facturas…</p>
-        </div>
-
-        <!-- USERS (vacío de momento) -->
-        <div class="tab-pane fade" id="user" role="tabpanel">
-            <h4>Configuración Users</h4>
-            <p>Aquí podrás gestionar listas específicas para usuarios…</p>
-        </div>
+        <!-- Dynamic Sections -->
+        <div class="tab-pane fade show active" id="servicios"></div>
+        <div class="tab-pane fade" id="metales"></div>
+        <div class="tab-pane fade" id="subgrupos"></div>
+        <div class="tab-pane fade" id="estados"></div>
     </div>
 </div>
 
-<script
-        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+<!-- Generic Modal -->
+<div class="modal fade" id="configModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Añadir / Editar</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="modalNombre">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <input type="text" class="form-control" id="modalDescripcion">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-outline-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="//cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+<script>
+    const csrfToken  = $('meta[name="_csrf"]').attr('content');
+    const csrfHeader = $('meta[name="_csrf_header"]').attr('content');
+    $(document).ajaxSend((e, xhr) => xhr.setRequestHeader(csrfHeader, csrfToken));
+
+    (() => {
+        const tipos = ['servicios','metales','subgrupos','estados'];
+        const modal = new bootstrap.Modal(document.getElementById('configModal'));
+        let current = { tipo: null, id: null };
+
+        function showToast(msg, isError=false){
+            const toastId = `toast${Date.now()}`;
+            $('#toastContainer').append(`
+      <div id="${toastId}" class="toast align-items-center ${isError?'text-bg-danger':'text-bg-success'} border-0 mb-2" role="alert" data-bs-delay="2000">
+        <div class="d-flex">
+          <div class="toast-body">${msg}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      </div>`);
+            new bootstrap.Toast($(`#${toastId}`)).show();
+        }
+
+        function renderSection(tipo) {
+            const container = $(`#${tipo}`);
+            container.empty();
+            const card = $($('#card-template').html());
+            card.find('h5').text(tipo.charAt(0).toUpperCase() + tipo.slice(1));
+            card.find('thead').html(`
+        <tr><th>Nombre</th><th>Descripción</th><th>Acciones</th></tr>
+    `);
+
+            const table = card.find('table').DataTable({
+                ajax: { url: `/api/configuracion/${tipo}`, dataSrc: (json)=> json },
+                scrollX: true,
+                columns: [
+                    { data: 'nombre', title: 'Nombre' },
+                    { data: 'description', title: 'Descripción' },
+                    { data: 'id', orderable: false, render: id => `
+                <button class="btn btn-sm btn-outline-primary me-1" data-action="edit" data-id="${id}"><i class="fas fa-pencil-alt"></i></button>
+                <button class="btn btn-sm btn-outline-primary" data-action="del" data-id="${id}"><i class="fas fa-trash"></i></button>` }
+                ]
+            });
+
+            card.find('[data-action=add]').on('click', () => {
+                current = { tipo, id: null };
+                $('#modalNombre, #modalDescripcion').val('');
+                $('.modal-title').text(`Añadir a ${tipo}`);
+                modal.show();
+            });
+            card.on('click', '[data-action=edit]', e => {/* ... */});
+            card.on('click', '[data-action=del]', e => {/* ... */});
+            container.append(card);
+        }
+
+        $(document).ready(()=> tipos.forEach(renderSection));
+    })();
 </script>
 </body>
 </html>

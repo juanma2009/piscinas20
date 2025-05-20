@@ -1,0 +1,119 @@
+PROBLEMA AL CREAR DOS SELECT DINÁMICOS CON THYMELEAF(NO MOSTRABA LOS DATOS DEL SEGUNDO SELECT)
+
+EL CODIGO CON FRAGMENTO EN EL CASO DE pedidolistarfotos.html debe estar dentro del form para que lo reconozca el binding
+<div layout:fragment="scripts">
+    <!-- las librerías -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+
+    <!-- tu código -->
+    <script>
+        $(function() {
+            // 1) PAGINACIÓN de las fotos
+            const itemsPerPage = 2;
+            const photos = $(".photo-item");
+            const pagination = $("#photo-pagination");
+            let currentPage = 1;
+            function showPage(page) {
+                const start = (page - 1) * itemsPerPage;
+                const end   = start + itemsPerPage;
+                photos.each((i, el) => $(el).toggle(i >= start && i < end));
+            }
+            function buildPagination() {
+                const totalPages = Math.ceil(photos.length / itemsPerPage);
+                pagination.empty();
+                for (let i = 1; i <= totalPages; i++) {
+                    const li = $(`<li class="page-item${i===currentPage?' active':''}"><a href="#" class="page-link">${i}</a></li>`);
+                    li.find("a").click(e => {
+                        e.preventDefault();
+                        currentPage = i;
+                        showPage(i);
+                        buildPagination();
+                    });
+                    pagination.append(li);
+                }
+            }
+            if (photos.length) {
+                showPage(1);
+                buildPagination();
+            }
+
+            // 2) SCROLL INFINITO
+            let isLoading = false, noMore = false, page = 1;
+            function loadPhotos() {
+                if (isLoading || noMore) return;
+                isLoading = true;
+                $.getJSON('/api/pedido/listarFotos', { page: page })
+                    .done(response => {
+                        if (response.length) {
+                            response.forEach(photo => {
+                                $("#photo-container").append(`
+                 <div class="pedido-card photo-item">
+                   <a href="/pedidos/ver/${photo.npedido}">
+                     <img src="${photo.imageUrl||'/images/spring.png'}" alt="Imagen">
+                   </a>
+                 </div>
+               `);
+                            });
+                            page++; isLoading = false;
+                        } else {
+                            noMore = true; isLoading = false;
+                        }
+                    })
+                    .fail((_, status, err) => {
+                        console.error('Error cargando fotos:', status, err);
+                        isLoading = false;
+                    });
+            }
+            // inicia carga y engancha scroll
+            loadPhotos();
+            $("#photo-container").scroll(function() {
+                const c = $(this);
+                if (c.scrollTop() + c.innerHeight() >= this.scrollHeight - 50) {
+                    loadPhotos();
+                }
+            });
+
+            // 3) AJAX PIEZA → TIPO
+            const piezaSel = $('#pieza'), tipoSel = $('#tipo');
+            console.log('Handler pieza–tipo montado');
+            piezaSel.on('change', function() {
+                const pieza = this.value;
+                console.log('Pieza seleccionada:', pieza);
+                $.ajax({
+                    url: '/api/pedido/tipoPorPieza',  // o '/tipoPorPieza' si tu @RequestMapping no incluye /api/pedido
+                    method: 'GET',
+                    dataType: 'json'
+                })
+                    .done(data => {
+                        console.log('datos recibidos:', data);
+                        tipoSel.empty()
+                            .append('<option value="" disabled selected>Seleccione un tipo</option>');
+                        (data[pieza]||[]).forEach(t => {
+                            tipoSel.append(`<option value="${t}">${t}</option>`);
+                        });
+                    })
+                    .fail((xhr,s,e) => {
+                        console.error('Error AJAX tipoPorPieza', s, e, xhr.responseText);
+                    });
+            });
+        });
+    </script>
+</div>
+1. Fragmento de scripts mal ubicado
+- El layout no “pegaba” los <script> al final del <body>, así que el código nunca llegaba al navegador.
+- Lección: Define un fragmento (por ejemplo layout:fragment="scripts") en tu layout y coloca ahí todas las inclusiones y tu JS custom.
+
+2. Binding estático antes de existir el elemento
+- Se hacía $('#pieza').on('change', …) antes de que el <select id="pieza"> existiera en el DOM, por lo que no enganchaba nada.
+- Lección: Para elementos que se renderizan tarde (Thymeleaf, AJAX, componentes dinámicos), usa delegated binding:
+  $(document).on('change', '#pieza', handler);
+
+3. Duplicado de librerías / orden de carga
+- Tenías dos versiones de jQuery (3.1.1 en el <head> y 3.6.0 al final), generando conflictos.
+- Lección: Carga siempre una sola versión, y hazlo antes de tu código que dependa de ella.
+
+4. Verificación con console.log y Network
+- Insertar console.log('script cargado!') y console.log($('#pieza').length) permitió saber si el JS corría y si el selector encontraba el elemento.
+- Lección: Usa prints en consola y revisa la pestaña Network → XHR para validar tus peticiones AJAX y respuestas.

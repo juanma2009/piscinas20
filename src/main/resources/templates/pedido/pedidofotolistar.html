@@ -4,6 +4,10 @@
       layout:decorator="admin/admin_layout">
 <head>
     <meta charset="utf-8"/>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+
+
     <title>Listar Pedidos</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
@@ -19,30 +23,30 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
 
-    <style>
 
-            /* Otros estilos... */
+    <style>
+        /* Otros estilos... */
         #photo-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 15px;
-            max-height: 500px; /* Ajusta este valor según la altura deseada */
+            max-height: 150px; /* Ajusta este valor según la altura deseada */
             overflow-y: auto; /* Agrega el scroll vertical cuando el contenido exceda la altura máxima */
         }
 
 
-            body {
-                width: 100vw;
-                min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
-                overflow-x: hidden;
-                background-color: #f9f9f9; /* opcional: fondo más suave */
-            }
+        body {
+            width: 100vw;
+            min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
+            overflow-x: hidden;
+            background-color: #f9f9f9; /* opcional: fondo más suave */
+        }
 
-            .container {
-                max-width: 95%; /* más ancho que el container por defecto */
-            }
+        .container {
+            max-width: 95%; /* más ancho que el container por defecto */
+        }
 
-            .card-img-container {
+        .card-img-container {
             width: 100%;
             height: 200px;
             overflow: hidden;
@@ -95,366 +99,443 @@
             object-fit: cover;
         }
 
-            .card-header.bg-white {
-                background-color: white !important;
-            }
+        .card-header.bg-white {
+            background-color: white !important;
+        }
 
-            .card-header bg-primary text-white {
-                width: 100%;
-                height: 100px;
-                border-radius: 10px 10px 0 0;
-            }
-            /* Establecer un padding y margen general para todas las secciones internas */
-            .container-fluid,
-            .card,
-            .card-body,
-            .card-header,
-            section.content-header {
-                padding: 1rem;
-                margin-bottom: 1rem;
-            }
+        .card-header bg-primary text-white {
+            width: 100%;
+            height: 100px;
+            border-radius: 10px 10px 0 0;
+        }
+        /* Establecer un padding y margen general para todas las secciones internas */
+        .container-fluid,
+        .card,
+        .card-body,
+        .card-header,
+        section.content-header {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
 
-            /* Asegura que las tarjetas no queden pegadas entre sí o a los bordes */
-            .card {
-                border-radius: 10px;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            }
+        /* Asegura que las tarjetas no queden pegadas entre sí o a los bordes */
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
 
-            /* Control uniforme para las tablas */
-            .table {
-                margin-bottom: 1rem;
-            }
+        /* Control uniforme para las tablas */
+        .table {
+            margin-bottom: 1rem;
+        }
 
-            /* Espaciado entre botones */
-            .btn-group .btn {
-                margin-right: 0.5rem;
-            }
+        /* Espaciado entre botones */
+        .btn-group .btn {
+            margin-right: 0.5rem;
+        }
 
-            /* Botones pequeños con padding uniforme */
-            .btn-sm {
-                padding: 0.4rem 0.75rem;
-            }
+        /* Botones pequeños con padding uniforme */
+        .btn-sm {
+            padding: 0.4rem 0.75rem;
+        }
 
-            .card-header {
-                background: linear-gradient(135deg, #0062cc, #004085); /* Gradiente de azul */
-                color: white;
-                padding: 15px;
-                font-weight: bold;
-                text-transform: uppercase; /* Texto en mayúsculas */
-                font-size: 1.25rem; /* Aumentar el tamaño de la fuente */
-                border-radius: 8px 8px 0 0; /* Bordes redondeados */
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra ligera */
-                transition: background-color 0.3s ease, box-shadow 0.3s ease;
-            }
+        .card-header {
+            background: linear-gradient(135deg, #0062cc, #004085); /* Gradiente de azul */
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            text-transform: uppercase; /* Texto en mayúsculas */
+            font-size: 1.25rem; /* Aumentar el tamaño de la fuente */
+            border-radius: 8px 8px 0 0; /* Bordes redondeados */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra ligera */
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
 
-            .card-header:hover {
-                background-color: #0056b3; /* Tono más oscuro de azul */
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
-            }
+        .card-header:hover {
+            background-color: #0056b3; /* Tono más oscuro de azul */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
+        }
 
-            body {
-                width: 100vw;
-                min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
-                overflow-x: hidden;
-                background-color: #f9f9f9; /* opcional: fondo más suave */
-            }
-            body {
-                width: 100vw;
-                min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
-                overflow-x: hidden;
-                background-color: #f9f9f9; /* opcional: fondo más suave */
-            }
+        body {
+            width: 100vw;
+            min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
+            overflow-x: hidden;
+            background-color: #f9f9f9; /* opcional: fondo más suave */
+        }
+        body {
+            width: 100vw;
+            min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
+            overflow-x: hidden;
+            background-color: #f9f9f9; /* opcional: fondo más suave */
+        }
+        html, body {
+            height: 100%; /* Asegura que el contenido cubra toda la pantalla */
+            margin: 0; /* Elimina márgenes por defecto */
+            padding: 0; /* Elimina el padding por defecto */
+            overflow: hidden; /* Oculta el scroll si no es necesario */
+        }
+        /* Hace la tabla responsiva */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;  /* Permite scroll horizontal si es necesario */
+            -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en móviles */
+        }
+
+        /* Ajuste general de la tabla */
+        .table td, .table th {
+            white-space: nowrap; /* Evita que el contenido de las celdas se corte */
+            font-size: 14px;
+            padding: 8px;
+        }
+        Estilos base (ya definidos para escritorio)
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table td,
+        .table th {
+            white-space: nowrap;
+            font-size: 14px;
+            padding: 8px;
+        }
+
+        @media screen and (min-width: 1268px) {
+
             html, body {
-                height: 100%; /* Asegura que el contenido cubra toda la pantalla */
-                margin: 0; /* Elimina márgenes por defecto */
-                padding: 0; /* Elimina el padding por defecto */
-                overflow: hidden; /* Oculta el scroll si no es necesario */
-            }
-            /* Hace la tabla responsiva */
-            .table-responsive {
+                overflow-x: hidden;
                 width: 100%;
-                overflow-x: auto;  /* Permite scroll horizontal si es necesario */
-                -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en móviles */
+                margin: 0;
+                padding: 0;
             }
 
-            /* Ajuste general de la tabla */
-            .table td, .table th {
-                white-space: nowrap; /* Evita que el contenido de las celdas se corte */
-                font-size: 14px;
-                padding: 8px;
-            }
-            Estilos base (ya definidos para escritorio)
-            .table-responsive {
+            .container-fluid {
                 width: 100%;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
+                max-width: 100vw;
+                padding: 0;
+                margin: 0 auto;
+                overflow-x: hidden;
             }
 
-            .table td,
-            .table th {
+            /* Contenedor scrollable de la tabla */
+            .dataTables_scrollBody {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 290px; /* 🔹 Altura fija de la tabla visible */
+
+                overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
+                overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
+                display: block;
+            }
+
+            /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
+            .dataTables_scrollBody table {
+                width: 100% !important;
+                max-width: 100%;
+                min-width: auto !important;
+                table-layout: auto;
+
+            }
+            .dataTables_scrollBody
+
+            th, td {
+                padding: 10px;
                 white-space: nowrap;
-                font-size: 14px;
-                padding: 8px;
             }
+        }
 
-            @media screen and (min-width: 1268px) {
-
-                html, body {
-                    overflow-x: hidden;
-                    width: 100%;
-                    margin: 0;
-                    padding: 0;
-                }
-
-                .container-fluid {
-                    width: 100%;
-                    max-width: 100vw;
-                    padding: 0;
-                    margin: 0 auto;
-                    overflow-x: hidden;
-                }
-
-                /* Contenedor scrollable de la tabla */
-                .dataTables_scrollBody {
-                    width: 100% !important;
-                    max-width: 100% !important;
-                    height: 290px; /* 🔹 Altura fija de la tabla visible */
-
-                    overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
-                    overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
-                    display: block;
-                }
-
-                /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
-                .dataTables_scrollBody table {
-                    width: 100% !important;
-                    max-width: 100%;
-                    min-width: auto !important;
-                    table-layout: auto;
-
-                }
-                .dataTables_scrollBody
-
-                th, td {
-                    padding: 10px;
-                    white-space: nowrap;
-                }
-            }
 
     </style>
 </head>
 <body class="hold-transition sidebar-mini">
 <div layout:fragment="content">
     <div class="container container-fluid">
-            <!-- Sección de contenido -->
-            <section class="content-header">
+        <section class="content-header">
 
-                    <div class="card">
-                        <div class="card-header bg-primary text-white">
-                            <i class="fas fa-images"></i> Galeria de Imagenes
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-images"></i> Galeria de Imagenes
+                </div>
+
+                <div class="row justify-content-between align-items-center">
+                    <div class="col-md-8">
+                        <div class="btn-group btn-group-toggle">
+                            <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary">
+                                <i class="fas fa-list"></i> Pedidos
+                            </a>
+                            <a th:href="@{/listar}" class="btn btn-outline-primary">
+                                <i class="fas fa-user"></i> Clientes
+                            </a>
+                            <a th:href="@{/form}" class="btn btn-outline-primary">
+                                <i class="fas fa-user-plus"></i> Nuevo Cliente
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <form id="formBusqueda" method="post" th:action="@{'/pedidos/buscarFoto'}" class="row g-3">
+
+                        <div class="col-md-3">
+                            <label for="cliente" class="form-label">Cliente</label>
+                            <select id="cliente" name="cliente" class="form-control">
+                                <option value="">Seleccione</option>
+                                <option th:each="cliente : ${clientes}"
+                                        th:value="${cliente.nombre}"
+                                        th:text="${cliente.nombre}"
+                                        th:selected="${cliente.nombre == clienteSeleccionado}">
+                                </option>
+                            </select>
                         </div>
 
-                        <div class="row justify-content-between align-items-center">
-                            <div class="col-md-8">
-                                <div class="btn-group btn-group-toggle">
-                                    <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary">
-                                        <i class="fas fa-list"></i> Pedidos
-                                    </a>
-                                    <a th:href="@{/listar}" class="btn btn-outline-primary">
-                                        <i class="fas fa-user"></i> Clientes
-                                    </a>
-                                    <a th:href="@{/form}" class="btn btn-outline-primary">
-                                        <i class="fas fa-user-plus"></i> Nuevo Cliente
-                                    </a>
-                                </div>
-                            </div>
+                        <div class="col-md-3">
+                            <label for="servicios" class="form-label">T.Pedido</label>
+                            <select id="servicios" name="servicios" class="form-control">
+                                <option value="">Seleccione</option>
+                                <option th:each="s : ${servicios}"
+                                        th:value="${s}"
+                                        th:text="${s}"
+                                        th:selected="${s == servicioSeleccionado}">
+                                </option>
+                            </select>
                         </div>
 
-                        <div class="card-body">
-                            <!-- Formulario de búsqueda -->
-                            <form id="formBusqueda" method="post" th:action="@{'/pedidos/buscarFoto'}" class="row g-3">
-                                <div class="col-md-3">
-                                    <label for="cliente" class="form-label">Cliente</label>
-                                    <select id="cliente" name="cliente" class="form-control">
-                                        <option value="">Seleccione</option>
-                                        <option th:each="cliente : ${clientes}" th:text="${cliente.nombre}" th:value="${cliente.nombre}"></option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="tipoPedido" class="form-label">T.Pedido</label>
-                                    <select id="tipoPedido" name="tipoPedido" class="form-control">
-                                        <option value="">Seleccione</option>
-                                        <option th:each="tipoPedido : ${tipoPedidos}" th:text="${tipoPedido}" th:value="${tipoPedido}"></option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="estado" class="form-label">Estado</label>
-                                    <select id="estado" name="estado" class="form-control">
-                                        <option value="">Seleccione</option>
-                                        <option th:each="estado : ${estados}" th:text="${estado}" th:value="${estado}"></option>
-                                    </select>
-                                </div>
-                                <!-- Grupo (Metal) -->
-                                <div class="col-md-3">
-                                    <label for="grupo" class="form-label" th:text="'Metal'"></label>
-                                    <select id="grupo" name="grupo" class="form-select form-control">
-                                        <option value="">Seleccione</option>
-                                        <option th:each="grupo : ${grupo}" th:text="${grupo}" th:value="${grupo}"></option>
-                                    </select>
-                                </div>
-                                <!-- Subgrupo (Tipo de Joya) -->
-                                <div class="col-md-3">
-                                    <label for="subgrupo" class="form-label" th:text="'Tipo de Joya'"></label>
-                                    <select id="subgrupo" name="subgrupo" class="form-select form-control">
-                                        <option value="">Seleccione</option>
-                                        <option th:each="subgrupo : ${subgrupo}" th:text="${subgrupo}" th:value="${subgrupo}"></option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="fechaDesde" class="form-label">Fecha Desde</label>
-                                    <input type="date" id="fechaDesde" name="fechaDesde" class="form-control">
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="fechaHasta" class="form-label">Fecha Hasta</label>
-                                    <input type="date" id="fechaHasta" name="fechaHasta" class="form-control">
-                                </div>
-                                <div class="col-md-12 text-right mt-2">
-                                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Buscar</button>
-                                </div>
-                            </form>
+                        <div class="col-md-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select id="estado" name="estado" class="form-control">
+                                <option value="">Seleccione</option>
+                                <option th:each="e : ${estados}"
+                                        th:value="${e}"
+                                        th:text="${e}"
+                                        th:selected="${e == estadoSeleccionado}">
+                                </option>
+                            </select>
+                        </div>
 
-                            <!-- Sección Grid con paginación para las fotos -->
-                            <div class="grid-view" th:if="${busquedaRealizada == true and pedido != null and !pedido.isEmpty()}">
-                                <!-- Contenedor de la grid con estilo display: grid y scroll vertical -->
-                                <div id="photo-container">
-                                    <div class="pedido-card photo-item" th:each="p : ${pedido}">
-                                        <a th:href="@{'/pedidos/ver/' + ${p.npedido}}">
-                                            <img th:src="${imagenesPedidos != null and imagenesPedidos.containsKey(p.npedido) ? imagenesPedidos[p.npedido] : '/images/spring.png'}"
-                                                 alt="Imagen del Pedido">
-                                        </a>
-                                    </div>
-                                </div>
-                                <!-- Controles de paginación fuera del grid -->
-                                <nav aria-label="Page navigation">
-                                    <ul class="pagination justify-content-center" id="photo-pagination"></ul>
-                                </nav>
+                        <div class="col-md-3">
+                            <label for="grupo" class="form-label">Metal</label>
+                            <select id="grupo" name="grupo" class="form-control">
+                                <option value="">Seleccione</option>
+                                <option th:each="m : ${metales}"
+                                        th:value="${m}"
+                                        th:text="${m}"
+                                        th:selected="${m == metalSeleccionado}">
+                                </option>
+                            </select>
+                        </div>
+
+
+                        <!-- PIEZA -->
+                        <div class="col-md-3">
+                            <label for="pieza">Pieza:</label>
+                            <select id="pieza" name="pieza" class="form-control">
+                                <option value="" disabled selected>Seleccione una pieza</option>
+                                <option th:each="pieza : ${tiposPorPieza.keySet()}"
+                                        th:value="${pieza}"
+                                        th:text="${pieza}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- TIPO -->
+                        <div class="col-md-3">
+                            <label for="tipo">Tipo:</label>
+                            <select id="tipo"  class="form-control" name="tipo">
+                                <option value="" disabled selected>Seleccione una pieza primero</option>   <!-- Opciones generadas por JS -->
+                            </select>
+                        </div>
+
+                        <!-- NUEVO campo Referencia -->
+                        <div class="col-md-3">
+                            <label for="ref" class="form-label">Referencia</label>
+                            <input type="text"
+                                   id="ref"
+                                   name="ref"
+                                   class="form-control"
+                                   placeholder="Ej: ABC123"
+                                   th:value="${refSeleccionado}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="fechaDesde" class="form-label">Fecha Desde</label>
+                            <input type="date" id="fechaDesde" name="fechaDesde" class="form-control"
+                                   th:value="${fechaHastaSeleccionada}">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="fechaHasta" class="form-label">Fecha Hasta</label>
+                            <input type="date" id="fechaHasta" name="fechaHasta" class="form-control"
+                                   th:value="${fechaHasta}">
+                        </div>
+
+                        <!-- Botones Buscar y Limpiar en la misma fila con espaciado y icono funcional -->
+                        <div class="col-md-12 d-flex justify-content-end mt-2">
+                            <button type="submit" class="btn btn-primary" style="margin-right: 1cm;">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                            <button type="reset" class="btn btn-secondary">
+                                <i class="fas fa-undo"></i> Limpiar
+                            </button>
+                        </div>
+                    </form>
+                    <div layout:fragment="scripts">
+                        <!-- las librerías -->
+                        <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+                        <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+                        <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+
+                        <!-- tu código -->
+                        <script>
+                            // Función para la paginación del grid de fotos
+                            function setupPagination() {
+                                const itemsPerPage = 5; // Número de fotos por página
+                                const photos = document.querySelectorAll(".photo-item");
+                                const pagination = document.getElementById("photo-pagination");
+                                let currentPage = 1;
+
+                                function showPage(page) {
+                                    const start = (page - 1) * itemsPerPage;
+                                    const end = start + itemsPerPage;
+                                    photos.forEach((photo, index) => {
+                                        photo.style.display = (index >= start && index < end) ? "block" : "none";
+                                    });
+                                }
+
+                                function buildPagination() {
+                                    const totalPages = Math.ceil(photos.length / itemsPerPage);
+                                    pagination.innerHTML = "";
+                                    for (let i = 1; i <= totalPages; i++) {
+                                        let li = document.createElement("li");
+                                        li.className = "page-item" + (i === currentPage ? " active" : "");
+                                        let a = document.createElement("a");
+                                        a.className = "page-link";
+                                        a.href = "#";
+                                        a.textContent = i;
+                                        a.addEventListener("click", function(e) {
+                                            e.preventDefault();
+                                            currentPage = i;
+                                            showPage(currentPage);
+                                            buildPagination();
+                                        });
+                                        li.appendChild(a);
+                                        pagination.appendChild(li);
+                                    }
+                                }
+
+                                if (photos.length > 0) {
+                                    showPage(currentPage);
+                                    buildPagination();
+                                }
+                            }
+
+                            // Al cargar el DOM se activa la paginación si la grid-view existe y tiene elementos
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const gridView = document.querySelector(".grid-view");
+                                if (gridView) {
+                                    setupPagination();
+                                }
+                            });
+
+                            $(document).ready(function(){
+                                var currentPage = 1;
+                                var isLoading = false;
+                                var noMorePhotos = false;
+
+                                // Función para cargar fotos vía AJAX según la página solicitada
+                                function loadPhotos(page) {
+                                    if(isLoading || noMorePhotos) return;
+                                    isLoading = true;
+
+                                    $.ajax({
+                                        url: '/api/pedido/listarFotos', // Asegúrate de tener este endpoint implementado
+                                        type: 'GET',
+                                        data: { page: page },
+                                        success: function(response) {
+                                            // Se asume que response es un arreglo JSON de objetos (puedes ajustar según tu API)
+                                            if(response && response.length > 0) {
+                                                response.forEach(function(photo) {
+                                                    // Construir el HTML de cada foto
+                                                    var photoHtml = '<div class="pedido-card photo-item">' +
+                                                        '<a href="/pedidos/ver/' + photo.npedido + '">' +
+                                                        '<img src="' + (photo.imageUrl ? photo.imageUrl : '/images/spring.png') + '" alt="Imagen del Pedido">' +
+                                                        '</a>' +
+                                                        '</div>';
+                                                    $('#photo-container').append(photoHtml);
+                                                });
+                                                currentPage++; // Incrementa el contador de página para la siguiente carga
+                                                isLoading = false;
+                                            } else {
+                                                // Si no hay más fotos, se marca la bandera para no intentar más cargas
+                                                noMorePhotos = true;
+                                                isLoading = false;
+                                            }
+                                        },
+                                        error: function(err) {
+                                            console.error('Error al cargar las fotos:', err);
+                                            isLoading = false;
+                                        }
+                                    });
+                                }
+
+                                // Cargar la primera página al iniciar
+                                loadPhotos(currentPage);
+
+                                // Detectar el evento scroll en el contenedor de fotos
+                                $('#photo-container').on('scroll', function() {
+                                    var container = $(this);
+                                    // Si se llega a 50px del final, cargar más fotos
+                                    if (container.scrollTop() + container.innerHeight() >= container[0].scrollHeight - 10) {
+                                        loadPhotos(currentPage);
+                                    }
+                                });
+                            });
+
+                            // AJAX pieza → tipo
+                            const piezaSel = $('#pieza'), tipoSel = $('#tipo');
+                            piezaSel.on('change', function () {
+                                const pieza = this.value;
+                                $.ajax({
+                                    url: '/api/pedido/tipoPorPieza',
+                                    method: 'GET',
+                                    dataType: 'json'
+                                })
+                                    .done(data => {
+                                        tipoSel.empty().append('<option value="" disabled selected>Seleccione un tipo</option>');
+                                        (data[pieza] || []).forEach(t => {
+                                            tipoSel.append(`<option value="${t}">${t}</option>`);
+                                        });
+                                    })
+                                    .fail((xhr, s, e) => {
+                                        console.error('Error AJAX tipoPorPieza', s, e, xhr.responseText);
+                                    });
+                            });
+
+                        </script>
+
+
+                    </div>
+
+
+                    <div class="grid-view"
+                         th:if="${busquedaRealizada == true and pedido != null and !pedido.isEmpty()}">
+                        <div id="photo-container">
+                            <div class="pedido-card photo-item" th:each="p : ${pedido}">
+                                <a th:href="@{'/pedidos/ver/' + ${p.npedido}}">
+                                    <img th:src="${imagenesPedidos != null and imagenesPedidos.containsKey(p.npedido) ? imagenesPedidos[p.npedido] : '/images/spring.png'}"
+                                         alt="Imagen del Pedido">
+                                </a>
                             </div>
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination justify-content-center" id="photo-pagination"></ul>
+                        </nav>
+                    </div>
 
-                        </div> <!-- card-body -->
-                    </div> <!-- card -->
+                </div> </div> </section>
 
-            </section>
+    </div> </div>
 
-    </div> <!-- wrapper -->
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
-<script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
-<script>
-    // Función para la paginación del grid de fotos
-    function setupPagination() {
-        const itemsPerPage = 100; // Número de fotos por página
-        const photos = document.querySelectorAll(".photo-item");
-        const pagination = document.getElementById("photo-pagination");
-        let currentPage = 1;
 
-        function showPage(page) {
-            const start = (page - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            photos.forEach((photo, index) => {
-                photo.style.display = (index >= start && index < end) ? "block" : "none";
-            });
-        }
-
-        function buildPagination() {
-            const totalPages = Math.ceil(photos.length / itemsPerPage);
-            pagination.innerHTML = "";
-            for (let i = 1; i <= totalPages; i++) {
-                let li = document.createElement("li");
-                li.className = "page-item" + (i === currentPage ? " active" : "");
-                let a = document.createElement("a");
-                a.className = "page-link";
-                a.href = "#";
-                a.textContent = i;
-                a.addEventListener("click", function(e) {
-                    e.preventDefault();
-                    currentPage = i;
-                    showPage(currentPage);
-                    buildPagination();
-                });
-                li.appendChild(a);
-                pagination.appendChild(li);
-            }
-        }
-
-        if (photos.length > 0) {
-            showPage(currentPage);
-            buildPagination();
-        }
-    }
-
-    // Al cargar el DOM se activa la paginación si la grid-view existe y tiene elementos
-    document.addEventListener("DOMContentLoaded", function() {
-        const gridView = document.querySelector(".grid-view");
-        if (gridView) {
-            setupPagination();
-        }
-    });
-
-    $(document).ready(function(){
-        var currentPage = 1;
-        var isLoading = false;
-        var noMorePhotos = false;
-
-        // Función para cargar fotos vía AJAX según la página solicitada
-        function loadPhotos(page) {
-            if(isLoading || noMorePhotos) return;
-            isLoading = true;
-
-            $.ajax({
-                url: '/api/pedido/listarFotos', // Asegúrate de tener este endpoint implementado
-                type: 'GET',
-                data: { page: page },
-                success: function(response) {
-                    // Se asume que response es un arreglo JSON de objetos (puedes ajustar según tu API)
-                    if(response && response.length > 0) {
-                        response.forEach(function(photo) {
-                            // Construir el HTML de cada foto
-                            var photoHtml = '<div class="pedido-card photo-item">' +
-                                '<a href="/pedidos/ver/' + photo.npedido + '">' +
-                                '<img src="' + (photo.imageUrl ? photo.imageUrl : '/images/spring.png') + '" alt="Imagen del Pedido">' +
-                                '</a>' +
-                                '</div>';
-                            $('#photo-container').append(photoHtml);
-                        });
-                        currentPage++; // Incrementa el contador de página para la siguiente carga
-                        isLoading = false;
-                    } else {
-                        // Si no hay más fotos, se marca la bandera para no intentar más cargas
-                        noMorePhotos = true;
-                        isLoading = false;
-                    }
-                },
-                error: function(err) {
-                    console.error('Error al cargar las fotos:', err);
-                    isLoading = false;
-                }
-            });
-        }
-
-        // Cargar la primera página al iniciar
-        loadPhotos(currentPage);
-
-        // Detectar el evento scroll en el contenedor de fotos
-        $('#photo-container').on('scroll', function() {
-            var container = $(this);
-            // Si se llega a 50px del final, cargar más fotos
-            if (container.scrollTop() + container.innerHeight() >= container[0].scrollHeight - 50) {
-                loadPhotos(currentPage);
-            }
-        });
-    });
-</script>
 </body>
 </html>
