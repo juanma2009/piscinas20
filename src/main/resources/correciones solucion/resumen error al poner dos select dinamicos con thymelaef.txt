@@ -117,3 +117,5 @@ EL CODIGO CON FRAGMENTO EN EL CASO DE pedidolistarfotos.html debe estar dentro d
 4. Verificación con console.log y Network
 - Insertar console.log('script cargado!') y console.log($('#pieza').length) permitió saber si el JS corría y si el selector encontraba el elemento.
 - Lección: Usa prints en consola y revisa la pestaña Network → XHR para validar tus peticiones AJAX y respuestas.
+
+

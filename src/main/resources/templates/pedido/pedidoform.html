@@ -251,7 +251,7 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" id="detalles-adicionales-tab" data-toggle="tab" href="#detalles-adicionales" role="tab" aria-controls="detalles-adicionales" aria-selected="false">
-                                Detalles Adicionales
+                                Detalles
                             </a>
                         </li>
                         <li class="nav-item">
@@ -344,49 +344,6 @@
                                 </div>
                             </div>
 
-                            <div class="row">
-
-
-
-                                <!-- Metal -->
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="grupo">Metal</label>
-                                        <select id="grupo" name="grupo" class="form-control" th:field="*{grupo}">
-                                            <option th:each="m : ${metales}"
-                                                    th:value="${m}"
-                                                    th:text="${m}">
-                                            </option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- Pieza -->
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="pieza">Pieza</label>
-                                        <select id="pieza" name="pieza" class="form-control" th:field="*{pieza}"
-                                                onchange="actualizarTipos()">
-                                            <option value="">-- Selecciona Pieza --</option>
-                                            <option th:each="p : ${piezas}"
-                                                    th:value="${p}"
-                                                    th:text="${p}"
-                                                    th:selected="${pedido.pieza == p}">
-                                            </option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- Tipo (dinámico) -->
-                                <div class="col-md-4" id="container-tipo">
-                                    <div class="form-group">
-                                        <label for="tipo">Tipo</label>
-                                        <select id="tipo" name="tipo" class="form-control" th:field="*{tipo}">
-                                            <option value="">-- Primero elige Pieza --</option>
-                                        </select>
-                                   </div>
-                               </div>
-                        </div>
 
                         <!-- Botón para añadir fotos -->
                         <div class="form-group text-center mt-3">
@@ -398,6 +355,52 @@
 
                     <!-- Pestaña Detalles Adicionales -->
                     <div class="tab-pane fade" id="detalles-adicionales" role="tabpanel" aria-labelledby="detalles-adicionales-tab">
+
+                        <div class="row">
+
+
+
+                            <!-- Metal -->
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="grupo">Metal</label>
+                                    <select id="grupo" name="grupo" class="form-control" th:field="*{grupo}">
+                                        <option th:each="m : ${metales}"
+                                                th:value="${m}"
+                                                th:text="${m}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Pieza -->
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="pieza">Pieza</label>
+                                    <select id="pieza" name="pieza" class="form-control" th:field="*{pieza}"
+                                            onchange="actualizarTipos()">
+                                        <option value="">-- Selecciona Pieza --</option>
+                                        <option th:each="p : ${piezas}"
+                                                th:value="${p}"
+                                                th:text="${p}"
+                                                th:selected="${pedido.pieza == p}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Tipo (dinámico) -->
+                            <div class="col-md-4" id="container-tipo">
+                                <div class="form-group">
+                                    <label for="tipo">Tipo</label>
+                                    <select id="tipo" name="tipo" class="form-control" th:field="*{tipo}">
+                                        <option value="">-- Primero elige Pieza --</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+
                         <div class="row">
                             <!-- Peso -->
                             <div class="col-md-2">

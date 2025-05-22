@@ -139,10 +139,10 @@
             .dataTables_scrollBody {
                 width: 100% !important;
                 max-width: 100% !important;
-                height: 290px; /* 🔹 Altura fija de la tabla visible */
+
 
                 overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
-                overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
+                /*  overflow-x: auto;  🔹 Scroll horizontal solo si se necesita */
                 display: block;
             }
 
@@ -154,12 +154,23 @@
                 table-layout: auto;
 
             }
-            .dataTables_scrollBody
-
-            th, td {
+            .dataTables_scrollBody  th, td {
                 padding: 10px;
                 white-space: nowrap;
             }
+
+            .card-body{
+                margin-top: -35px;
+            }
+            .dataTables_scrollHeadInner {
+                width: 100% !important;
+            }
+
+            .dataTables_scrollHeadInner table {
+                width: 100% !important;
+                table-layout: auto;
+            }
+
         }
 
     </style>
@@ -381,8 +392,8 @@
                         ?? [],
                 },
                 "columns": [
-                    {"data": "ref", "title": "N° Referencia"},
-                    {"data": "cliente", "title": "Cliente"},
+                    {"data": "ref", "title": "N° Ref"},
+
                     {"data": "tipoPedido", "title": "T.Pedido"},
                     {"data": "estado", "title": "Estado"},
                     {
@@ -450,12 +461,15 @@
                 "lengthMenu": [5, 10, 15, 25],
                 "pageLength": 5,
                 "displayLength": 5,// Valor por defecto en el selector "Mostrar"
-                "fixedHeader": true,   // Mantiene el encabezado y controles fijos
-                "scrollY": "300px",    // Establece la altura de la tabla con scroll vertical
+
+                "scrollY": "280px",    // Establece la altura de la tabla con scroll vertical
                 "scrollCollapse": true, // Asegura que el espacio de scroll se adapte si hay pocas filas
-                "responsive": true   //
+                  //
 
             });
+        });
+        $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
+            table.columns.adjust().draw();
         });
 
 
