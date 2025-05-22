@@ -163,6 +163,18 @@
             padding: 10px;
             white-space: nowrap;
         }
+
+        /* Cabecera de la tabla fija al hacer scroll ayuda ha que no este fija*/
+        .dataTables_wrapper .dataTables_scroll {
+            overflow: auto;
+        }
+
+        .dataTables_scrollHeadInner,
+        .dataTables_scrollBody table {
+            width: 100% !important;
+            table-layout: auto;
+        }
+
     }
 
     </style>
@@ -447,17 +459,17 @@
                     "language": {
                         "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
                     },
-                    "paging": true,
-                    "searching": true,
-                    "ordering": true,
-                    "lengthMenu": [5, 10, 15, 25],
-                    "pageLength": 5,
-                    "displayLength": 5 ,// Valor por defecto en el selector "Mostrar"
-                    "fixedHeader": true ,   // Mantiene el encabezado y controles fijos
-                    "scrollY": "300px",    // Establece la altura de la tabla con scroll vertical
-                    "scrollCollapse": true, // Asegura que el espacio de scroll se adapte si hay pocas filas
-                    "responsive": true   //
-
+                    //la cabezer se mueve tambien con el scroll
+                    paging: true,
+                    searching: true,
+                    ordering: true,
+                    lengthMenu: [5, 10, 15, 25],
+                    pageLength: 5,
+                    scrollY: "300px",          // Scroll vertical
+                    scrollX: true,             // 🔹 Scroll horizontal sincroniza <thead> y <tbody>
+                    scrollCollapse: true,
+                    fixedHeader: false,        // Asegúrate de que no esté activo si no quieres cabecera fija al hacer scroll vertical
+                    responsive: false
                 });
 
                 // ✅ Interceptar el formulario para la búsqueda
