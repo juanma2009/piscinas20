@@ -2,6 +2,7 @@ package com.bolsadeideas.springboot.app.models.service;
 
 
 import com.bolsadeideas.springboot.app.models.dao.PedidoDao;
+import com.bolsadeideas.springboot.app.models.entity.Cliente;
 import com.bolsadeideas.springboot.app.models.entity.Pedido;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
@@ -15,13 +16,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Service
 public class PedidoServiceImpl implements PedidoService {
@@ -35,10 +38,17 @@ public class PedidoServiceImpl implements PedidoService {
 	@Autowired
 	private PedidoDao pedidoDao;
 
+	Logger log = Logger.getLogger(PedidoServiceImpl.class.getName());
+
 	@Override
 	@Transactional(readOnly=true)
 	public Iterable<Pedido> findAll() {
 		return  pedidoDao.findAll();
+	}
+
+	@Override
+	public Map<String, Double> totalFacturadoPorMesAnios(Long clienteId, int anio) {
+		return Map.of();
 	}
 
 	@Transactional
@@ -69,22 +79,22 @@ public class PedidoServiceImpl implements PedidoService {
 		return null;
 	}
 
-
-	public  Page<Pedido> buscarPedidos(String cliente,String tipoPedido, String estado, String grupo,
-											  String pieza,String tipo,String ref, Date fechaDesde, Date fechaHasta, Pageable pageable)
-	{
+	public Page<Pedido> buscarPedidos(Integer id, String tipoPedido, String estado, String grupo,
+									  String pieza, String tipo, String ref, Date fechaDesde, Date fechaHasta,
+									  Pageable pageable) {
 
 		CriteriaBuilder cb = entityManager.getCriteriaBuilder();
 		CriteriaQuery<Pedido> cq = cb.createQuery(Pedido.class);
 		Root<Pedido> pedido = cq.from(Pedido.class);
+		Join<Pedido, Cliente> clienteJoin = pedido.join("cliente", JoinType.LEFT);
 
 		List<Predicate> predicates = new ArrayList<>();
-
-		if (cliente != null && !cliente.isEmpty()) {
-			predicates.add(cb.like(cb.lower(pedido.get("cliente").get("nombre")), "%" + cliente.toLowerCase() + "%"));
+		log.info("id del cleinte"+id);
+		if (id != null && id != 0) {
+			predicates.add(cb.equal(clienteJoin.get("id"), id));
 		}
 		if (tipoPedido != null && !tipoPedido.isEmpty()) {
-			predicates.add(cb.equal(pedido.get("tipoPedido"),tipoPedido));
+			predicates.add(cb.equal(pedido.get("tipoPedido"), tipoPedido));
 		}
 		if (estado != null && !estado.isEmpty()) {
 			predicates.add(cb.like(cb.lower(pedido.get("estado")), "%" + estado.toLowerCase() + "%"));
@@ -110,22 +120,63 @@ public class PedidoServiceImpl implements PedidoService {
 
 		cq.where(predicates.toArray(new Predicate[0]));
 
+		// Añadir ordenación según pageable.getSort()
+		if (pageable.getSort() != null) {
+			List<Order> orders = new ArrayList<>();
+			pageable.getSort().forEach(order -> {
+				Path<?> path = pedido.get(order.getProperty());
+				orders.add(order.isAscending() ? cb.asc(path) : cb.desc(path));
+			});
+			cq.orderBy(orders);
+		}
+
 		TypedQuery<Pedido> query = entityManager.createQuery(cq);
 		query.setFirstResult((int) pageable.getOffset());
 		query.setMaxResults(pageable.getPageSize());
 
 		List<Pedido> pedidos = query.getResultList();
 
-		// Contar total de registros para la paginación
+		// COUNT query (con el join al cliente para que el filtro por cliente funcione también)
 		CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
 		Root<Pedido> countRoot = countQuery.from(Pedido.class);
-		countQuery.select(cb.count(countRoot)).where(predicates.toArray(new Predicate[0]));
+		Join<Pedido, Cliente> countClienteJoin = countRoot.join("cliente", JoinType.LEFT);
+
+		List<Predicate> countPredicates = new ArrayList<>();
+
+		if (id != null && id != 0) {
+			countPredicates.add(cb.equal(countClienteJoin.get("id"), id));
+		}
+		if (tipoPedido != null && !tipoPedido.isEmpty()) {
+			countPredicates.add(cb.equal(countRoot.get("tipoPedido"), tipoPedido));
+		}
+		if (estado != null && !estado.isEmpty()) {
+			countPredicates.add(cb.like(cb.lower(countRoot.get("estado")), "%" + estado.toLowerCase() + "%"));
+		}
+		if (grupo != null && !grupo.isEmpty()) {
+			countPredicates.add(cb.equal(countRoot.get("grupo"), grupo));
+		}
+		if (pieza != null && !pieza.isEmpty()) {
+			countPredicates.add(cb.equal(countRoot.get("pieza"), pieza));
+		}
+		if (tipo != null && !tipo.isEmpty()) {
+			countPredicates.add(cb.equal(countRoot.get("tipo"), tipo));
+		}
+		if (ref != null && !ref.isEmpty()) {
+			countPredicates.add(cb.equal(countRoot.get("ref"), ref));
+		}
+		if (fechaDesde != null) {
+			countPredicates.add(cb.greaterThanOrEqualTo(countRoot.get("fechaEntrega"), fechaDesde));
+		}
+		if (fechaHasta != null) {
+			countPredicates.add(cb.lessThanOrEqualTo(countRoot.get("fechaEntrega"), fechaHasta));
+		}
+
+		countQuery.select(cb.count(countRoot));
+		countQuery.where(countPredicates.toArray(new Predicate[0]));
 		Long totalRegistros = entityManager.createQuery(countQuery).getSingleResult();
 
 		return new PageImpl<>(pedidos, pageable, totalRegistros);
 	}
-
-
 
 	@Override
 	public Pedido obtenerUltimoNumeroPedido() {
@@ -158,6 +209,172 @@ public class PedidoServiceImpl implements PedidoService {
 		return pedidoDao.findByClienteOrEstadoReport(idcliente,estado);
 
 	}
+
+	@Override
+	public Map<String, Integer> contarPedidosPorMes(Long clienteId) {
+		return Map.of();
+	}
+
+
+	// Obtener los años con pedidos para un cliente
+
+	@Override
+	public List<Integer> obtenerAniosConPedidos(Long clienteId) {
+		List<Pedido> pedidos = pedidoDao.findByClienteIds(clienteId);
+		return pedidos.stream()
+				.filter(p -> p.getFechaFinalizado() != null)
+				.map(p -> p.getFechaFinalizado().toInstant().atZone(ZoneId.systemDefault()).getYear())
+				.distinct()
+				.sorted(Comparator.reverseOrder())
+				.collect(Collectors.toList());
+	}
+
+	@Override
+	public Map<String, Integer> contarPedidosPorMesYAnio(Long clienteId, int anio) {
+		List<Pedido> pedidos = pedidoDao.findByClienteIds(clienteId);
+		Map<String, Integer> resultado = new LinkedHashMap<>();
+
+		String[] meses = {"Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"};
+		for (String mes : meses) resultado.put(mes, 0);
+
+		for (Pedido p : pedidos) {
+			if (p.getFechaEntrega() != null) {
+				LocalDate fecha = p.getFechaEntrega().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+				if (fecha.getYear() == anio) {
+					int mesIndex = fecha.getMonthValue() - 1; // 0-based
+					resultado.put(meses[mesIndex], resultado.get(meses[mesIndex]) + 1);
+				}
+			}
+		}
+		log.info("Contador de pedidos por mes y año: " + resultado);
+		return resultado;
+	}
+
+
+// Facturación anual para un cliente
+
+	@Override
+	public List<Integer> obtenerAniosConFacturacion(Long clienteId) {
+		List<Pedido> pedidosCliente = pedidoDao.findByClienteIds(clienteId);
+		return pedidosCliente.stream()
+				.filter(p -> p.getFechaFinalizado() != null && p.getCobrado() != null)
+				.map(p -> p.getFechaFinalizado().toInstant()
+						.atZone(ZoneId.systemDefault())
+						.toLocalDate().getYear())
+				.distinct()
+				.sorted()
+				.collect(Collectors.toList());
+	}
+
+	// Facturación mensual para un año seleccionado
+	@Override
+	public Map<String, Double> totalFacturadoPorMesAnio(Long clienteId, int anio) {
+		List<Pedido> pedidosCliente = pedidoDao.findByClienteIds(clienteId);
+		Map<String, Double> totalPorMes = new LinkedHashMap<>();
+
+		String[] mesesAbreviados = {"Ene", "Feb", "Mar", "Abr", "May", "Jun",
+				"Jul", "Ago", "Sep", "Oct", "Nov", "Dic"};
+		// Inicializar todos los meses en 0.0
+		for (String mes : mesesAbreviados) {
+			totalPorMes.put(mes, 0.0);
+		}
+
+		pedidosCliente.stream()
+				.filter(p -> p.getFechaFinalizado() != null && p.getCobrado() != null)
+				.map(p -> new AbstractMap.SimpleEntry<>(
+						p.getFechaFinalizado().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+						p.getCobrado()))
+				.filter(entry -> entry.getKey().getYear() == anio)
+				.forEach(entry -> {
+					int mesIndex = entry.getKey().getMonthValue() - 1;
+					String mesAbreviado = mesesAbreviados[mesIndex];
+					totalPorMes.put(mesAbreviado, totalPorMes.get(mesAbreviado) + entry.getValue());
+				});
+
+		return totalPorMes;
+	}
+
+
+
+	@Override
+	public Map<String, Double> totalFacturadoPorMes(Long clienteId) {
+		List<Pedido> pedidosCliente = pedidoDao.findByClienteIds(clienteId);
+		Map<String, Double> totalPorMes = new LinkedHashMap<>();
+
+		// Filtrar pedidos válidos
+		List<Pedido> pedidosValidos = pedidosCliente.stream()
+				.filter(p -> p.getFechaFinalizado() != null && p.getCobrado() != null)
+				.collect(Collectors.toList());
+
+		if (pedidosValidos.isEmpty()) {
+			return totalPorMes; // Sin pedidos válidos, retornamos mapa vacío
+		}
+
+		// Obtener el rango de fechas (primer y último mes con pedidos)
+		LocalDate minFecha = pedidosValidos.stream()
+				.map(p -> p.getFechaFinalizado().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
+				.min(LocalDate::compareTo)
+				.orElse(LocalDate.now());
+
+		LocalDate maxFecha = pedidosValidos.stream()
+				.map(p -> p.getFechaFinalizado().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
+				.max(LocalDate::compareTo)
+				.orElse(LocalDate.now());
+
+		// Inicializar el mapa con todos los meses del rango
+		YearMonth start = YearMonth.from(minFecha);
+		YearMonth end = YearMonth.from(maxFecha);
+
+		YearMonth current = start;
+		while (!current.isAfter(end)) {
+			totalPorMes.put(current.toString(), 0.0); // formato YYYY-MM
+			current = current.plusMonths(1);
+		}
+
+		// Sumar los importes a los meses correspondientes
+		for (Pedido pedido : pedidosValidos) {
+			LocalDate fecha = pedido.getFechaFinalizado().toInstant()
+					.atZone(ZoneId.systemDefault())
+					.toLocalDate();
+
+			String mes = YearMonth.from(fecha).toString(); // formato YYYY-MM
+			totalPorMes.put(mes, totalPorMes.get(mes) + pedido.getCobrado());
+		}
+
+		log.info("Total facturado por mes (incluyendo meses sin facturación): {}");
+		return totalPorMes;
+	}
+
+
+
+
+//	public Map<String, Integer> totalFacturadoPorMes(Long clienteId) {
+//		// Obtenemos los pedidos del cliente
+//		List<Pedido> pedidos = pedidoDao.findByClienteIds(clienteId);
+//		// Mapa para almacenar el total facturado por mes
+//		Map<String, Integer> resultado = new LinkedHashMap<>();
+//
+//		// Inicializar meses
+//		String[] meses = {"Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"};
+//		// Llenar el mapa con los meses y un valor inicial de 0
+//		for (String mes : meses) resultado.put(mes, 0);
+//
+//		// Iterar sobre los pedidos
+//		for (Pedido p : pedidos) {
+//			if (pedido.getFechaEntrega() != null && pedido.getCobrado() != null) {
+//				// Convertir Date a LocalDate para obtener el mes correctamente
+//				Instant instant = p.getFechaEntrega().toInstant();
+//				ZoneId zone = ZoneId.systemDefault();
+//				LocalDate localDate = instant.atZone(zone).toLocalDate();
+//				int mes = localDate.getMonthValue(); // 1 = enero
+//				resultado.put(meses[mes - 1], resultado.get(meses[mes - 1]) + 1);
+//			}
+//		}
+//		return resultado;
+//	}
+
+
+
 
 	@Override
 	@Transactional(readOnly=true)
@@ -194,6 +411,8 @@ public class PedidoServiceImpl implements PedidoService {
 		// Generar el informe
 		return JasperFillManager.fillReport(jasperReport, parameters, ds);
 	}
+
+
 
 
 }

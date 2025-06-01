@@ -33,59 +33,55 @@ public class TwoFactorAuthenticationFilter extends OncePerRequestFilter {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        // Verificar si el usuario está autenticado
         if (auth != null && auth.isAuthenticated()) {
             HttpSession session = request.getSession();
 
-            // Excluir la página de verificación de 2FA para evitar ciclos
             String requestURI = request.getRequestURI();
             if (requestURI.contains("/verify_2fa")) {
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            // Comprobar si el 2FA ya fue verificado
-            Boolean isTwoFactorVerified = (Boolean) session.getAttribute("2FA_VERIFIED");
-            if (Boolean.TRUE.equals(isTwoFactorVerified)) {
-                // Continuar con la cadena de filtros si 2FA ya está verificado
-                filterChain.doFilter(request, response);
+            String username = auth.getName();
+            User user = userRepository.findByUsername(username);
+
+            // Verificar si el usuario tiene 2FA activado
+            if (user != null && user.isTwoFactorEnabled()) {
+                Boolean isTwoFactorVerified = (Boolean) session.getAttribute("2FA_VERIFIED");
+                if (Boolean.TRUE.equals(isTwoFactorVerified)) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
+                Boolean isCodeSent = (Boolean) session.getAttribute("2FA_CODE_SENT");
+                if (isCodeSent == null || !isCodeSent) {
+                    String email = user.getEmail();
+                    if (email != null) {
+                        String generatedCode = twoFactorMessageService.generateVerificationCode();
+                        user.setSecret(generatedCode);
+                        userRepository.save(user);
+
+                        try {
+                            twoFactorMessageService.sendVerificationCode(email, generatedCode);
+                        } catch (MessagingException e) {
+                            log.severe("Error al enviar el código de verificación: " + e.getMessage());
+                            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error al enviar el código de verificación.");
+                            return;
+                        }
+
+                        session.setAttribute("2FA_CODE_SENT", true);
+                    }
+                }
+
+                response.sendRedirect("/verify_2fa");
                 return;
             }
 
-            // Si el código no fue enviado, envíalo
-            Boolean isCodeSent = (Boolean) session.getAttribute("2FA_CODE_SENT");
-            if (isCodeSent == null || !isCodeSent) {
-                String username = auth.getName();
-                String email = userRepository.getUserEmail(username);
-
-                if (email != null) {
-                    String generatedCode = twoFactorMessageService.generateVerificationCode();
-
-                    User user = userRepository.findByUsername(username);
-                    if (user != null) {
-                        user.setSecret(generatedCode);
-                        userRepository.save(user);
-                    }
-
-                    try {
-                        twoFactorMessageService.sendVerificationCode(email, generatedCode);
-                    } catch (MessagingException e) {
-                        log.severe("Error al enviar el código de verificación: " + e.getMessage());
-                        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error al enviar el código de verificación.");
-                        return;
-                    }
-
-                    // Marcar en la sesión que el código fue enviado
-                    session.setAttribute("2FA_CODE_SENT", true);
-                }
-            }
-
-            // Redirigir a la página de verificación de 2FA
-            response.sendRedirect("/verify_2fa");
+            // Si 2FA no está habilitado, continuar sin redirigir
+            filterChain.doFilter(request, response);
             return;
         }
 
-        // Continuar con la cadena de filtros si el usuario no está autenticado
         filterChain.doFilter(request, response);
     }
 

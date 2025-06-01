@@ -24,10 +24,10 @@ public class Role {
 
     private String descripcion;
 
-    @Column(name = "secret")
-    private String secret;  // Información del doble factor, si aplica
+//    @Column(name = "secret")
+//    private String secret;  // Información del doble factor, si aplica
 
-    private String estado;
+    private boolean estado;
 
 
     @ManyToMany(mappedBy = "roles", fetch = FetchType.EAGER)

@@ -5,13 +5,17 @@ import com.bolsadeideas.springboot.app.models.entity.Pedido;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 
 public interface PedidoService {
 
 	public Iterable<Pedido> findAll();
+
+	Map<String, Double> totalFacturadoPorMesAnios(Long clienteId, int anio);
+
+	Map<String, Double> totalFacturadoPorMes(Long clienteId);
 
 	public Page<Pedido> findAll(Pageable pageable);
 
@@ -35,5 +39,13 @@ public interface PedidoService {
 	public Page<Pedido>  findAllByCliente(Long idcliente, Pageable pageable);
 
 	public Iterable<Pedido> findAllByClienteAndEstado(String idcliente,String estado);
-	
+
+	public Map<String, Integer> contarPedidosPorMes(Long clienteId) ;
+
+	List<Integer> obtenerAniosConPedidos(Long clienteId);
+
+	Map<String, Integer> contarPedidosPorMesYAnio(Long clienteId, int anio);
+
+	List<Integer> obtenerAniosConFacturacion(Long clienteId);
+	Map<String, Double> totalFacturadoPorMesAnio(Long clienteId, int anio);
 }

@@ -56,7 +56,7 @@ public class Pedido implements Serializable {
 
     private String horas;
 
-    private String cobrado;
+    private Double cobrado;
 
     private String empleado;
 

@@ -477,7 +477,7 @@ public class PedidoController {
         //todo mirar porque al guardar sin datos en los regsitros de actuaizar el pedio sale empty String "Problema era por el peso no esta validando"
         Pedido pedidoExistente = pedidoService.findOne(npedido);
         if (pedidoExistente != null) {
-            actualizarPedidoExistente(pedidoExistente, observacion, estado, tipoPedido,grupo,pieza, pesoDouble,horas,cobrado,fechaEntrega,fechaFinalizado,empleado,ref, flash);
+            actualizarPedidoExistente(pedidoExistente, observacion, estado, tipoPedido,grupo,pieza, pesoDouble,horas, Double.valueOf(cobrado),fechaEntrega,fechaFinalizado,empleado,ref, flash);
         } else {
             guardarNuevoPedido(pedido, flash);
         }
@@ -487,7 +487,7 @@ public class PedidoController {
     }
 
 //todo añadir los nuevos campos metal,pieza,tipo
-        private void actualizarPedidoExistente(Pedido pedidoExistente, String observacion, String estado, String tipoPedido, String grupo, String pieza, Double peso, String horas, String cobrado,Date fechaEntrega, Date fechaFinalizado,  String empleado, String ref, RedirectAttributes flash) {
+        private void actualizarPedidoExistente(Pedido pedidoExistente, String observacion, String estado, String tipoPedido, String grupo, String pieza, Double peso, String horas, Double cobrado,Date fechaEntrega, Date fechaFinalizado,  String empleado, String ref, RedirectAttributes flash) {
         pedidoExistente.setObservacion(observacion);
         pedidoExistente.setEstado(estado);
         pedidoExistente.setTipoPedido(tipoPedido);
@@ -656,7 +656,7 @@ public class PedidoController {
      * Filtro para buscar los ALBARANES
      *
      * @param page
-     * @param cliente
+     * @param id
      * @param pageable
      * @param model
      * @return
@@ -666,7 +666,7 @@ public class PedidoController {
     @PostMapping("/buscar")
     public String buscar(
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "cliente", defaultValue = "") String cliente,
+            @RequestParam(name = "cliente", defaultValue = "") int id,
             @RequestParam(name = "estado", defaultValue = "") String estado,
             @RequestParam(name = "tipoPedido", defaultValue = "") String tipoPedido,
             @RequestParam(name = "grupo", defaultValue = "") String grupo,
@@ -684,7 +684,7 @@ public class PedidoController {
 
         // Paginación de las búsquedas totales
         Pageable pageRequest = PageRequest.of(page, 6);
-        Page<Pedido> pedido = pedidoService.buscarPedidos(cliente, tipoPedido,estado, grupo, pieza,tipo,ref, fechaDesdeDate, fechaHastaDate, pageRequest);
+        Page<Pedido> pedido = pedidoService.buscarPedidos(id, tipoPedido,estado, grupo, pieza,tipo,ref, fechaDesdeDate, fechaHastaDate, pageRequest);
         PageRender<Pedido> pageRender = new PageRender<>("listarPedidos", pedido);
 
         // Agregar la lista de imágenes de los pedidos
@@ -736,7 +736,7 @@ public class PedidoController {
         model.addAttribute("clientes", clienteService.findAll());
 
         // Filtros seleccionados (si no se pasa nada, se deja vacío o con valor predeterminado)
-        model.addAttribute("clienteSeleccionado", cliente);
+        model.addAttribute("clienteSeleccionado", id);
         model.addAttribute("estadoSeleccionado", estado);
         model.addAttribute("grupoSeleccionado", grupo);
         model.addAttribute("tipoPedidoSeleccionado", tipoPedido);
@@ -761,7 +761,7 @@ public class PedidoController {
     @PostMapping("/buscarFoto")
     public String buscarFoto(
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(required = false) String cliente,
+            @RequestParam(required = false) Integer id,
             @RequestParam(required = false) String servicios,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String grupo,
@@ -773,13 +773,14 @@ public class PedidoController {
             Pageable pageable,
             Model model) throws JsonProcessingException {
 
+        log.info("Buscar foto cliente id{}", id);
         // Conversión de fechas
         Date fechaDesdeDate = (fechaDesde != null) ? Date.from(fechaDesde.atStartOfDay(ZoneId.systemDefault()).toInstant()) : null;
         Date fechaHastaDate = (fechaHasta != null) ? Date.from(fechaHasta.atStartOfDay(ZoneId.systemDefault()).toInstant()) : null;
 
         // Búsqueda paginada
         Pageable pageRequest = PageRequest.of(page, Integer.MAX_VALUE);
-        Page<Pedido> pedido = pedidoService.buscarPedidos(cliente, servicios, estado, grupo, pieza, tipo,ref, fechaDesdeDate, fechaHastaDate, pageRequest);
+        Page<Pedido> pedido = pedidoService.buscarPedidos(id, servicios, estado, grupo, pieza, tipo,ref, fechaDesdeDate, fechaHastaDate, pageRequest);
         PageRender<Pedido> pageRender = new PageRender<>("listarPedidos", pedido);
 
         // Mapear imágenes de pedidos
@@ -805,7 +806,7 @@ public class PedidoController {
         model.addAttribute("countProveedor", proveedorService.count());
 
         // Filtros activos
-        model.addAttribute("clienteSeleccionado", cliente);
+        model.addAttribute("clienteSeleccionado", id);
         model.addAttribute("servicioSeleccionado", servicios);
         model.addAttribute("estadoSeleccionado", estado);
         model.addAttribute("metalSeleccionado", grupo);
@@ -1000,5 +1001,7 @@ log.info("llegan del front"+pedidoId+fileId);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
 
 }

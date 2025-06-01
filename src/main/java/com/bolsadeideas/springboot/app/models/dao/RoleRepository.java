@@ -9,9 +9,11 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface RoleRepository extends JpaRepository<Role, Long> {
+
     Role findByNombre(String nombre);
 
     @Query("SELECT u FROM User u JOIN FETCH u.roles WHERE u.username = :username")
     Optional<User> findByUsernameWithRoles(@Param("username") String username);
 
+    boolean existsByNombre(String nombre);
 }

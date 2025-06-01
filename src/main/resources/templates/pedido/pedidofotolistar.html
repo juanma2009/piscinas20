@@ -282,14 +282,15 @@
 
                         <div class="col-md-3">
                             <label for="cliente" class="form-label">Cliente</label>
-                            <select id="cliente" name="cliente" class="form-control">
+                            <select id="cliente" name="id" class="form-control"> <!-- name=id -->
                                 <option value="">Seleccione</option>
                                 <option th:each="cliente : ${clientes}"
-                                        th:value="${cliente.nombre}"
-                                        th:text="${cliente.nombre}"
-                                        th:selected="${cliente.nombre == clienteSeleccionado}">
+                                        th:value="${cliente.id}"
+                                        th:text="${#strings.concat(cliente.nombre, ' ', cliente.apellido)}"
+                                        th:selected="${cliente.id == clienteSeleccionado}">
                                 </option>
                             </select>
+
                         </div>
 
                         <div class="col-md-3">
