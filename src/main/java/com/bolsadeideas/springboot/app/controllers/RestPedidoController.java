@@ -2,15 +2,10 @@ package com.bolsadeideas.springboot.app.controllers;
 
 
 import com.bolsadeideas.springboot.app.apigoogledrice.GoogleDriveService;
-import com.bolsadeideas.springboot.app.models.dto.PedidoDtos;
 import com.bolsadeideas.springboot.app.models.dto.mapper.PedidoMapper;
-import com.bolsadeideas.springboot.app.models.entity.ArchivoAdjunto;
-import com.bolsadeideas.springboot.app.models.entity.Cliente;
 import com.bolsadeideas.springboot.app.models.entity.Pedido;
 import com.bolsadeideas.springboot.app.models.service.*;
-import com.bolsadeideas.springboot.app.util.paginator.PageRender;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -18,7 +13,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Generated;
@@ -34,6 +28,7 @@ import java.util.stream.Collectors;
 )
 @RestController
 @RequestMapping("/api/pedido/")
+@Log4j2
 public class RestPedidoController {
 
     Log logger = org.apache.commons.logging.LogFactory.getLog(getClass());
@@ -136,7 +131,7 @@ public class RestPedidoController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> buscar(
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "cliente", defaultValue = "") String cliente,
+            @RequestParam(name = "cliente", defaultValue = "") Integer id,
             @RequestParam(name = "estado", defaultValue = "") String estado,
             @RequestParam(name = "tipoPedido", defaultValue = "") String tipoPedido,
             @RequestParam(name = "metal", defaultValue = "") String grupo,
@@ -151,7 +146,7 @@ public class RestPedidoController {
         Date fechaHastaDate = (fechaHasta != null) ? Date.from(fechaHasta.atStartOfDay(ZoneId.systemDefault()).toInstant()) : null;
 
         Pageable pageRequest = PageRequest.of(page, 6);
-        Page<Pedido> pedidos = pedidoService.buscarPedidos(cliente, tipoPedido, estado, grupo, pieza,tipo,ref, fechaDesdeDate, fechaHastaDate, pageRequest);
+        Page<Pedido> pedidos = pedidoService.buscarPedidos(id, tipoPedido, estado, grupo, pieza,tipo,ref, fechaDesdeDate, fechaHastaDate, pageRequest);
 
         List<Map<String, Object>> pedidosData = pedidos.getContent().stream().map(p -> {
             Map<String, Object> pedidoData = new HashMap<>();
@@ -191,6 +186,64 @@ public class RestPedidoController {
         tiposPorPieza.put("Otros", List.of("Otros"));
         return tiposPorPieza;
     }
+//    // OBTENEMOS LAS ESTADISTICAS DE LOS PEDIDOS
+//    @GetMapping("/estadisticas/pedidos-por-mes")
+//    @ResponseBody
+//    public Map<String, Integer> getPedidosPorMes(@RequestParam Long clienteId) {
+//        log.info("Cliente ID: {}", clienteId);
+//        // Llama al servicio para obtener la cantidad de pedidos por mes
+//        log.info("Cantidad de pedidos por mes: {}", pedidoService.contarPedidosPorMes(clienteId));
+//        return pedidoService.contarPedidosPorMes(clienteId);
+//
+//    }
 
+//    // OBTENEMOS LAS ESTADISTICAS DE LOS PEDIDOS
+//    @GetMapping("/estadisticas/pedidos-por-mes")
+//    @ResponseBody
+//    public Map<String, Integer> getFacturacionPorMes(@RequestParam Long clienteId) {
+//        log.info("Cliente ID: {}", clienteId);
+//        // Llama al servicio para obtener la cantidad de pedidos por mes
+//        log.info("Cantidad de pedidos por mes: {}", pedidoService.contarPedidosPorMes(clienteId));
+//        return pedidoService.contarPedidosPorMes(clienteId);
+//
+//    }
+
+     //OBTENEMOS LAS ESTADISTICAS DfacturacionE LOS FACTURACION-ANUAL
+    @GetMapping("/estadisticas/facturacionanual")
+    @ResponseBody
+    public Map<String, Double> getFacturacionAnual(@RequestParam Long clienteId) {
+        // Llama al servicio para obtener el total facturado por año
+        log.info("Cantidad de pedidos por mes: {}", pedidoService.totalFacturadoPorMes(clienteId));
+        return pedidoService.totalFacturadoPorMes(clienteId); // Devuelve {"2021": 12000.0, "2022": 18000.0, ...}
+    }
+
+    @GetMapping("/estadisticas/anios")
+    public ResponseEntity<List<Integer>> getAniosFacturacion(@RequestParam Long clienteId) {
+        return ResponseEntity.ok(pedidoService.obtenerAniosConFacturacion(clienteId));
+    }
+
+    @GetMapping("/estadisticas/facturacion-mensual")
+    public ResponseEntity<Map<String, Double>> getFacturacionMensual(
+            @RequestParam Long clienteId,
+            @RequestParam int anio) {
+        return ResponseEntity.ok(pedidoService.totalFacturadoPorMesAnio(clienteId, anio));
+    }
+
+
+    @GetMapping("/estadisticas/pedidos-por-mes")
+    public ResponseEntity<Map<String, Integer>> getPedidosPorMeses(
+            @RequestParam Long clienteId,
+            @RequestParam int anio) {
+        log.info("Cliente ID: {}", clienteId);
+        // Llama al servicio para obtener la cantidad de pedidos por mes y año
+        log.info("Cantidad de pedidos por mes y año: {}", pedidoService.contarPedidosPorMesYAnio(clienteId, anio));
+        return ResponseEntity.ok(pedidoService.contarPedidosPorMesYAnio(clienteId, anio));
+    }
+    @GetMapping("/estadisticas/anios-disponibles")
+    public ResponseEntity<List<Integer>> getAniosDisponibles(@RequestParam Long clienteId) {
+        List<Integer> anios = pedidoService.obtenerAniosConPedidos(clienteId);
+        log.info("Años disponibles para el cliente {}: {}", clienteId, anios);
+        return ResponseEntity.ok(anios);
+    }
 
 }

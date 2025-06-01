@@ -5,6 +5,8 @@
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <link rel="stylesheet" href="../css/table.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <link rel="stylesheet" href="../css/table.css">
@@ -170,6 +172,22 @@
                 width: 100% !important;
                 table-layout: auto;
             }
+            /* Cabecera de la tabla fija al hacer scroll ayuda ha que no este fija*/
+            .dataTables_wrapper .dataTables_scroll {
+                overflow: auto;
+            }
+
+            .dataTables_scrollHeadInner,
+            .dataTables_scrollBody table {
+                width: 100% !important;
+                table-layout: auto;
+            }
+
+
+        .grafico-mismo-alto {
+            height: 300px;
+        }
+
 
         }
 
@@ -225,6 +243,13 @@
                 <li class="nav-item">
                     <a class="nav-link" id="albaranes-tab" data-toggle="tab" href="#albaranes" role="tab" aria-controls="albaranes" aria-selected="false">Facturas</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="analisis-tab" data-toggle="tab" href="#analisis" role="tab" aria-controls="analisis" aria-selected="false">
+                        Análisis
+                    </a>
+                </li>
+
+
             </ul>
 
             <!-- Contenido de las pestañas -->
@@ -276,6 +301,80 @@
                     </div>
                 </div>
 
+                <!-- Tab: Análisis -->
+                <div class="tab-pane fade" id="analisis" role="tabpanel" aria-labelledby="analisis-tab">
+                    <div class="row mt-3">
+
+                        <!-- Pedidos por Mes -->
+                        <div class="col-md-6 h-100">
+                            <div class="card card-primary card-outline h-100">
+                                <div class="card-header">
+                                    <i class="fas fa-box-open me-2"></i> Pedidos por Año
+                                </div>
+                                <div class="card-body">
+                                    <!-- Fila con año a la izquierda y total a la derecha -->
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <!-- Select de año -->
+                                        <div class="d-flex align-items-center">
+                                            <label for="anioPedidosSelect" class="me-2 mb-0">Año:</label>
+                                            <select id="anioPedidosSelect" class="form-control form-control-sm">
+                                                <!-- Se llenará dinámicamente -->
+                                            </select>
+                                        </div>
+
+                                        <!-- Campo de total pedidos -->
+                                        <div class="d-flex align-items-center">
+                                            <label for="totalPedidosMensual" class="me-2 fw-bold mb-0">Total Pedidos:</label>
+                                            <input type="text" id="totalPedidosMensual" class="form-control form-control-sm text-end" readonly style="width: 100px;">
+                                        </div>
+                                    </div>
+
+                                    <!-- Gráfico -->
+                                    <div class="position-relative mb-3 grafico-mismo-alto">
+                                        <canvas id="chartPedidosMensual"></canvas>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- Facturación Anual -->
+                        <div class="col-md-6 h-100">
+                            <div class="card card-primary card-outline h-100">
+                                <div class="card-header">
+                                    <i class="fas fa-euro-sign me-2"></i> Facturación Anual
+                                </div>
+                                <div class="card-body">
+                                    <!-- Fila con año a la izquierda y total a la derecha -->
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <!-- Select de año -->
+                                        <div class="d-flex align-items-center">
+                                        <label for="anioSelect" class="me-2 mb-0">Año:</label>
+                                            <select id="anioSelect" class="form-control form-control-sm">
+                                                <!-- Se llenará dinámicamente -->
+                                            </select>
+                                        </div>
+                                        <!-- Campo de total factura -->
+                                        <div class="d-flex align-items-center">
+                                            <label for="totalFacturacionMensual" class="col-auto col-form-label fw-bold ms-4">Total Facturado:</label>
+                                            <input type="text" id="totalFacturacionMensual" class="form-control form-control-sm text-end" readonly style="width: 100px;">
+                                        </div>
+                                    </div>
+
+                                    <div class="position-relative mb-3 grafico-mismo-alto">
+                                        <canvas id="chartFacturacionMensual"></canvas>
+                                    </div>
+
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
             </div>
         </div>
 
@@ -284,9 +383,299 @@
     </section>
 </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </body>
 </html>
 <script>
+    const clienteId = $('#clienteId').val();
+
+
+    // Variable global para el chart (asumo que la tienes declarada fuera)
+    let myChart = null;
+
+    // Arreglo con nombres de meses (o los meses que usas)
+    const todosLosMeses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    // Variable clienteId, debe estar definida en tu contexto, por ejemplo:
+    // const clienteId = 123;
+
+    function cargarAnios() {
+        // Llamada GET para obtener los años disponibles para un cliente (como haces con facturas)
+        fetch(`/api/pedido/estadisticas/anios-disponibles?clienteId=${clienteId}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Error en la respuesta del servidor');
+                return response.json();
+            })
+            .then(anios => {
+                const select = document.getElementById('anioPedidosSelect');
+                select.innerHTML = '';
+
+                if (anios.length === 0) {
+                    const option = document.createElement('option');
+                    option.text = 'Sin datos';
+                    select.appendChild(option);
+                    return;
+                }
+
+                anios.forEach(anio => {
+                    const option = document.createElement('option');
+                    option.value = anio;
+                    option.text = anio;
+                    select.appendChild(option);
+                });
+
+                // Seleccionamos el primer año y cargamos sus datos
+                select.value = anios[0];
+                cargarDatosEstadistica(anios[0]);
+            })
+            .catch(error => {
+                console.error('Error al cargar años:', error);
+            });
+    }
+
+    function cargarDatosEstadistica(anio) {
+        // Llamada GET para obtener datos de pedidos por mes para un año y cliente dados
+        fetch(`/api/pedido/estadisticas/pedidos-por-mes?clienteId=${clienteId}&anio=${anio}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Error en la respuesta del servidor');
+                return response.json();
+            })
+            .then(data => {
+                // Obtenemos los valores para cada mes, si no hay datos, ponemos 0
+                const valores = todosLosMeses.map(mes => data[mes] || 0);
+                const total = valores.reduce((a, b) => a + b, 0);
+
+                // Actualizamos campo total (input o span, según como tengas en tu HTML)
+                document.getElementById('totalPedidosMensual').value = total;
+
+                const ctx = document.getElementById('chartPedidosMensual').getContext('2d');
+
+                // Si ya hay gráfico, lo destruimos para volver a pintar
+                if (myChart) {
+                    myChart.destroy();
+                }
+
+                // Creamos el gráfico con Chart.js
+                myChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: todosLosMeses,
+                        datasets: [{
+                            label: `Pedidos en ${anio}`,
+                            data: valores,
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error al cargar datos del gráfico:', error);
+            });
+    }
+
+    // Evento cambio año: carga datos del año seleccionado
+    document.getElementById('anioPedidosSelect').addEventListener('change', function () {
+        const anioSeleccionado = this.value;
+        cargarDatosEstadistica(anioSeleccionado);
+    });
+
+    // Inicializamos la carga de años al cargar la página
+    cargarAnios();
+
+
+
+    //factuarción mensual
+    let chartFacturacionMensual; // referencia al gráfico para actualizarlo luego
+
+    // 1. Obtener lista de años con facturación (una sola vez al cargar)
+    $.get(`/api/pedido/estadisticas/anios`, { clienteId }, function (anios) {
+        const select = $('#anioSelect');
+
+        anios.forEach(anio => {
+            select.append(`<option value="${anio}">${anio}</option>`);
+        });
+
+        // Cargar por defecto el último año
+        const anioDefault = anios[anios.length - 1];
+        select.val(anioDefault);
+        cargarFacturacionMensual(anioDefault);
+    });
+
+    // 2. Al cambiar el año, volver a cargar la facturación
+    $('#anioSelect').on('change', function () {
+        const anioSeleccionado = $(this).val();
+        cargarFacturacionMensual(anioSeleccionado);
+    });
+
+    // 3. Función para cargar facturación mensual y dibujar/actualizar el gráfico
+    function cargarFacturacionMensual(anio) {
+        $.get(`/api/pedido/estadisticas/facturacion-mensual`, { clienteId, anio }, function (data) {
+            const labels = Object.keys(data);   // Meses abreviados: Ene, Feb, ...
+            const valores = Object.values(data); // Valores de facturación
+
+            // Calcular total facturado
+            const total = valores.reduce((acc, val) => acc + val, 0);
+            $('#totalFacturacionMensual').val(total.toFixed(2) + ' €');
+
+            // Si el gráfico ya existe, actualizarlo
+            if (chartFacturacionMensual) {
+                chartFacturacionMensual.data.labels = labels;
+                chartFacturacionMensual.data.datasets[0].data = valores;
+                //chartFacturacionMensual.options.plugins.title.text = `Facturación mensual (${anio})`;
+                chartFacturacionMensual.update();
+            } else {
+                // Crear gráfico por primera vez
+                chartFacturacionMensual = new Chart(document.getElementById('chartFacturacionMensual'), {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: `Facturación Mensual en (€) del ${anio}`,
+                            data: valores,
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: false,
+                                // text: `Facturación mensual (${anio})`
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+
+    <!-- inicio de graficos analis-->
+    function cargarEstadisticas() {
+        // Pedidos por Mes
+        $.get('/api/pedido/estadisticas/pedidos-por-mes', { clienteId }, function (data) {
+            const labels = Object.keys(data);
+            const valores = Object.values(data);
+            new Chart(document.getElementById('chartPedidosMes'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pedidos',
+                        data: valores,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)'
+                    }]
+                }
+            });
+        });
+
+        // Facturación por Año
+        $.get(`/api/pedido/estadisticas/facturacionanual`, { clienteId }, function (data) {
+            const labels = Object.keys(data);
+            const valores = Object.values(data);
+
+            // Total de todos los años
+            const total = valores.reduce((acc, val) => acc + val, 0);
+
+            // Mostrar el total en la casilla
+            $('#totalFacturacion').val(total.toFixed(2) + ' €');
+
+            new Chart(document.getElementById('chartFacturacionAnual'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Facturación (€)',
+                        data: valores,
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                    }]
+                }
+            });
+        });
+    }
+
+    function cargarPedidosMensuales(clienteId) {
+        const select = document.getElementById('anioPedidosSelect');
+        const anio = select.value;
+
+        $.get(`/api/pedido/estadisticas/pedidos-por-mes`, { clienteId, anio }, function (data) {
+            const labels = Object.keys(data);
+            const valores = Object.values(data);
+
+            const total = valores.reduce((acc, val) => acc + val, 0);
+            $('#totalPedidosMensual').val(total);
+
+            if (window.pedidosChart) {
+                window.pedidosChart.destroy();
+            }
+
+            const ctx = document.getElementById('chartPedidosMensual').getContext('2d');
+            window.pedidosChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pedidos',
+                        data: valores,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return `Pedidos: ${context.parsed.y}`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: `Pedidos por mes (${anio})`
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    }
+    function llenarAniosPedidos(clienteId) {
+        $.get(`/api/pedido/estadisticas/anios-disponibles`, { clienteId }, function (anios) {
+            const select = $('#anioPedidosSelect');
+            select.empty();
+            anios.forEach(anio => {
+                select.append(`<option value="${anio}">${anio}</option>`);
+            });
+            cargarPedidosMensuales(clienteId);
+        });
+    }
+
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        if ($(e.target).attr("href") === '#analisis') {
+            cargarEstadisticas();
+        }
+    });
 
 
         let tablaFacturasCargada = true;
@@ -454,22 +843,48 @@
                 ],
                 "language": {
                     "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
-                },
-                "paging": true,
-                "searching": true,
-                "ordering": true,
-                "lengthMenu": [5, 10, 15, 25],
-                "pageLength": 5,
-                "displayLength": 5,// Valor por defecto en el selector "Mostrar"
-
-                "scrollY": "280px",    // Establece la altura de la tabla con scroll vertical
-                "scrollCollapse": true, // Asegura que el espacio de scroll se adapte si hay pocas filas
-                  //
-
+                }, //la cabezer se mueve tambien con el scroll
+                paging: true,
+                searching: true,
+                ordering: true,
+                lengthMenu: [5, 10, 15, 25],
+                pageLength: 5,
+                scrollY: "300px",          // Scroll vertical
+                scrollX: true,             // 🔹 Scroll horizontal sincroniza <thead> y <tbody>
+                scrollCollapse: true,
+                fixedHeader: false,        // Asegúrate de que no esté activo si no quieres cabecera fija al hacer scroll vertical
+                responsive: false
             });
         });
         $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
             table.columns.adjust().draw();
+        });
+
+        // Chart Pedidos por Mes (últimos 12 meses)
+        const pedidosMesChart = new Chart(document.getElementById(' '), {
+            type: 'bar',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                datasets: [{
+                    label: 'Pedidos',
+                    data: data, // Reemplaza por datos reales
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)'
+                }]
+            }
+        });
+
+        // Chart Facturación Anual
+        const facturacionAnualChart = new Chart(document.getElementById('chartFacturacionAnual'), {
+            type: 'line',
+            data: {
+                labels: ['2021', '2022', '2023', '2024'],
+                datasets: [{
+                    label: 'Total Facturado (€)',
+                    data: data ,// Reemplaza por datos reales
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    fill: false
+                }]
+            }
         });
 
 

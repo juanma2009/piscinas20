@@ -23,6 +23,7 @@ public class SecurityConfig {
                 .antMatchers("/css/**", "/dist/**", "/plugins/**", "/js/**", "/images/**").permitAll()
                 .antMatchers("/login", "/logout").permitAll()
                 .antMatchers("/verify_2fa").permitAll()
+                .antMatchers("/roles/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
                 .and()
                 .formLogin()

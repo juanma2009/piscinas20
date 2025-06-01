@@ -218,8 +218,9 @@
                                 <select id="cliente" name="cliente" class="form-control">
                                     <option value="">Seleccione</option>
                                     <option th:each="cliente : ${clientes}"
-                                            th:value="${cliente.nombre}"
-                                            th:text="${cliente.nombre}"
+                                            th:value="${cliente.id}"
+                                            th:text="${#strings.concat(cliente.nombre, ' ', cliente.apellido)}"
+                                            th:selected="${cliente.id == clienteSeleccionado}">
                                            >
                                     </option>
                                 </select>
@@ -492,6 +493,13 @@
                                 console.warn("No se encontraron pedidos.");
                                 table.clear().draw();
                             }
+
+                            // Cerrar el formulario de filtros tras búsqueda
+                            const formBusqueda = document.getElementById("formBusqueda");
+                            const btnToggle = document.getElementById("toggleBusqueda");
+
+                            formBusqueda.style.maxHeight = "0";
+                            btnToggle.textContent = "Mostrar Filtros";
                         },
                         error: function(xhr, status, error) {
                             console.error("Error en la búsqueda:", error);

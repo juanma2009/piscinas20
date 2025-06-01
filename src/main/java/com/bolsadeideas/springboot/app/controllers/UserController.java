@@ -47,6 +47,7 @@ public class UserController {
         User user = new User();
         Set<Role> rolesSet = new HashSet<>(roleRepository.findAll()); // Convertir a Set
         log.info("Roles: " + rolesSet);
+        model.addAttribute("titulo", "Crear Usuarios");
         model.addAttribute("user", user);
         model.addAttribute("rolesList", rolesSet);
         return "user/create_user_with_role";
