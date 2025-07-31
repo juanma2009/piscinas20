@@ -470,8 +470,21 @@ public class PedidoController {
             return PEDIDOFORM;
         }
         Double pesoDouble = null;
-        if (peso != null && !peso.trim().isEmpty()) {
+        if (peso != null && !peso.trim().replace(",", ".").isEmpty()) {
             pesoDouble = Double.valueOf(peso);
+        } else {
+            pesoDouble = 0.0; // Asignar un valor por defecto si no se proporciona
+        }
+
+        if (cobrado != null && !cobrado.trim().isEmpty()) {
+            cobrado = cobrado.replace(",", "."); // Reemplazar coma por punto si es necesario
+        } else {
+            cobrado = "0.0"; // Asignar un valor por defecto si no se proporciona
+        }
+        if(horas != null && !horas.trim().isEmpty()) {
+            horas = horas.replace(",", ":"); // Reemplazar coma por punto si es necesario
+        } else {
+            horas = "0"; // Asignar un valor por defecto si no se proporciona
         }
 
         //todo mirar porque al guardar sin datos en los regsitros de actuaizar el pedio sale empty String "Problema era por el peso no esta validando"
