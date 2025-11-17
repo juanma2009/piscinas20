@@ -144,9 +144,14 @@ public class ClienteServiceImpl implements IClienteService {
         return albaranDAO.findById(id).orElse(null);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Pedido findPedidoById(Long id) {
-        return pedidoDao.findById(id).orElse(null);
+        Pedido pedido = pedidoDao.findById(id).orElse(null);
+        if (pedido != null && pedido.getCliente() != null) {
+            pedido.getCliente().getNombre(); // fuerza la carga dentro de la sesión activa
+        }
+        return pedido;
     }
 
     @Override

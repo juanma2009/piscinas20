@@ -18,27 +18,33 @@ public class ArchivoAdjunto implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long pedidoAdjunto;
+    private Long pedidoAdjunto;  // Este campo almacenará el ID del pedido asociado
 
-    private String nombre;
+    private String nombre;  // Nombre original del archivo (el nombre que sube el usuario)
 
-    @Temporal(TemporalType.DATE)  // @Temporal(TemporalType.DATE)
-    private Date fecha;
+    @Temporal(TemporalType.DATE)
+    private Date fecha;  // Fecha de subida del archivo (puedes usar la fecha actual si lo prefieres)
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "npedido")
-    private Pedido pedido;
-/*
-    @Column(name = "google_drive_file_id")
-    private String googleDriveFileId; // Campo para el ID en Google Drive
-*/
-    private String urlCloudinary;
+    private Pedido pedido;  // Relación con la entidad Pedido
 
-    private String setUrlDrive;
+    private String urlCloudinary;  // URL de Cloudinary donde se encuentra la imagen
+
+    private String setUrlDrive;  // Si decides usar Google Drive, puedes almacenar aquí la URL
 
     public void setUrlDrive(String urlDrive) {
         this.setUrlDrive = urlDrive;  // Asigna la URL de Google Drive al campo
     }
 
+    // Constructor sin argumentos
+    public ArchivoAdjunto() {}
 
+    // Constructor para los metadatos (opcional)
+    public ArchivoAdjunto(Long pedidoAdjunto, String nombre, String urlCloudinary) {
+        this.pedidoAdjunto = pedidoAdjunto;
+        this.nombre = nombre;
+        this.urlCloudinary = urlCloudinary;
+        this.fecha = new Date();  // Fecha actual
+    }
 }

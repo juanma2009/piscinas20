@@ -4,6 +4,8 @@ package com.bolsadeideas.springboot.app.models.service;
 import com.bolsadeideas.springboot.app.models.entity.Pedido;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -34,7 +36,10 @@ public interface PedidoService {
 
 	public List<Pedido> findAllPedidos();
 
-	public Page<Pedido> findPedidoByIdClienteAndFinalizados(Long idCliente, Pageable pageable);
+    @Transactional(readOnly = true)
+    Page<Pedido> findAllPedidos(Pageable pageable);
+
+    public Page<Pedido> findPedidoByIdClienteAndFinalizados(Long idCliente, Pageable pageable);
 
 	public Page<Pedido>  findAllByCliente(Long idcliente, Pageable pageable);
 
@@ -48,4 +53,9 @@ public interface PedidoService {
 
 	List<Integer> obtenerAniosConFacturacion(Long clienteId);
 	Map<String, Double> totalFacturadoPorMesAnio(Long clienteId, int anio);
+
+	//obtenEr pedido por id
+	@Query("SELECT p FROM Pedido p JOIN FETCH p.cliente WHERE p.npedido = :id")
+	public Pedido findPedidoById(Long id);
+
 }

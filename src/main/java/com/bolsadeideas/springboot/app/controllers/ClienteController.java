@@ -64,6 +64,17 @@ public class ClienteController {
                 .body(recurso);
     }
 
+
+    /**metodo que da el error al cargrar la pagina ver cliente con pedidos y facturas
+     *
+     * @param id
+     * @param model
+     * @param flash
+     * @param pagePedido
+     * @param pageFactura
+     * @return
+     */
+
     @GetMapping(value = "/ver/{id}")
     public String ver(@PathVariable(value = "id") Long id,
                       Map<String, Object> model,
@@ -77,10 +88,12 @@ public class ClienteController {
             return "redirect:/listar";
         }
 
+        //todo  paginacion pedidos por cliente arreglar con su llamado en el servicio
+
         // Paginación para el listado de pedidos
         Pageable pageRequestPedido = PageRequest.of(pagePedido,4);
-        Page<Pedido> pedido = pedidoService.findAllByCliente(id, pageRequestPedido);
-        PageRender<Pedido> pageRenderPedido = new PageRender<>("/ver/" + id, pedido);
+      Page<Pedido> pedido = pedidoService.getPedidosById(id, pageRequestPedido);
+      PageRender<Pedido> pageRenderPedido = new  PageRender<>("/ver/" + id, pedido);
 
         // Paginación para el listado de facturas
         Pageable pageRequestFactura = PageRequest.of(pageFactura, 4);

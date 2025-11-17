@@ -1,8 +1,6 @@
 package com.bolsadeideas.springboot.app.models.entity;
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
@@ -15,6 +13,8 @@ import java.util.List;
 @Getter
 @Setter
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "PEDIDO")
 public class Pedido implements Serializable {
     private static final long serialVersionUID = 1456456L;
@@ -24,7 +24,7 @@ public class Pedido implements Serializable {
     @SequenceGenerator(sequenceName = "pedido_seq", allocationSize = 1, name = "IDENTIFICADOR")
     private Long npedido;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     private Cliente cliente;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd")
@@ -73,10 +73,14 @@ public class Pedido implements Serializable {
     //estado de envio del sms (enviado, no enviado)
     private String estadoEnvioSms;
 
+    private String borrador;
+
+    private String observaciones;
+
     //añadir una variable que guarde los archivos adjuntos en un arraylist
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "pedido")
-    private List<ArchivoAdjunto> archivosAdjuntos;
+    private List<ArchivoAdjunto> archivosAdjuntos = new ArrayList<>();
 
     @PrePersist
     public void prePersit() {

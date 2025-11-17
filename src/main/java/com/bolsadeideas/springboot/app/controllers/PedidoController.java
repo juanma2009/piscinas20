@@ -4,9 +4,10 @@ import com.bolsadeideas.springboot.app.apigoogledrice.GoogleDriveService;
 import com.bolsadeideas.springboot.app.apisms.AppSms;
 import com.bolsadeideas.springboot.app.models.entity.*;
 import com.bolsadeideas.springboot.app.models.service.*;
+import com.bolsadeideas.springboot.app.models.service.redis.RedisQueueProducer;
+import com.bolsadeideas.springboot.app.models.service.redis.RedisTestService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import lombok.extern.log4j.Log4j2;
 import net.sf.jasperreports.engine.*;
 import org.apache.commons.io.IOUtils;
@@ -23,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,6 +73,12 @@ public class PedidoController {
     private ArchivoAdjuntoService archivoAdjuntoService;
 
     @Autowired
+    private RedisTestService redisTestService;
+
+    @Autowired
+    private RedisQueueProducer RedisQueueProducer;
+
+    @Autowired
     private CloudinaryService cloudinaryService;
 
     @ModelAttribute("fotosTemporales")
@@ -115,10 +123,7 @@ public class PedidoController {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.IMAGE_JPEG);  // Asegúrate de que el tipo sea el correcto
 
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .contentLength(data.length)
-                    .body(resource);
+            return ResponseEntity.ok().headers(headers).contentLength(data.length).body(resource);
         } catch (IOException e) {
             // En caso de error, retornar 404
             return ResponseEntity.notFound().build();
@@ -128,35 +133,63 @@ public class PedidoController {
     }
 
 
-    /*
-
-    @GetMapping("/ver/fotos/{fileId}")
-    public ResponseEntity<ByteArrayResource> verFoto(@PathVariable String fileId) {
-        try {
-            // Descargar el archivo desde Google Drive
-            InputStream in = googleDriveService.downloadFile(fileId);
-            byte[] data = IOUtils.toByteArray(in);
-            ByteArrayResource resource = new ByteArrayResource(data);
-
-            // Si conoces el mime type (por ejemplo "image/jpeg") lo puedes especificar,
-            // o bien detectarlo dinámicamente si lo tienes almacenado.
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.IMAGE_JPEG);
-
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .contentLength(data.length)
-                    .body(resource);
-        } catch (IOException e) {
-            // En caso de error, puedes retornar un 404 o el código de error que consideres apropiado
-            return ResponseEntity.notFound().build();
-        }
-    }
-*/
-    @RequestMapping(value = {"/listarPedidos"}, method = RequestMethod.GET)
+    @RequestMapping(value = "/listarPedidos", method = RequestMethod.GET)
     public String listar(@RequestParam(name = "page", defaultValue = "0") int page, Model model) {
         Pageable pageRequest = PageRequest.of(page, 5);
+        Page<Pedido> pedido = pedidoService.findAllPedidos(pageRequest);  // Llamada al servicio
+
+        log.info("Listado de clientes pedidoService.findAllPedidos(pageRequest)" + pedido.getTotalElements());
+        // Reparar el paginador eliminando el "/" en la URL
+        PageRender<Pedido> pageRender = new PageRender<>("listarPedidos", pedido);
+
+        // Obtener todos los clientes para el filtro
+        log.info("Listado de clientes clienteService.findAll()" + clienteService.findAll().toString());
+        model.addAttribute("clientes", clienteService.findAll());
+
+        List<String> estados = Arrays.asList("Finalizado", "Pendiente");
+        model.addAttribute("estados", estados);
+
+        // 1. Listado de Servicio
+        List<String> servicios = Arrays.asList("Pedido", "Compostela");
+        model.addAttribute("servicios", servicios);
+
+        // 2. Listado de Metal
+        List<String> metales = Arrays.asList("Oro Amarillo", "Oro Blanco", "Oro Rosa", "Plata", "Platino", "Otro");
+        model.addAttribute("metales", metales);
+
+        // 3. Listado de Pieza (padre de Tipos)
+        List<String> piezas = Arrays.asList("Anillo", "Colgante", "Pulsera", "Pendientes", "Aro", "Broche", "Otros");
+        model.addAttribute("piezas", piezas);
+
+        // 4. Mapa de Tipos según Pieza
+        Map<String, List<String>> tiposPorPieza = new HashMap<>();
+        tiposPorPieza.put("Anillo", Arrays.asList("Anillo", "Alianzas", "1/2 Alianzas", "Solitarios", "Sello"));
+        tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra", "Sin Piedra"));
+        tiposPorPieza.put("Pulsera", List.of("Pulsera"));
+        tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente", "Criollas", "1/2 Criolla", "Aretes", "Largos"));
+        tiposPorPieza.put("Aro", Arrays.asList("Aro", "Aro Entorcillado", "Cierre caja", "Aros"));
+        tiposPorPieza.put("Broche", List.of("Broche"));
+        tiposPorPieza.put("Otros", List.of("Otros"));
+
+        // Pasar al modelo
+        model.addAttribute("tiposPorPieza", tiposPorPieza);
+
+        // Otros datos necesarios
+        model.addAttribute("pedido", pedido);
+        model.addAttribute("clientes", clienteService.findAll());
+        model.addAttribute("estados", Arrays.asList("Finalizado", "Pendiente"));
+        model.addAttribute(TITULO, "Listado de Pedidos");
+
+        return "pedido/pedidolistar";
+    }
+
+
+    /// muestar ls fotos de los pedidos
+    @RequestMapping(value = {"/listarFotosPedidos"}, method = RequestMethod.GET)
+    public String listarFotos(@RequestParam(name = "page", defaultValue = "0") int page, Model model) {
+        Pageable pageRequest = PageRequest.of(page, Integer.MAX_VALUE);
         Page<Pedido> pedido = pedidoService.findAll(pageRequest);
+
 
         // Reparar el paginador eliminando el "/" en la URL
         PageRender<Pedido> pageRender = new PageRender<>("listarPedidos", pedido);
@@ -164,8 +197,7 @@ public class PedidoController {
         // Obtener todos los clientes para el filtro
         model.addAttribute("clientes", clienteService.findAll());
 
-
-        List<String> estados = Arrays.asList("Finalizado","Pendiente");
+        List<String> estados = Arrays.asList("Finalizado", "Pendiente");
         model.addAttribute("estados", estados);
         //todo añadir al metodo editar los nuevos campos metal,pieza,tipo
 
@@ -173,139 +205,35 @@ public class PedidoController {
         List<String> servicios = Arrays.asList("Pedido", "Compostela");
         model.addAttribute("servicios", servicios);
 // 2. Listado de Metal
-        List<String> metales = Arrays.asList("Oro Amarillo","Oro Blanco","Oro Rosa","Plata","Platino","Otro");
+        List<String> metales = Arrays.asList("Oro Amarillo", "Oro Blanco", "Oro Rosa", "Plata", "Platino", "Otro");
         model.addAttribute("metales", metales);
 // 3. Listado de Pieza (padre de Tipos)
-        List<String> piezas = Arrays.asList("Anillo","Colgante","Pulsera","Pendientes","Aro","Broche","Otros" );
+        List<String> piezas = Arrays.asList("Anillo", "Colgante", "Pulsera", "Pendientes", "Aro", "Broche", "Otros");
         model.addAttribute("piezas", piezas);
 // 4. Mapa de Tipos según Pieza
         Map<String, List<String>> tiposPorPieza = new HashMap<>();
-        tiposPorPieza.put("Anillo", Arrays.asList("Anillo","Alianzas","1/2 Alianzas","Solitarios","Sello" ));
-        tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra","Sin Piedra" ));
+        tiposPorPieza.put("Anillo", Arrays.asList("Anillo", "Alianzas", "1/2 Alianzas", "Solitarios", "Sello"));
+        tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra", "Sin Piedra"));
 // Pulsera: tendrá solo “Pulsera” pero escondemos el select en el front
         tiposPorPieza.put("Pulsera", List.of("Pulsera"));
-        tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente","Criollas","1/2 Criolla","Aretes","Largos"));
-        tiposPorPieza.put("Aro", Arrays.asList("Aro","Aro Entorcillado","Cierre caja","Aros"));
+        tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente", "Criollas", "1/2 Criolla", "Aretes", "Largos"));
+        tiposPorPieza.put("Aro", Arrays.asList("Aro", "Aro Entorcillado", "Cierre caja", "Aros"));
 // Broche y Otros: solo una opción y ocultamos el listbox en el front
         tiposPorPieza.put("Broche", List.of("Broche"));
         tiposPorPieza.put("Otros", List.of("Otros"));
         model.addAttribute("tiposPorPieza", tiposPorPieza);
-        model.addAttribute("tiposPorPieza", tiposPorPieza);
 
-        /*
-        // Obtener imágenes de cada pedido utilizando el servicio de Cloudinary
-        Map<Long, String> imagenesPedidos = new HashMap<>();
-        for (Pedido p : pedido.getContent()) {
-            List<ArchivoAdjunto> archivos = archivoAdjuntoService.findArchivosAdjuntosByPedidoId(p.getNpedido());
-            if (!archivos.isEmpty()) {
-                // Aquí obtenemos el ID público de Cloudinary de cada archivo adjunto
-                String publicId = archivos.get(0).getUrlCloudinary(); // Obtener el publicId del archivo
-                try {
-                    // Usamos el servicio Cloudinary para obtener la URL de la imagen
-                    String imageUrl = cloudinaryService.getImageUrl(publicId);
-                    imagenesPedidos.put(p.getNpedido(), imageUrl); // Asignamos la URL de la imagen al pedido
-                } catch (Exception e) {
-                    // En caso de error, se asigna una imagen por defecto
-                    imagenesPedidos.put(p.getNpedido(), "/img/default.jpg");
-                }
-            } else {
-                // Si no hay imágenes adjuntas, se asigna una imagen por defecto
-                imagenesPedidos.put(p.getNpedido(), "/img/default.jpg");
-            }
-        }
-
-        // Agregar la lista de imágenes al modelo
-        model.addAttribute("imagenesPedidos", imagenesPedidos);
-*/
         // Configuración del título y la página
         model.addAttribute(TITULO, "Listado de Pedidos");
         model.addAttribute("pedido", pedido);
         model.addAttribute("page", pageRender);
 
-        return "pedido/pedidolistar";
+        return "pedido/pedidofotolistar";
     }
-
- /// muestar ls fotos de los pedidos
- ///
- @RequestMapping(value = {"/listarFotosPedidos"}, method = RequestMethod.GET)
- public String listarFotos(@RequestParam(name = "page", defaultValue = "0") int page, Model model) {
-     Pageable pageRequest = PageRequest.of(page,Integer.MAX_VALUE );
-     Page<Pedido> pedido = pedidoService.findAll(pageRequest);
-
-
-     // Reparar el paginador eliminando el "/" en la URL
-     PageRender<Pedido> pageRender = new PageRender<>("listarPedidos", pedido);
-
-     // Obtener todos los clientes para el filtro
-     model.addAttribute("clientes", clienteService.findAll());
-
-     List<String> estados = Arrays.asList("Finalizado","Pendiente");
-     model.addAttribute("estados", estados);
-     //todo añadir al metodo editar los nuevos campos metal,pieza,tipo
-
-// 1. Listado de Servicio
-     List<String> servicios = Arrays.asList("Pedido", "Compostela");
-     model.addAttribute("servicios", servicios);
-// 2. Listado de Metal
-     List<String> metales = Arrays.asList("Oro Amarillo","Oro Blanco","Oro Rosa","Plata","Platino","Otro");
-     model.addAttribute("metales", metales);
-// 3. Listado de Pieza (padre de Tipos)
-     List<String> piezas = Arrays.asList("Anillo","Colgante","Pulsera","Pendientes","Aro","Broche","Otros" );
-     model.addAttribute("piezas", piezas);
-// 4. Mapa de Tipos según Pieza
-     Map<String, List<String>> tiposPorPieza = new HashMap<>();
-     tiposPorPieza.put("Anillo", Arrays.asList("Anillo","Alianzas","1/2 Alianzas","Solitarios","Sello" ));
-     tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra","Sin Piedra" ));
-// Pulsera: tendrá solo “Pulsera” pero escondemos el select en el front
-     tiposPorPieza.put("Pulsera", List.of("Pulsera"));
-     tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente","Criollas","1/2 Criolla","Aretes","Largos"));
-     tiposPorPieza.put("Aro", Arrays.asList("Aro","Aro Entorcillado","Cierre caja","Aros"));
-// Broche y Otros: solo una opción y ocultamos el listbox en el front
-     tiposPorPieza.put("Broche", List.of("Broche"));
-     tiposPorPieza.put("Otros", List.of("Otros"));
-     model.addAttribute("tiposPorPieza", tiposPorPieza);
-/*
-     if(!busquedaRealizada){
-     // Obtener imágenes de cada pedido utilizando el servicio de Cloudinary
-     Map<Long, String> imagenesPedidos = new HashMap<>();
-     for (Pedido p : pedido.getContent()) {
-         List<ArchivoAdjunto> archivos = archivoAdjuntoService.findArchivosAdjuntosByPedidoId(p.getNpedido());
-         if (!archivos.isEmpty()) {
-             // Aquí obtenemos el ID público de Cloudinary de cada archivo adjunto
-             String publicId = archivos.get(0).getUrlCloudinary(); // Obtener el publicId del archivo
-             try {
-                 // Usamos el servicio Cloudinary para obtener la URL de la imagen
-                 String imageUrl = cloudinaryService.getImageUrl(publicId);
-                 imagenesPedidos.put(p.getNpedido(), imageUrl); // Asignamos la URL de la imagen al pedido
-             } catch (Exception e) {
-                 // En caso de error, se asigna una imagen por defecto
-                 imagenesPedidos.put(p.getNpedido(), "/img/default.jpg");
-             }
-         } else {
-             // Si no hay imágenes adjuntas, se asigna una imagen por defecto
-             imagenesPedidos.put(p.getNpedido(), "/img/default.jpg");
-         }
-     }
-
-        // Agregar la lista de imágenes al modelo
-         model.addAttribute("imagenesPedidos", imagenesPedidos);
-     }
-*/
-     // Configuración del título y la página
-     model.addAttribute(TITULO, "Listado de Pedidos");
-     model.addAttribute("pedido", pedido);
-     model.addAttribute("page", pageRender);
-
-     return "pedido/pedidofotolistar";
- }
-
-
 
 
     @GetMapping("/ver/{id}")
-    public String ver(@PathVariable(value = "id") Long id,
-                      Model model,
-                      RedirectAttributes flash) {
+    public String ver(@PathVariable(value = "id") Long id, Model model, RedirectAttributes flash) {
         Pedido pedido = clienteService.findPedidoById(id);
         if (pedido == null) {
             flash.addFlashAttribute("error", "El pedido no existe en la base de datos!");
@@ -313,10 +241,6 @@ public class PedidoController {
         }
 
         model.addAttribute("pedido", pedido);
-        // Suponiendo que ya has obtenido las URLs de las imágenes en el método cargarImagenes
-        // O bien puedes obtenerlas en este mismo método a través del servicio
-      //  List<String> fotos = archivoAdjuntoService.obtenerUrlsFotos(pedido.getNpedido());
-      //  model.addAttribute("fotos", fotos);
         model.addAttribute("titulo", "Detalles del Pedido");
         return "pedido/pedidover";
     }
@@ -351,30 +275,6 @@ public class PedidoController {
         return urls;
     }
 
-    /*
-
-    @GetMapping("/cargarImagenes/{id}")
-    @ResponseBody
-    public List<String> cargarImagenes(@PathVariable(value = "id") Long id) {
-        List<String> urls = new ArrayList<>();
-
-        // Obtener los archivos adjuntos asociados al pedido
-        List<ArchivoAdjunto> archivosAdjuntos = archivoAdjuntoService.findArchivosAdjuntosByPedidoId(id);
-
-        for (ArchivoAdjunto archivo : archivosAdjuntos) {
-            if (archivo.getGoogleDriveFileId() != null) {
-                // Construir la URL pública para cada archivo
-                String url = "" + archivo.getGoogleDriveFileId();
-                urls.add(url);
-            } else {
-                log.warn("El archivo con nombre " + archivo.getNombre() + " no tiene un Google Drive File ID asociado.");
-            }
-        }
-
-        return urls;
-    }
-
-*/
 
     /**
      * Crear los Pedidos para los clientes
@@ -385,9 +285,7 @@ public class PedidoController {
      * @return
      */
     @GetMapping("/form/{clienteId}")
-    public String crear(@PathVariable(value = "clienteId") Long clienteId,
-                        Map<String, Object> model,
-                        RedirectAttributes flash) {
+    public String crear(@PathVariable(value = "clienteId") Long clienteId, Map<String, Object> model, RedirectAttributes flash) {
         Cliente cliente = clienteService.findOne(clienteId);
         if (cliente == null) {
             flash.addFlashAttribute(ERROR, "El cliente no existe en la base de datos");
@@ -396,13 +294,13 @@ public class PedidoController {
 
 
         log.info("entra en PedidoController");
-        Pedido numeroPedido =pedidoService.obtenerUltimoNumeroPedido();
+        Pedido numeroPedido = pedidoService.obtenerUltimoNumeroPedido();
         Pedido pedido = new Pedido();
         pedido.setCliente(cliente);
 
-        log.info(numeroPedido);
+
         //List<String> estados = Arrays.asList("PENDIENTE", "REALIZANDO", "TERMINADO" ); EN LA VERSION NORRMAL SE PONDRA ESTE
-        List<String> estados = Arrays.asList("Finalizado","Pendiente");
+        List<String> estados = Arrays.asList("Finalizado", "Pendiente");
         model.put("estados", estados);
         //todo añadir al metodo editar los nuevos campos metal,pieza,tipo
 
@@ -410,19 +308,19 @@ public class PedidoController {
         List<String> servicios = Arrays.asList("Pedido", "Compostela");
         model.put("servicios", servicios);
 // 2. Listado de Metal
-        List<String> metales = Arrays.asList("Oro Amarillo","Oro Blanco","Oro Rosa","Plata","Platino","Otro");
+        List<String> metales = Arrays.asList("Oro Amarillo", "Oro Blanco", "Oro Rosa", "Plata", "Platino", "Otro");
         model.put("metales", metales);
 // 3. Listado de Pieza (padre de Tipos)
-        List<String> piezas = Arrays.asList("Anillo","Colgante","Pulsera","Pendientes","Aro","Broche","Otros" );
+        List<String> piezas = Arrays.asList("Anillo", "Colgante", "Pulsera", "Pendientes", "Aro", "Broche", "Otros");
         model.put("piezas", piezas);
 // 4. Mapa de Tipos según Pieza
         Map<String, List<String>> tiposPorPieza = new HashMap<>();
-        tiposPorPieza.put("Anillo", Arrays.asList("Anillo","Alianzas","1/2 Alianzas","Solitarios","Sello" ));
-        tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra","Sin Piedra" ));
+        tiposPorPieza.put("Anillo", Arrays.asList("Anillo", "Alianzas", "1/2 Alianzas", "Solitarios", "Sello"));
+        tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra", "Sin Piedra"));
 // Pulsera: tendrá solo “Pulsera” pero escondemos el select en el front
         tiposPorPieza.put("Pulsera", List.of("Pulsera"));
-        tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente","Criollas","1/2 Criolla","Aretes","Largos"));
-        tiposPorPieza.put("Aro", Arrays.asList("Aro","Aro Entorcillado","Cierre caja","Aros"));
+        tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente", "Criollas", "1/2 Criolla", "Aretes", "Largos"));
+        tiposPorPieza.put("Aro", Arrays.asList("Aro", "Aro Entorcillado", "Cierre caja", "Aros"));
 // Broche y Otros: solo una opción y ocultamos el listbox en el front
         tiposPorPieza.put("Broche", List.of("Broche"));
         tiposPorPieza.put("Otros", List.of("Otros"));
@@ -432,7 +330,7 @@ public class PedidoController {
         List<String> empleado = List.of("Anselmo");
         model.put("empleado", empleado);
 //Pedido
-        model.put("numeroPedido", numeroPedido.getNpedido()+1);
+        model.put("numeroPedido", numeroPedido.getNpedido() + 1);
         model.put("pedido", pedido);
 // Proveedor
         model.put("proveedores", proveedorService.findAll());
@@ -440,67 +338,8 @@ public class PedidoController {
         return "pedido/pedidoform";
     }
 
-//todo añadir los nuevos campos metal,pieza,tipo
 
-    @PostMapping("/form")
-    public String guardar(@ModelAttribute @Valid Pedido pedido,
-                          BindingResult result,
-                          Model model,
-                          @RequestParam("npedido") Long npedido,
-                          @RequestParam("observacion") String observacion,
-                          @RequestParam("estado") String estado,
-                          @RequestParam("tipoPedido") String tipoPedido,
-                          @RequestParam("grupo") String grupo,
-                          @RequestParam("pieza") String pieza,
-                          @RequestParam(name ="peso",required = false) String peso,
-                          @RequestParam(name ="horas",required = false) String horas,
-                          @RequestParam(name ="cobrado",required = false) String cobrado,
-                          @RequestParam(name = "fechaFinalizado", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaFinalizado,
-                          @RequestParam(name = "fechaEntrega", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaEntrega,
-                          @RequestParam(name = "empleado",required = false) String empleado,
-                          @RequestParam(name = "ref",required = false) String ref,
-                          RedirectAttributes flash,
-                          SessionStatus status,
-                          @RequestParam("fileNamesJSON") String fileNamesJSON) {
-
-        System.out.println("Fecha Finalizado received: " + fechaFinalizado);
-        System.out.println("Fecha Entregado received: " + fechaEntrega);
-        if (result.hasErrors()) {
-            model.addAttribute(TITULO, CREARPEDIDO);
-            return PEDIDOFORM;
-        }
-        Double pesoDouble = null;
-        if (peso != null && !peso.trim().replace(",", ".").isEmpty()) {
-            pesoDouble = Double.valueOf(peso);
-        } else {
-            pesoDouble = 0.0; // Asignar un valor por defecto si no se proporciona
-        }
-
-        if (cobrado != null && !cobrado.trim().isEmpty()) {
-            cobrado = cobrado.replace(",", "."); // Reemplazar coma por punto si es necesario
-        } else {
-            cobrado = "0.0"; // Asignar un valor por defecto si no se proporciona
-        }
-        if(horas != null && !horas.trim().isEmpty()) {
-            horas = horas.replace(",", ":"); // Reemplazar coma por punto si es necesario
-        } else {
-            horas = "0"; // Asignar un valor por defecto si no se proporciona
-        }
-
-        //todo mirar porque al guardar sin datos en los regsitros de actuaizar el pedio sale empty String "Problema era por el peso no esta validando"
-        Pedido pedidoExistente = pedidoService.findOne(npedido);
-        if (pedidoExistente != null) {
-            actualizarPedidoExistente(pedidoExistente, observacion, estado, tipoPedido,grupo,pieza, pesoDouble,horas, Double.valueOf(cobrado),fechaEntrega,fechaFinalizado,empleado,ref, flash);
-        } else {
-            guardarNuevoPedido(pedido, flash);
-        }
-
-        status.setComplete();
-        return "redirect:/pedidos/form/" + pedido.getCliente().getId();
-    }
-
-//todo añadir los nuevos campos metal,pieza,tipo
-        private void actualizarPedidoExistente(Pedido pedidoExistente, String observacion, String estado, String tipoPedido, String grupo, String pieza, Double peso, String horas, Double cobrado,Date fechaEntrega, Date fechaFinalizado,  String empleado, String ref, RedirectAttributes flash) {
+    private void actualizarPedidoExistente(Pedido pedidoExistente, String observacion, String estado, String tipoPedido, String grupo, String pieza, Double peso, String horas, Double cobrado, Date fechaEntrega, Date fechaFinalizado, String empleado, String ref, RedirectAttributes flash) {
         pedidoExistente.setObservacion(observacion);
         pedidoExistente.setEstado(estado);
         pedidoExistente.setTipoPedido(tipoPedido);
@@ -513,6 +352,8 @@ public class PedidoController {
         pedidoExistente.setFechaEntrega(fechaEntrega);
         pedidoExistente.setRef(ref);
         pedidoExistente.setEmpleado(empleado);
+        pedidoExistente.setTipo(grupo); // incidencia #2 no se mostraba el tipo y pieza y no se guardaba
+        pedidoExistente.setPieza(pieza); // incidencia #2 no se mostraba el tipo y pieza y no se guardaba
 
         try {
             //todo poner si tiene activado el envio de sms, que hay que implementar todavia en el registro del cliente
@@ -553,88 +394,152 @@ public class PedidoController {
         }
     }
 
-    @PostMapping("/guardarFotos")
-    @ResponseStatus(HttpStatus.OK)
-    public void guardarFotos(@Valid ArchivoAdjunto archivoAdjunto,
-                             @RequestParam("npedido") String npedido,
-                             @RequestParam("files") MultipartFile[] fotos,
-                             RedirectAttributes flash) {
-        System.out.println("npedido recibido: " + npedido);
-        String pedidoId = npedido.replaceAll("[^0-9]", "").trim();
 
+    @PostMapping("/form")
+    public ResponseEntity<?> guardar(@ModelAttribute @Valid Pedido pedido,
+                                     BindingResult result, Model model,
+                                     @RequestParam("observacion") String observacion,
+                                     @RequestParam("estado") String estado,
+                                     @RequestParam("tipoPedido") String tipoPedido,
+                                     @RequestParam("grupo") String grupo,
+                                     @RequestParam("pieza") String pieza,
+                                     @RequestParam(name = "peso", required = false) String peso,
+                                     @RequestParam(name = "horas", required = false) String horas,
+                                     @RequestParam(name = "cobrado", required = false) String cobrado,
+                                     @RequestParam(name = "fechaFinalizado", required = false)
+                                     @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaFinalizado,
+                                     @RequestParam(name = "fechaEntrega", required = false)
+                                     @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaEntrega,
+                                     @RequestParam(name = "empleado", required = false) String empleado,
+                                     @RequestParam(name = "ref", required = false) String ref,
+                                     RedirectAttributes flash, SessionStatus status,
+                                     @RequestParam(name = "fileNamesJSON", required = false) String fileNamesJSON,
+                                     @RequestParam(name = "files", required = false) MultipartFile[] files) {
+
+        // -------------------------------------------------------------------------
+        // 1. Sanitización de datos de entrada
+        // -------------------------------------------------------------------------
+        Long npedido = pedido.getNpedido();
+        Double pesoDouble = parsePeso(peso);
+        Double cobradoDouble = parseCobrado(cobrado);
+        String horasSaneadas = parseHoras(horas);
+        sanitizeClienteNombre(pedido);
+
+        // -------------------------------------------------------------------------
+        // 2. Lógica de actualización de pedido existente
+        // -------------------------------------------------------------------------
+        if (npedido != null && npedido > 0) {
+            Pedido pedidoExistente = pedidoService.findOne(npedido);
+            if (pedidoExistente != null) {
+                // Actualizamos los datos
+                actualizarPedidoExistente(pedidoExistente, observacion, estado, tipoPedido, grupo, pieza,
+                        pesoDouble, horasSaneadas, cobradoDouble, fechaEntrega,
+                        fechaFinalizado, empleado, ref, flash);
+
+                // Subida de archivos si existen
+                if (files != null && files.length > 0) {
+                    subirYGuardarArchivos(files, npedido, pedidoExistente.getCliente().getId(), flash);
+                }
+
+                // Finalizamos sesión y devolvemos respuesta AJAX con redirección
+                status.setComplete();
+                String redirectUrl = "/pedidos/form/" + pedidoExistente.getCliente().getId();
+                return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl, "info", "Pedido actualizado con éxito"));
+            } else {
+                log.warn("Pedido con npedido={} no encontrado. Se creará uno nuevo.", npedido);
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // 3. Lógica de creación de nuevo pedido
+        // -------------------------------------------------------------------------
+        guardarNuevoPedido(pedido, flash);
+
+        // Subida de archivos si existen
+        if (files != null && files.length > 0) {
+            subirYGuardarArchivos(files, pedido.getNpedido(), pedido.getCliente().getId(), flash);
+        }
+
+        // Finalizamos sesión y devolvemos respuesta AJAX con redirección
+        status.setComplete();
+        String redirectUrl = "/pedidos/form/" + pedido.getCliente().getId();
+        log.info("Nuevo pedido creado con npedido={}",pedido.getCliente().getId());
+        return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl, "info", " Pedido y archivos guardados con éxito"));
+    }
+
+
+// -------------------------------------------------------------------------
+// 4. Métodos auxiliares para sanitización de datos
+// -------------------------------------------------------------------------
+
+    // Método para convertir el valor de 'peso' de String a Double
+    private Double parsePeso(String peso) {
+        if (peso != null && !peso.trim().isEmpty()) {
+            return Double.valueOf(peso.trim().replace(",", "."));
+        }
+        return 0.0;  // Si no hay peso, devolvemos 0.0
+    }
+
+    // Método para convertir el valor de 'cobrado' de String a Double
+    private Double parseCobrado(String cobrado) {
+        if (cobrado != null && !cobrado.trim().isEmpty()) {
+            return Double.valueOf(cobrado.trim().replace(",", "."));
+        }
+        return 0.0;  // Si no hay cobrado, devolvemos 0.0
+    }
+
+    // Método para convertir el valor de 'horas' de String a formato adecuado
+    private String parseHoras(String horas) {
+        if (horas != null && !horas.trim().isEmpty()) {
+            return horas.trim().replace(",", ":");
+        }
+        return "0";  // Si no hay horas, devolvemos "0"
+    }
+
+    // Método para concatenar el nombre y apellido del cliente
+    private void sanitizeClienteNombre(Pedido pedido) {
+        if (pedido.getCliente().getNombre() != null && pedido.getCliente().getApellido() != null) {
+            String nombreCompleto = pedido.getCliente().getNombre() + " " + pedido.getCliente().getApellido();
+            pedido.getCliente().setNombre(nombreCompleto);
+        }
+    }
+
+
+// ---------------------------------------------------------------------------------
+// MÉTODO AUXILIAR para Subir Archivos (se centraliza la lógica de /guardarFotos)
+// ---------------------------------------------------------------------------------
+
+    private void subirYGuardarArchivos(MultipartFile[] fotos, Long npedido, Long clienteId, RedirectAttributes flash) {
         if (fotos != null && fotos.length > 0) {
+            List<ArchivoAdjunto> archivosBatch = new ArrayList<>();
+
             for (MultipartFile foto : fotos) {
                 if (!foto.isEmpty()) {
                     try {
-                        // Convertir el archivo MultipartFile a byte array
+                        // *** Lógica de subida a Cloudinary ***
                         byte[] imageBytes = foto.getBytes();
+                        String fileName = "pedido_" + npedido + "_" + System.currentTimeMillis();  // Nombre único para cada archivo
 
-                        // Subir archivo a Cloudinary
-                        String fileName = "foto_" + System.currentTimeMillis();
+                        // Subir la imagen a Cloudinary
                         String imageUrl = cloudinaryService.uploadImage(imageBytes, fileName);
+                        String publicId = imageUrl.split("/v\\d+/")[1].split("\\.")[0];  // Extraer el publicId de la URL
 
-                        String publicId = imageUrl.split("/v\\d+/")[1].split("\\.")[0];
+                        // Enviar los metadatos a Redis para ser procesados en segundo plano
+                        redisTestService.testConnection();
+                        String mensaje = npedido + ";" + foto.getOriginalFilename() + ";" + publicId;
 
-                        // Guardar la referencia del archivo en la base de datos
-                        ArchivoAdjunto nuevoArchivo = new ArchivoAdjunto();
-                        nuevoArchivo.setNombre(foto.getOriginalFilename());
-                        nuevoArchivo.setUrlCloudinary(publicId);
-                        nuevoArchivo.setPedidoAdjunto(Long.valueOf(pedidoId));
-                        archivoAdjuntoService.guardar(nuevoArchivo);
+                        RedisQueueProducer.sendMessage(mensaje);
 
+                        flash.addFlashAttribute("info", "Archivos subidos con éxito.");
                     } catch (IOException e) {
-                        flash.addFlashAttribute("error", "Error al subir el archivo: " + foto.getOriginalFilename());
+                        flash.addFlashAttribute("error", "Error al subir: " + foto.getOriginalFilename());
                         e.printStackTrace();
                     }
                 }
             }
-            flash.addFlashAttribute("info", "Archivos subidos con éxito a Cloudinary.");
-        } else {
-            flash.addFlashAttribute("error", "No se seleccionaron archivos para subir.");
         }
     }
 
-
-
-
-    /**
-     * Al guardar las fotos se deben guardar en archvivos adjuntos con el numero de pedido y nombre de la foto
-     * por otra parte se debe guardar en la carpeta de fotos del sistema operativo el archivo para poder ser cargado poesteriormete
-     * @param npedido
-     * @param foto
-     * @param flash
-     * @return
-     */
-    /*
-    @PostMapping("/guardarFotos")
-    @ResponseStatus(HttpStatus.OK) // Indica que la respuesta será 200 OK sin vista
-    public void guardarFotos(@Valid ArchivoAdjunto archivoAdjunto,
-                             @RequestParam("npedido") String npedido,
-                             @RequestParam("files") MultipartFile foto,
-                             RedirectAttributes flash) {
-        System.out.println("npedido recibido: " + npedido);
-        String pedidoId = npedido.replaceAll("[^0-9]", "").trim();
-        if (!foto.isEmpty()) {
-            try {
-                // Subir archivo a Google Drive
-                String fileId = googleDriveService.uploadFileToFolder(foto);
-
-                // Guardar la referencia del archivo en la base de datos
-                archivoAdjunto.setNombre(foto.getOriginalFilename());
-                archivoAdjunto.setGoogleDriveFileId(fileId);
-                archivoAdjunto.setPedidoAdjunto(Long.valueOf(pedidoId));
-                archivoAdjuntoService.guardar(archivoAdjunto);
-
-                flash.addFlashAttribute("info", "Archivo subido con éxito a Google Drive: " + foto.getOriginalFilename());
-            } catch (IOException e) {
-                flash.addFlashAttribute("error", "Error al subir el archivo a Google Drive: " + foto.getOriginalFilename());
-                e.printStackTrace();
-            }
-        } else {
-            flash.addFlashAttribute("error", "No se seleccionó ningún archivo para subir.");
-        }
-    }
-*/
 
 
     /**
@@ -650,9 +555,9 @@ public class PedidoController {
         Pedido pedido = clienteService.findPedidoById(id);
         if (pedido != null) {
             // Eliminar todos los archivos adjuntos asociados al pedido
-          //  for (ArchivoAdjunto archivoAdjunto : pedido.getArchivos()) {
-                // Aquí podrías llamar a algún servicio o método para eliminar el archivo adjunto de la base de datos
-                 //archivoAdjuntoService.eliminarArchivoAdjunto(archivoAdjunto);            }
+            //  for (ArchivoAdjunto archivoAdjunto : pedido.getArchivos()) {
+            // Aquí podrías llamar a algún servicio o método para eliminar el archivo adjunto de la base de datos
+            //archivoAdjuntoService.eliminarArchivoAdjunto(archivoAdjunto);            }
 
             // Eliminar el pedido
             clienteService.deletePedido(id);
@@ -675,20 +580,8 @@ public class PedidoController {
      * @return
      */
     //todo añadir los nuevos campos metal,pieza,tipo
-
     @PostMapping("/buscar")
-    public String buscar(
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "cliente", defaultValue = "") int id,
-            @RequestParam(name = "estado", defaultValue = "") String estado,
-            @RequestParam(name = "tipoPedido", defaultValue = "") String tipoPedido,
-            @RequestParam(name = "grupo", defaultValue = "") String grupo,
-            @RequestParam(name = "pieza", defaultValue = "") String pieza,
-            @RequestParam(name = "tipo", defaultValue = "") String tipo,
-            @RequestParam(name = "ref", defaultValue = "") String ref,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
-            Pageable pageable, Model model) {
+    public String buscar(@RequestParam(name = "page", defaultValue = "0") int page, @RequestParam(name = "cliente", defaultValue = "") int id, @RequestParam(name = "estado", defaultValue = "") String estado, @RequestParam(name = "tipoPedido", defaultValue = "") String tipoPedido, @RequestParam(name = "grupo", defaultValue = "") String grupo, @RequestParam(name = "pieza", defaultValue = "") String pieza, @RequestParam(name = "tipo", defaultValue = "") String tipo, @RequestParam(name = "ref", defaultValue = "") String ref, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta, Pageable pageable, Model model) {
 
 
         // Si no se proporciona fecha, usa null
@@ -697,7 +590,7 @@ public class PedidoController {
 
         // Paginación de las búsquedas totales
         Pageable pageRequest = PageRequest.of(page, 6);
-        Page<Pedido> pedido = pedidoService.buscarPedidos(id, tipoPedido,estado, grupo, pieza,tipo,ref, fechaDesdeDate, fechaHastaDate, pageRequest);
+        Page<Pedido> pedido = pedidoService.buscarPedidos(id, tipoPedido, estado, grupo, pieza, tipo, ref, fechaDesdeDate, fechaHastaDate, pageRequest);
         PageRender<Pedido> pageRender = new PageRender<>("listarPedidos", pedido);
 
         // Agregar la lista de imágenes de los pedidos
@@ -720,28 +613,28 @@ public class PedidoController {
         model.addAttribute("imagenesPedidos", imagenesPedidos);
 
         // Datos estáticos (estados, grupos, subgrupos, etc.)
-        List<String> estados = Arrays.asList("Finalizado","Pendiente");
+        List<String> estados = Arrays.asList("Finalizado", "Pendiente");
         model.addAttribute("estados", estados);
         //todo añadir al metodo editar los nuevos campos metal,pieza,tipo
 
-// 1. Listado de Servicio
+        // 1. Listado de Servicio
         List<String> servicios = Arrays.asList("Pedido", "Compostela");
         model.addAttribute("servicios", servicios);
-// 2. Listado de Metal
-        List<String> metales = Arrays.asList("Oro Amarillo","Oro Blanco","Oro Rosa","Plata","Platino","Otro");
+        // 2. Listado de Metal
+        List<String> metales = Arrays.asList("Oro Amarillo", "Oro Blanco", "Oro Rosa", "Plata", "Platino", "Otro");
         model.addAttribute("metales", metales);
-// 3. Listado de Pieza (padre de Tipos)
-        List<String> piezas = Arrays.asList("Anillo","Colgante","Pulsera","Pendientes","Aro","Broche","Otros" );
+        // 3. Listado de Pieza (padre de Tipos)
+        List<String> piezas = Arrays.asList("Anillo", "Colgante", "Pulsera", "Pendientes", "Aro", "Broche", "Otros");
         model.addAttribute("piezas", piezas);
-// 4. Mapa de Tipos según Pieza
+        // 4. Mapa de Tipos según Pieza
         Map<String, List<String>> tiposPorPieza = new HashMap<>();
-        tiposPorPieza.put("Anillo", Arrays.asList("Anillo","Alianzas","1/2 Alianzas","Solitarios","Sello" ));
-        tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra","Sin Piedra" ));
-// Pulsera: tendrá solo “Pulsera” pero escondemos el select en el front
+        tiposPorPieza.put("Anillo", Arrays.asList("Anillo", "Alianzas", "1/2 Alianzas", "Solitarios", "Sello"));
+        tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra", "Sin Piedra"));
+        // Pulsera: tendrá solo “Pulsera” pero escondemos el select en el front
         tiposPorPieza.put("Pulsera", List.of("Pulsera"));
-        tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente","Criollas","1/2 Criolla","Aretes","Largos"));
-        tiposPorPieza.put("Aro", Arrays.asList("Aro","Aro Entorcillado","Cierre caja","Aros"));
-// Broche y Otros: solo una opción y ocultamos el listbox en el front
+        tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente", "Criollas", "1/2 Criolla", "Aretes", "Largos"));
+        tiposPorPieza.put("Aro", Arrays.asList("Aro", "Aro Entorcillado", "Cierre caja", "Aros"));
+        // Broche y Otros: solo una opción y ocultamos el listbox en el front
         tiposPorPieza.put("Broche", List.of("Broche"));
         tiposPorPieza.put("Otros", List.of("Otros"));
         model.addAttribute("tiposPorPieza", tiposPorPieza);
@@ -769,22 +662,9 @@ public class PedidoController {
         return "pedido/pedidolistar";
     }
 
-//todo añadir los nuevos campos metal,pieza,tipo
 
     @PostMapping("/buscarFoto")
-    public String buscarFoto(
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(required = false) Integer id,
-            @RequestParam(required = false) String servicios,
-            @RequestParam(required = false) String estado,
-            @RequestParam(required = false) String grupo,
-            @RequestParam(required = false) String pieza,
-            @RequestParam(required = false) String tipo,
-            @RequestParam(required = false) String ref,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
-            Pageable pageable,
-            Model model) throws JsonProcessingException {
+    public String buscarFoto(@RequestParam(name = "page", defaultValue = "0") int page, @RequestParam(required = false) Integer id, @RequestParam(required = false) String servicios, @RequestParam(required = false) String estado, @RequestParam(required = false) String grupo, @RequestParam(required = false) String pieza, @RequestParam(required = false) String tipo, @RequestParam(required = false) String ref, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta, Pageable pageable, Model model) throws JsonProcessingException {
 
         log.info("Buscar foto cliente id{}", id);
         // Conversión de fechas
@@ -793,7 +673,7 @@ public class PedidoController {
 
         // Búsqueda paginada
         Pageable pageRequest = PageRequest.of(page, Integer.MAX_VALUE);
-        Page<Pedido> pedido = pedidoService.buscarPedidos(id, servicios, estado, grupo, pieza, tipo,ref, fechaDesdeDate, fechaHastaDate, pageRequest);
+        Page<Pedido> pedido = pedidoService.buscarPedidos(id, servicios, estado, grupo, pieza, tipo, ref, fechaDesdeDate, fechaHastaDate, pageRequest);
         PageRender<Pedido> pageRender = new PageRender<>("listarPedidos", pedido);
 
         // Mapear imágenes de pedidos
@@ -830,7 +710,7 @@ public class PedidoController {
         model.addAttribute("fechaHastaSeleccionada", fechaHasta != null ? fechaHasta : "");
 
         // Cargar datos para selectores
-        List<String> estados = Arrays.asList("Finalizado","Pendiente");
+        List<String> estados = Arrays.asList("Finalizado", "Pendiente");
         model.addAttribute("estados", estados);
         model.addAttribute("clientes", clienteService.findAll());
         model.addAttribute("servicios", Arrays.asList("Pedido", "Compostela"));
@@ -866,24 +746,22 @@ public class PedidoController {
     //muetra ls fotos de lso pedidos
 
     @GetMapping("/eliminarFoto/{fileId}")
-    public String eliminarFoto(@PathVariable("fileId") String fileId,
-                               @RequestParam("npedido") String pedidoId,
-                               RedirectAttributes flash) {
+    public String eliminarFoto(@PathVariable("fileId") String fileId, @RequestParam("npedido") String pedidoId, RedirectAttributes flash) {
         log.info("Llegan del front: pedidoId=" + pedidoId + ", fileId=" + fileId);
 
         // Buscar el archivo en la base de datos relacionado con este pedido
-        ArchivoAdjunto archivo = archivoAdjuntoService.findArchivosAdjuntosByPedidoIdOne(fileId, Long.valueOf(pedidoId));
+        Optional<ArchivoAdjunto> archivo = archivoAdjuntoService.findArchivosAdjuntosByPedidoIdOne(fileId, Long.valueOf(pedidoId));
 
         log.info("Archivo encontrado: " + archivo);
 
-        if (archivo != null) {
+        if (archivo.isPresent()) {
             try {
                 // Eliminar de Cloudinary
-                String deleteResult = cloudinaryService.deleteImage(archivo.getUrlCloudinary()); // Aquí debes cambiar el método a obtener el publicId de Cloudinary
+                String deleteResult = cloudinaryService.deleteImage(archivo.get().getUrlCloudinary()); // Aquí debes cambiar el método a obtener el publicId de Cloudinary
 
                 if ("ok".equals(deleteResult)) {
                     // Eliminar la referencia en la base de datos
-                    archivoAdjuntoService.eliminarArchivoAdjunto(archivo);
+                    archivoAdjuntoService.eliminarArchivoAdjunto(archivo.orElse(null));
                     flash.addFlashAttribute("info", "Foto eliminada con éxito de Cloudinary y del pedido!");
                 } else {
                     flash.addFlashAttribute("error", "No se encontró la imagen en Cloudinary.");
@@ -901,49 +779,14 @@ public class PedidoController {
     }
 
 
-    /*
-    @GetMapping("/eliminarFoto/{fileId}")
-    public String eliminarFoto(@PathVariable("fileId") String fileId,
-                               @RequestParam("npedido") String pedidoId,
-                               RedirectAttributes flash) {
-log.info("llegan del front"+pedidoId+fileId);
-        // Buscar el pedido en la base de datos
-
-
-        // Buscar el archivo en la base de datos relacionado con este pedido
-        ArchivoAdjunto archivo = archivoAdjuntoService.findArchivosAdjuntosByPedidoIdOne(fileId, pedidoId);
-
-        log.info(archivo);
-        if (archivo != null) {
-            try {
-                // Eliminar de Google Drive
-                googleDriveService.deleteFile(archivo.getGoogleDriveFileId());
-
-                // Eliminar la referencia en la base de datos
-                archivoAdjuntoService.eliminarArchivoAdjunto(archivo);
-
-                flash.addFlashAttribute("info", "Foto eliminada con éxito de Google Drive y del pedido!");
-            } catch (Exception e) {
-                flash.addFlashAttribute("error", "Error al eliminar la foto: " + e.getMessage());
-                e.printStackTrace();
-            }
-        } else {
-            flash.addFlashAttribute("error", "No se encontró la foto asociada.");
-        }
-
-        return "redirect:/pedidos/form/" + pedidoId;
-    }
-*/
-
-
-//todo añadir los nuevos campos metal,pieza,tipo
+    //todo añadir los nuevos campos metal,pieza,tipo
     @RequestMapping(value = "/formEditar/{id}")
     public String editar(@PathVariable(value = "id") Long id, Map<String, Object> model, RedirectAttributes flash) {
 
         Pedido pedido = null;
 
         if (id > 0) {
-            pedido = pedidoService.findOne(id);
+            pedido = pedidoService.findPedidoById(id);
             if (pedido == null) {
                 flash.addFlashAttribute("error", "El ID del Pedido no existe en la BBDD!");
                 return "redirect:pedido/listar";
@@ -953,33 +796,33 @@ log.info("llegan del front"+pedidoId+fileId);
             return "redirect:pedido/listar";
         }
 
-        List<String> estados = Arrays.asList("Finalizado","Pendiente");
+        List<String> estados = Arrays.asList("Finalizado", "Pendiente");
         model.put("estados", estados);
         //todo añadir al metodo editar los nuevos campos metal,pieza,tipo
 
-// 1. Listado de Servicio
+        // 1. Listado de Servicio
         List<String> servicios = Arrays.asList("Pedido", "Compostela");
         model.put("servicios", servicios);
-// 2. Listado de Metal
-        List<String> metales = Arrays.asList("Oro Amarillo","Oro Blanco","Oro Rosa","Plata","Platino","Otro");
+        // 2. Listado de Metal
+        List<String> metales = Arrays.asList("Oro Amarillo", "Oro Blanco", "Oro Rosa", "Plata", "Platino", "Otro");
         model.put("metales", metales);
-// 3. Listado de Pieza (padre de Tipos)
-        List<String> piezas = Arrays.asList("Anillo","Colgante","Pulsera","Pendientes","Aro","Broche","Otros" );
+        // 3. Listado de Pieza (padre de Tipos)
+        List<String> piezas = Arrays.asList("Anillo", "Colgante", "Pulsera", "Pendientes", "Aro", "Broche", "Otros");
         model.put("piezas", piezas);
-// 4. Mapa de Tipos según Pieza
+        // 4. Mapa de Tipos según Pieza
         Map<String, List<String>> tiposPorPieza = new HashMap<>();
-        tiposPorPieza.put("Anillo", Arrays.asList("Anillo","Alianzas","1/2 Alianzas","Solitarios","Sello" ));
-        tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra","Sin Piedra" ));
-// Pulsera: tendrá solo “Pulsera” pero escondemos el select en el front
+        tiposPorPieza.put("Anillo", Arrays.asList("Anillo", "Alianzas", "1/2 Alianzas", "Solitarios", "Sello"));
+        tiposPorPieza.put("Colgante", Arrays.asList("Con Piedra", "Sin Piedra"));
+        // Pulsera: tendrá solo “Pulsera” pero escondemos el select en el front
         tiposPorPieza.put("Pulsera", List.of("Pulsera"));
-        tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente","Criollas","1/2 Criolla","Aretes","Largos"));
-        tiposPorPieza.put("Aro", Arrays.asList("Aro","Aro Entorcillado","Cierre caja","Aros"));
-// Broche y Otros: solo una opción y ocultamos el listbox en el front
+        tiposPorPieza.put("Pendientes", Arrays.asList("Pendiente", "Criollas", "1/2 Criolla", "Aretes", "Largos"));
+        tiposPorPieza.put("Aro", Arrays.asList("Aro", "Aro Entorcillado", "Cierre caja", "Aros"));
+        // Broche y Otros: solo una opción y ocultamos el listbox en el front
         tiposPorPieza.put("Broche", List.of("Broche"));
         tiposPorPieza.put("Otros", List.of("Otros"));
         model.put("tiposPorPieza", tiposPorPieza);
 
-// Empleados
+        // Empleados
         List<String> empleado = List.of("Anselmo");
         model.put("empleado", empleado);
 
@@ -989,16 +832,14 @@ log.info("llegan del front"+pedidoId+fileId);
     }
 
     @PostMapping("/report")
-    public ResponseEntity<?> generateReport(HttpServletResponse response,
-                                            @RequestParam(name = "cliente") String cliente,
-                                            @RequestParam(name = "estado") String estado){
+    public ResponseEntity<?> generateReport(HttpServletResponse response, @RequestParam(name = "cliente") String cliente, @RequestParam(name = "estado") String estado) {
         log.info("cliente: " + cliente);
         log.info("estado: " + estado);
         try {
             // Generar el informe
-            JasperPrint jasperPrint = pedidoService.generateJasperPrint(cliente,estado);
+            JasperPrint jasperPrint = pedidoService.generateJasperPrint(cliente, estado);
 
-        // Convertir el informe a un arreglo de bytes en formato PDF
+            // Convertir el informe a un arreglo de bytes en formato PDF
             byte[] pdfBytes = JasperExportManager.exportReportToPdf(jasperPrint);
 
             // Configurar la respuesta HTTP para la descarga del PDF
@@ -1015,6 +856,24 @@ log.info("llegan del front"+pedidoId+fileId);
         }
     }
 
+    /**
+     * Redirige al formulario de edición de un pedido específico para un cliente dado.
+     *
+     * @param clienteId El ID del cliente asociado al pedido.
+     * @param pedidoId  El ID del pedido que se desea editar.
+     * @return Una redirección a la página de edición del pedido o a la lista si no se encuentra el cliente o el pedido.
+     */
+    @GetMapping("/pedidos/form/{clienteId}/{pedidoId}")
+    public String editarPedido(@PathVariable Long clienteId, @PathVariable Long pedidoId) {
+        Cliente cliente = clienteService.findOne(clienteId);
+        Pedido pedido = pedidoService.findOne(pedidoId);
+
+        if (cliente == null || pedido == null) {
+            return "redirect:/listar"; // o página de error
+        }
+
+        return "redirect:/pedidos/formEditar/{}" + pedidoId;
+    }
 
 
 }

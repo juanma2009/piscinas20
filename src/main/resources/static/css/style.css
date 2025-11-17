@@ -1,0 +1,119 @@
+/* =====================
+   🎨 Estilo Global - style.css
+   ===================== */
+
+/* ---------- Botones ---------- */
+.btn {
+    border-radius: 6px !important;
+    font-weight: 700; /* 🔹 Negrita global */
+    letter-spacing: 0.3px;
+    transition: all 0.2s ease-in-out;
+    text-transform: none;
+    padding: 0.45rem 0.9rem;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Colores base */
+.btn-primary {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border: none;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0069d9, #004a99);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    border: none;
+    color: #fff;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #34c759, #1e7e34);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8, #0d6efd);
+    border: none;
+    color: #fff;
+}
+
+.btn-info:hover {
+    background: linear-gradient(135deg, #138496, #0b5ed7);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    border: none;
+    color: #fff;
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, #5a6268, #343a40);
+}
+
+/* ---------- Formularios ---------- */
+.form-control {
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    box-shadow: none;
+    transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.4);
+}
+
+/* ---------- Tablas ---------- */
+.table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14px;
+}
+
+.table th {
+    background-color: #004085;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table td,
+.table th {
+    padding: 10px;
+    border: 1px solid #dee2e6;
+}
+
+/* ---------- Modales ---------- */
+.modal-content {
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #0062cc, #004085);
+    color: white;
+    border-bottom: 2px solid #004085;
+}
+
+.modal-body {
+    background-color: #f8f9fa;
+}
+
+/* ---------- Cabeceras ---------- */
+.card-header {
+    background: linear-gradient(135deg, #0062cc, #004085);
+    color: white;
+    padding: 15px;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 1.25rem;
+    border-radius: 8px 8px 0 0;
+}

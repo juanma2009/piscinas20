@@ -30,6 +30,9 @@ import java.util.stream.Collectors;
 public class PedidoServiceImpl implements PedidoService {
 
 	@Autowired
+	private IClienteService clienteService;
+
+	@Autowired
 	private EntityManager entityManager;
 
 	@Autowired
@@ -191,17 +194,69 @@ public class PedidoServiceImpl implements PedidoService {
 
 	@Override
 	public List<Pedido> findAllPedidos() {
-		return (List<Pedido>) pedidoDao.findAll();
+		return List.of();
 	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Page<Pedido> findAllPedidos(Pageable pageable) {
+		Page<Pedido> pedidos = pedidoDao.findAllWithCliente(pageable);
+
+		// Diagnóstico: verificar que el cliente está cargado
+		pedidos.getContent().forEach(p -> {
+			if (p.getCliente() != null) {
+				System.out.println("Cliente cargado: " + p.getCliente().getNombre()); // Verifica que no sea null
+			} else {
+				System.out.println("Cliente no cargado");
+			}
+		});
+
+		return pedidos;
+	}
+
+
+
 
 	public Page<Pedido> findPedidoByIdClienteAndFinalizados(Long idCliente, Pageable pageable) {
 		return  pedidoDao.findPedidosByIdClienteAndTerminado(idCliente, pageable);
 	}
 
+	/**
+	 * 	todo arreglar para admirtir paginacion
+	 * Obtiene una página de pedidos asociados a un cliente específico.
+	 */
 	@Override
 	public Page<Pedido> findAllByCliente(Long idcliente, Pageable pageable) {
-		return pedidoDao.findByClienteId(idcliente, pageable);
+		return  pedidoDao.findPedidoById(idcliente, pageable);
 	}
+
+
+	//----------
+
+
+	public Page<Pedido> getPedidosById(Long id, Pageable pageable) {
+		// Obtener los pedidos paginados
+		Page<Pedido> pedidos = pedidoDao.findPedidoById(id, pageable);
+
+		// Obtener el conteo de los pedidos
+		long totalPedidos = pedidoDao.countPedidoById(id);
+
+		// Aquí puedes usar el conteo para realizar otras tareas, por ejemplo, devolverlo en una respuesta personalizada
+		return pedidos;
+	}
+
+	// Método para obtener el total de pedidos (útil si lo necesitas)
+	public long getTotalPedidos(Long id) {
+		return pedidoDao.countPedidoById(id);
+	}
+	//----------
+
+
+/*
+	@Override
+	public Page<Pedido> findAllByCliente(Long idcliente, Pageable pageable) {
+		return  pedidoDao.findPedidoById(idcliente, pageable);
+	}*/
 
 	//obetenemos los pedidos por cliente y estado para poder imprimir el reporte
 	@Override
@@ -294,6 +349,16 @@ public class PedidoServiceImpl implements PedidoService {
 		return totalPorMes;
 	}
 
+	@Override
+	@Transactional
+	public Pedido findPedidoById(Long id) {
+		Pedido pedido = pedidoDao.findByIdWithCliente(id);
+		if (pedido != null && pedido.getCliente() != null) {
+			pedido.getCliente().getId(); // fuerza la carga dentro de la sesión activa
+			return pedido;
+		}
+		return pedido;
+	}
 
 
 	@Override
@@ -414,5 +479,44 @@ public class PedidoServiceImpl implements PedidoService {
 
 
 
+		/**
+		 * Crea un pedido temporal vacío que se usará
+		 * para asociar fotos antes de completar el pedido.
+		 */
+		public Pedido crearPedidoTemporal(Long idcliente) {
+			log.info("Creando pedido temporal para cliente ID: {}"+idcliente);
+			log.info("Creando pedido temporal para cliente ID: {}"+idcliente);
+
+			Pedido pedido = new Pedido();
+
+			// Obtener el cliente desde el servicio
+			Cliente cliente = clienteService.findOne(idcliente);
+			if (cliente == null) {
+				throw new IllegalArgumentException("No se encontró cliente con ID: " + idcliente);
+			}
+
+			// Asignar cliente al pedido
+			pedido.setCliente(cliente);
+
+			// Generar un número temporal único
+			String codigoTemporal = String.valueOf(System.currentTimeMillis());
+			pedido.setNpedido(Long.valueOf(codigoTemporal));
+
+
+
+			// Establecer campos base
+			pedido.setEstado("TEMPORAL");
+			pedido.setBorrador("true");
+			pedido.setObservaciones("Pedido generado automáticamente al subir fotos.");
+
+
+			// Guardar en base de datos
+			Pedido pedidoGuardado = pedidoDao.save(pedido);
+
+			log.info("Número temporal generado: {}"+pedidoGuardado.getNpedido());
+			log.info("Pedido temporal creado con ID: {} y número: {}");
+			return pedidoGuardado;
+		}
 
 }
+
