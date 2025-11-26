@@ -16,6 +16,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -80,6 +81,7 @@ public class PedidoController {
 
     @Autowired
     private CloudinaryService cloudinaryService;
+
 
     @ModelAttribute("fotosTemporales")
     public List<String> inicializarFotosTemporales() {
@@ -503,42 +505,51 @@ public class PedidoController {
             pedido.getCliente().setNombre(nombreCompleto);
         }
     }
-
+    @Autowired
+    private StringRedisTemplate redisTemplate;
 
 // ---------------------------------------------------------------------------------
 // MÉTODO AUXILIAR para Subir Archivos (se centraliza la lógica de /guardarFotos)
 // ---------------------------------------------------------------------------------
+private void subirYGuardarArchivos(MultipartFile[] fotos, Long npedido, Long clienteId, RedirectAttributes flash) {
+    if (fotos != null && fotos.length > 0) {
+        List<ArchivoAdjunto> archivosBatch = new ArrayList<>();
 
-    private void subirYGuardarArchivos(MultipartFile[] fotos, Long npedido, Long clienteId, RedirectAttributes flash) {
-        if (fotos != null && fotos.length > 0) {
-            List<ArchivoAdjunto> archivosBatch = new ArrayList<>();
+        for (MultipartFile foto : fotos) {
+            if (!foto.isEmpty()) {
+                try {
+                    // *** Lógica de subida a Cloudinary ***
+                    byte[] imageBytes = foto.getBytes();
+                    String fileName = "pedido_" + npedido + "_" + System.currentTimeMillis();  // Nombre único para cada archivo
 
-            for (MultipartFile foto : fotos) {
-                if (!foto.isEmpty()) {
-                    try {
-                        // *** Lógica de subida a Cloudinary ***
-                        byte[] imageBytes = foto.getBytes();
-                        String fileName = "pedido_" + npedido + "_" + System.currentTimeMillis();  // Nombre único para cada archivo
+                    // Subir la imagen a Cloudinary
+                    String imageUrl = cloudinaryService.uploadImage(imageBytes, npedido, fileName);  // Usamos los parámetros adecuados
+                    String publicId = fileName;  // El publicId ahora lo podemos obtener del mismo fileName
 
-                        // Subir la imagen a Cloudinary
-                        String imageUrl = cloudinaryService.uploadImage(imageBytes, fileName);
-                        String publicId = imageUrl.split("/v\\d+/")[1].split("\\.")[0];  // Extraer el publicId de la URL
+                    // Enviar los metadatos a Redis para ser procesados en segundo plano
+                    redisTestService.testConnection();  // Verifica que la conexión de Redis esté activa
+                    String mensaje = npedido + ";" + foto.getOriginalFilename() + ";" + publicId;
 
-                        // Enviar los metadatos a Redis para ser procesados en segundo plano
-                        redisTestService.testConnection();
-                        String mensaje = npedido + ";" + foto.getOriginalFilename() + ";" + publicId;
+                    // **Guardar el mensaje en Redis**
+                    redisTemplate.opsForValue().set("testKey", mensaje);  // Guardamos el mensaje en Redis bajo la clave 'testKey'
+                    log.info("Mensaje enviado a Redis: {}", mensaje);  // Verifica que el mensaje se ha guardado
 
-                        RedisQueueProducer.sendMessage(mensaje);
+                    // Verificar que el valor se guarda correctamente en Redis
+                    String testKeyValue = redisTemplate.opsForValue().get("testKey");
+                    log.info("Valor de testKey en Redis: {}", testKeyValue);  // Debería mostrar el valor guardado
 
-                        flash.addFlashAttribute("info", "Archivos subidos con éxito.");
-                    } catch (IOException e) {
-                        flash.addFlashAttribute("error", "Error al subir: " + foto.getOriginalFilename());
-                        e.printStackTrace();
-                    }
+                    // **Enviar el mensaje para ser procesado en segundo plano**
+                    RedisQueueProducer.sendMessage(mensaje);
+
+                    flash.addFlashAttribute("info", "Archivos subidos con éxito.");
+                } catch (IOException e) {
+                    flash.addFlashAttribute("error", "Error al subir: " + foto.getOriginalFilename());
+                    e.printStackTrace();
                 }
             }
         }
     }
+}
 
 
 
@@ -594,21 +605,32 @@ public class PedidoController {
         PageRender<Pedido> pageRender = new PageRender<>("listarPedidos", pedido);
 
         // Agregar la lista de imágenes de los pedidos
+        // Agregar la lista de imágenes de los pedidos
         Map<Long, String> imagenesPedidos = new HashMap<>();
         for (Pedido p : pedido.getContent()) {
+            // Obtener los archivos adjuntos del pedido
             List<ArchivoAdjunto> archivos = archivoAdjuntoService.findArchivosAdjuntosByPedidoId(p.getNpedido());
+
             if (!archivos.isEmpty()) {
-                String publicId = archivos.get(0).getUrlCloudinary();
+                // El fileName ya contiene el publicId, por lo que lo usamos directamente
+                String publicId = archivos.get(0).getUrlCloudinary();  // Asumimos que getUrlCloudinary() ya devuelve el publicId
+
                 try {
+                    // Recuperar la URL usando el publicId directamente
                     String imageUrl = cloudinaryService.getImageUrl(publicId);
                     imagenesPedidos.put(p.getNpedido(), imageUrl);
                 } catch (Exception e) {
+                    // Si ocurre un error, asignar la imagen por defecto
                     imagenesPedidos.put(p.getNpedido(), "/img/default.jpg");
+                    log.error("Error al obtener la imagen para el pedido {}: {}", p.getNpedido(), e.getMessage());
                 }
             } else {
+                // Si no hay archivos adjuntos, asignar imagen por defecto
                 imagenesPedidos.put(p.getNpedido(), "/img/default.jpg");
             }
         }
+
+
 
         model.addAttribute("imagenesPedidos", imagenesPedidos);
 
@@ -679,14 +701,26 @@ public class PedidoController {
         // Mapear imágenes de pedidos
         Map<Long, String> imagenesPedidos = new HashMap<>();
         for (Pedido p : pedido.getContent()) {
+            // Obtener los archivos adjuntos del pedido
             List<ArchivoAdjunto> archivos = archivoAdjuntoService.findArchivosAdjuntosByPedidoId(p.getNpedido());
+
             if (!archivos.isEmpty()) {
                 try {
-                    imagenesPedidos.put(p.getNpedido(), cloudinaryService.getImageUrl(archivos.get(0).getUrlCloudinary()));
+                    // Usar el publicId almacenado en el archivo adjunto (por ejemplo, archivos.get(0).getPublicId())
+                    String publicId = archivos.get(0).getUrlCloudinary();  // Asumiendo que el publicId está almacenado en el objeto `ArchivoAdjunto`
+
+                    // Intentar obtener la URL de la imagen desde Redis
+                    String imageUrl = cloudinaryService.obtenerImagen(publicId);  // Recupera la URL de Cloudinary o Redis
+
+                    // Guardar la URL en el mapa para el pedido
+                    imagenesPedidos.put(p.getNpedido(), imageUrl);
+
                 } catch (Exception e) {
+                    // Si ocurre un error, asignar la imagen por defecto
                     imagenesPedidos.put(p.getNpedido(), "/img/default.jpg");
                 }
             } else {
+                // Si no hay archivos adjuntos, asignar la imagen por defecto
                 imagenesPedidos.put(p.getNpedido(), "/img/default.jpg");
             }
         }
