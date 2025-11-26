@@ -33,10 +33,8 @@ public class Cliente implements Serializable {
     private Long id;
     private String nombre;
 
-    @NotEmpty
     private String apellido;
 
-    @NotEmpty
     @Email
     private String email;
 
@@ -45,6 +43,7 @@ public class Cliente implements Serializable {
     private String direccion;
 
     private String Secret;
+
     @Column(name = "create_at")
     @Temporal(TemporalType.DATE)
     private Date createAt;

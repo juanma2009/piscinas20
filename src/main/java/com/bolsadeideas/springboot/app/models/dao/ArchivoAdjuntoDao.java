@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ArchivoAdjuntoDao extends PagingAndSortingRepository<ArchivoAdjunto, Long> {
 
@@ -16,6 +17,6 @@ public interface ArchivoAdjuntoDao extends PagingAndSortingRepository<ArchivoAdj
     public List<String> findArchivoAdjunto();
 
     @Query("select a from ArchivoAdjunto a where  a.nombre = ?1 and a.pedidoAdjunto = ?2")
-    public ArchivoAdjunto findArchivoAdjuntoByIdOne(String fileId,Long pedidoId);
+    public Optional<ArchivoAdjunto> findArchivoAdjuntoByIdOne(String fileId, Long pedidoId);
 
 }

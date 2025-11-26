@@ -58,38 +58,55 @@ public class RestPedidoController {
     private PedidoMapper pedidoMapper;
 
 //todo añadir los nuevos campos metal,pieza,tipo
-    //metdo que lista la tabla de pedidos con ajasx desde el frontend
-    @RequestMapping(value = {"/listarPedidos"}, method = RequestMethod.GET)
-    @ResponseBody
-    public Map<String, Object> listar(@RequestParam(name = "page", defaultValue = "0") int page) {
-        Pageable pageRequest = PageRequest.of(page, Integer.MAX_VALUE);
-        Page<Pedido> pedidos = pedidoService.findAll(pageRequest);
+@RequestMapping(value = "/listarPedidos", method = RequestMethod.GET)
+@ResponseBody
+public Map<String, Object> listar(@RequestParam(name = "page", defaultValue = "0") int page) {
+    // Crear la paginación
+    Pageable pageRequest = PageRequest.of(page, Integer.MAX_VALUE);  // Tamaño máximo de la página
 
-        List<Map<String, Object>> pedidosData = pedidos.getContent().stream().map(p -> {
-            Map<String, Object> pedidoData = new HashMap<>();
-            pedidoData.put("npedido", p.getNpedido()); // se utilizapra como id para entrar a editar y ver lo detalles
-            pedidoData.put("ref", p.getRef());
-            pedidoData.put("cliente", p.getCliente().getNombre()); // ✅ Siempre como String
-            pedidoData.put("tipoPedido", p.getTipoPedido());
-            pedidoData.put("estado", p.getEstado());
-            pedidoData.put("fechaFinalizado", p.getFechaFinalizado());
-            pedidoData.put("fechaEntrega", p.getFechaEntrega());
-            pedidoData.put("metal", p.getGrupo());
-            pedidoData.put("pieza", p.getPieza());//pieza
-            pedidoData.put("tipo", p.getTipo());
-            pedidoData.put("cobrado", p.getCobrado());
-            return pedidoData;
-        }).collect(Collectors.toList());
-        logger.info("listarP"+pedidosData);
-        Map<String, Object> response = new HashMap<>();
-        response.put("recordsTotal", pedidos.getTotalElements());
-        response.put("recordsFiltered", pedidos.getTotalElements());
-        response.put("data", pedidosData); // ✅ Misma estructura que en `buscar()`
+    // Obtener los pedidos con cliente cargado
+    Page<Pedido> pedidos = pedidoService.findAllPedidos(pageRequest);
+    // Log para verificar el número de pedidos obtenidos
+    log.info(pedidos.getTotalElements() + " pedidos encontrados");
 
-        return response;
-    }
+    // Mapear los pedidos a JSON para enviar al frontend
+    List<Map<String, Object>> pedidosData = pedidos.getContent().stream().map(p -> {
 
-//todo añadir los nuevos campos metal,pieza,tipo
+        // Log para verificar si el cliente es null o no
+        if (p.getCliente() == null) {
+            log.warn("Cliente es null para el pedido: " + p.getNpedido());
+        } else {
+            log.info("Cliente nombre: " + p.getCliente().getNombre()); // Si el cliente está cargado, muestra el nombre
+        }
+
+        // Crear el mapa de datos para cada pedido
+        Map<String, Object> pedidoData = new HashMap<>();
+        pedidoData.put("npedido", p.getNpedido()); // se utiliza para como id para entrar a editar y ver los detalles
+        pedidoData.put("ref", p.getRef());
+        // Asegúrate de que p.getCliente() no sea null
+        pedidoData.put("cliente", p.getCliente() != null ? p.getCliente().getNombre() : "Cliente no disponible");
+        pedidoData.put("tipoPedido", p.getTipoPedido());
+        pedidoData.put("estado", p.getEstado());
+        pedidoData.put("fechaFinalizado", p.getFechaFinalizado());
+        pedidoData.put("fechaEntrega", p.getFechaEntrega());
+        pedidoData.put("metal", p.getGrupo());
+        pedidoData.put("pieza", p.getPieza());
+        pedidoData.put("tipo", p.getTipo());
+        pedidoData.put("cobrado", p.getCobrado());
+        return pedidoData;
+    }).collect(Collectors.toList());
+
+    // Crear la estructura de respuesta para DataTables
+    Map<String, Object> response = new HashMap<>();
+    response.put("recordsTotal", pedidos.getTotalElements()); // Total de registros
+    response.put("recordsFiltered", pedidos.getTotalElements()); // Total de registros
+    response.put("data", pedidosData);  // Los datos de la página
+
+    return response;  // Devolver en formato JSON esperado por DataTables
+}
+
+
+
     @RequestMapping(value = {"/listarPedidosClientes"}, method = RequestMethod.GET)
     @ResponseBody
     public Map<String, Object> listarPorCliente(
@@ -97,7 +114,7 @@ public class RestPedidoController {
             @RequestParam(name = "page", defaultValue = "0") int page) {
 
         Pageable pageRequest = PageRequest.of(page, Integer.MAX_VALUE);
-        Page<Pedido> pedidos = pedidoService.findAllByCliente(idCliente, pageRequest);
+        Page<Pedido> pedidos = pedidoService.getPedidosById(idCliente, pageRequest);
 
         List<Map<String, Object>> pedidosData = pedidos.getContent().stream().map(p -> {
             Map<String, Object> pedidoData = new HashMap<>();

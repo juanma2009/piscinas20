@@ -1,0 +1,20 @@
+#incidencias
+
+20/10/2025
+*Pantalla crear usuario
+Se tiene que avisar al usuario al crear usuario que si algun campo que es esta reperitdo o obligatoriio salga por pantalla
+
+*Pantalla listar usuarios
+añadir editar usuario no sale error
+http://localhost:8080/users/edit/34 no carga la pagina de editar usuario sale error 404
+
+*Pantalla editar pedido
+ problema de renderizar lazy cambiar la llamada par que sea por jpal e consulta que obtener pedidos y clientes en la sesion
+
+#Mejoras
+17/10/25
+Se añade que puedas añadir fotos en los pedidos multiples archivos adjuntos.
+
+FUTURAS MEJORAS:
+
+eN EDITAR UN PEDIDO HAY UE PODER DAR A UN BTON Y QUE CARGRA LA PATE DE EDITCION SIN TENER QUE SALEIR FUERA Y VOLVER A ENTRAR

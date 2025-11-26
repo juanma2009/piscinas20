@@ -6,8 +6,8 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <link rel="stylesheet" href="cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
-    <meta name="_csrf" th:content="${_csrf.token}" />
-    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <script th:inline="javascript">
@@ -17,208 +17,274 @@
         /*]]>*/
     </script>
 
+    <style>
+        /*boton modal*/
+        .btn {
+            border-radius: 8px !important;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            transition: all 0.2s ease-in-out;
+        }
 
-<style>
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
 
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            border: none;
+        }
 
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0069d9, #004a99);
+        }
 
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            border: none;
+        }
 
-    .estado-pendiente {
-        background-color: #f8d7da; /* Rojo claro */
-    }
+        .btn-success:hover {
+            background: linear-gradient(135deg, #34c759, #1e7e34);
+        }
 
-    .estado-terminado {
-        background-color: #d4edda; /* Verde claro */
-    }
-    /* se comentan porque no deja ver el contenido
-    tab-content {
-       margin-top: 20cm;
-    }*/
+        /*dentro del modal*/
+        /* 🔹 Espaciado horizontal entre botones */
+        .gap-2 > * {
+            margin-right: 8px;
+        }
 
-    #fileListContainer {
-        background-color: white;
-        border: 1px solid #ccc;
-        padding: 10px;
-        border-radius: 5px;
-    }
+        .gap-2 > *:last-child {
+            margin-right: 0;
+        }
 
-    #fileList {
-        list-style: none;
-        padding: 0;
-    }
+        /* 🔹 Mejora visual del modal */
+        .modal-lg {
+            max-width: 900px; /* aumenta el ancho */
+        }
 
-    .deleteButton {
-        background-color: transparent;
-        border: none;
-        color: red;
-        cursor: pointer;
-        font-size: 16px;
-        vertical-align: middle;
-        margin-left: 5px;
-    }
+        .modal-content {
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
 
-     .card-header.bg-white {
-         background-color: white !important;
-     }
+        .modal-header {
+            border-bottom: 2px solid #004085;
+        }
 
-    .card-header bg-primary text-white {
-        width: 100%;
-        height: 100px;
-        border-radius: 10px 10px 0 0;
-    }
-    /* Establecer un padding y margen general para todas las secciones internas */
-    .container-fluid,
-    .card,
-    .card-body,
-    .card-header,
-    section.content-header {
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
+        .modal-body {
+            background-color: #f8f9fa;
+            border-radius: 0 0 10px 10px;
+        }
 
-    /* Asegura que las tarjetas no queden pegadas entre sí o a los bordes */
-    .card {
-        border-radius: 10px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
+        /* 🔹 Botones uniformes */
+        .btn {
+            border-radius: 6px !important;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            transition: all 0.2s ease-in-out;
+        }
 
-    /* Control uniforme para las tablas */
-    .table {
-        margin-bottom: 1rem;
-    }
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
 
-    /* Espaciado entre botones */
-    .btn-group .btn {
-        margin-right: 0.5rem;
-    }
+        /*loading*/
+        #loadingOverlay .progress {
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+        }
 
-    /* Botones pequeños con padding uniforme */
-    .btn-sm {
-        padding: 0.4rem 0.75rem;
-    }
+        #loadingOverlay .progress-bar {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
 
-    .card-header {
-        background: linear-gradient(135deg, #0062cc, #004085); /* Gradiente de azul */
-        color: white;
-        padding: 15px;
-        font-weight: bold;
-        text-transform: uppercase; /* Texto en mayúsculas */
-        font-size: 1.25rem; /* Aumentar el tamaño de la fuente */
-        border-radius: 8px 8px 0 0; /* Bordes redondeados */
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra ligera */
-        transition: background-color 0.3s ease, box-shadow 0.3s ease;
-    }
+        .estado-pendiente {
+            background-color: #f8d7da; /* Rojo claro */
+        }
 
-    .card-header:hover {
-        background-color: #0056b3; /* Tono más oscuro de azul */
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
-    }
+        .estado-terminado {
+            background-color: #d4edda; /* Verde claro */
+        }
 
-    body {
-        width: 100vw;
-        min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
-        overflow-x: hidden;
-        background-color: #f9f9f9; /* opcional: fondo más suave */
-    }
-    body {
-        width: 100vw;
-        min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
-        overflow-x: hidden;
-        background-color: #f9f9f9; /* opcional: fondo más suave */
-    }
-    html, body {
-        height: 100%; /* Asegura que el contenido cubra toda la pantalla */
-        margin: 0; /* Elimina márgenes por defecto */
-        padding: 0; /* Elimina el padding por defecto */
-        overflow: hidden; /* Oculta el scroll si no es necesario */
-    }
-    /* Hace la tabla responsiva */
-    .table-responsive {
-        width: 100%;
-        overflow-x: auto;  /* Permite scroll horizontal si es necesario */
-        -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en móviles */
-    }
+        #fileListContainer {
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
 
-    /* Ajuste general de la tabla */
-    .table td, .table th {
-        white-space: nowrap; /* Evita que el contenido de las celdas se corte */
-        font-size: 14px;
-        padding: 8px;
-    }
-    Estilos base (ya definidos para escritorio)
-    .table-responsive {
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
+        #fileList {
+            list-style: none;
+            padding: 0;
+        }
 
-    .table td,
-    .table th {
-        white-space: nowrap;
-        font-size: 14px;
-        padding: 8px;
-    }
+        .deleteButton {
+            background-color: transparent;
+            border: none;
+            color: red;
+            cursor: pointer;
+            font-size: 16px;
+            vertical-align: middle;
+            margin-left: 5px;
+        }
 
-    @media screen and (min-width: 1268px) {
+        .card-header.bg-white {
+            background-color: white !important;
+        }
+
+        .card-header bg-primary text-white {
+            width: 100%;
+            height: 100px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        /* Establecer un padding y margen general para todas las secciones internas */
+        .container-fluid,
+        .card,
+        .card-body,
+        .card-header,
+        section.content-header {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Asegura que las tarjetas no queden pegadas entre sí o a los bordes */
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Control uniforme para las tablas */
+        .table {
+            margin-bottom: 1rem;
+        }
+
+        /* Espaciado entre botones */
+        .btn-group .btn {
+            margin-right: 0.5rem;
+        }
+
+        /* Botones pequeños con padding uniforme */
+        .btn-sm {
+            padding: 0.4rem 0.75rem;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #0062cc, #004085); /* Gradiente de azul */
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            text-transform: uppercase; /* Texto en mayúsculas */
+            font-size: 1.25rem; /* Aumentar el tamaño de la fuente */
+            border-radius: 8px 8px 0 0; /* Bordes redondeados */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra ligera */
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card-header:hover {
+            background-color: #0056b3; /* Tono más oscuro de azul */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
+        }
+
+        body {
+            width: 100vw;
+            min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
+            overflow-x: hidden;
+            background-color: #f9f9f9; /* opcional: fondo más suave */
+        }
 
         html, body {
-            overflow-x: hidden;
+            height: 100%; /* Asegura que el contenido cubra toda la pantalla */
+            margin: 0; /* Elimina márgenes por defecto */
+            padding: 0; /* Elimina el padding por defecto */
+            overflow: hidden; /* Oculta el scroll si no es necesario */
+        }
+
+        /* Hace la tabla responsiva */
+        .table-responsive {
             width: 100%;
-            margin: 0;
-            padding: 0;
+            overflow-x: auto; /* Permite scroll horizontal si es necesario */
+            -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en móviles */
         }
 
-        .container-fluid {
+        /* Ajuste general de la tabla */
+        .table td, .table th {
+            white-space: nowrap; /* Evita que el contenido de las celdas se corte */
+            font-size: 14px;
+            padding: 8px;
+        }
+
+        .table-responsive {
             width: 100%;
-            max-width: 100vw;
-            padding: 0;
-            margin: 0 auto;
-            overflow-x: hidden;
-        }
-        .tab-content {
-            margin-top: 20px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* Contenedor scrollable de la tabla */
-        .dataTables_scrollBody {
-            width: 100% !important;
-            max-width: 100% !important;
-            height: 290px; /* 🔹 Altura fija de la tabla visible */
-
-            overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
-            overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
-            display: block;
+        .table td,
+        .table th {
+            white-space: nowrap;
+            font-size: 14px;
+            padding: 8px;
         }
 
-        /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
-        .dataTables_scrollBody table {
-            width: 100% !important;
-            max-width: 100%;
-            min-width: auto !important;
-            table-layout: auto;
+        @media screen and (min-width: 1268px) {
+            html, body {
+                overflow-x: hidden;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
 
-        }
+            .container-fluid {
+                width: 100%;
+                max-width: 100vw;
+                padding: 0;
+                margin: 0 auto;
+                overflow-x: hidden;
+            }
 
-        .dataTables_scrollBody {
+            .tab-content {
+                margin-top: 20px;
+            }
 
-            th, td {
+            /* Contenedor scrollable de la tabla */
+            .dataTables_scrollBody {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 290px; /* 🔹 Altura fija de la tabla visible */
+                overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
+                overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
+                display: block;
+            }
+
+            /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
+            .dataTables_scrollBody table {
+                width: 100% !important;
+                max-width: 100%;
+                min-width: auto !important;
+                table-layout: auto;
+            }
+
+            .dataTables_scrollBody th,
+            .dataTables_scrollBody td {
                 padding: 10px;
                 white-space: nowrap;
             }
         }
-    }
-
-</style>
+    </style>
 </head>
-<body>
 
+<body>
 <div layout:fragment="content">
     <div id="messege"></div>
 
     <section class="content-header">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <div  th:text="${titulo}"></div> <!-- Título de la tarjeta -->
+                <div th:text="${titulo}"></div> <!-- Título de la tarjeta -->
             </div>
             <!-- Botones de navegación -->
             <div class="row justify-content-between align-items-center">
@@ -239,28 +305,32 @@
                     </div>
                 </div>
             </div>
-            <div> </div>
+            <div></div>
             <div class="container-fluid mt-3">
-                <form id="pedidoForm" th:action="@{/pedidos/form/}" enctype="multipart/form-data" th:object="${pedido}" method="post">
+                <form id="pedidoForm" th:action="@{/pedidos/form/}" enctype="multipart/form-data" th:object="${pedido}"
+                      method="post">
                     <!-- Navegación de pestañas -->
                     <ul class="nav nav-tabs" id="pedidoTab" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" id="detalles-tab" data-toggle="tab" href="#detalles" role="tab" aria-controls="detalles" aria-selected="true">
+                            <a class="nav-link active" id="detalles-tab" data-toggle="tab" href="#detalles" role="tab"
+                               aria-controls="detalles" aria-selected="true">
                                 Informacion General
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="detalles-adicionales-tab" data-toggle="tab" href="#detalles-adicionales" role="tab" aria-controls="detalles-adicionales" aria-selected="false">
+                            <a class="nav-link" id="detalles-adicionales-tab" data-toggle="tab" href="#detalles-adicionales"
+                               role="tab" aria-controls="detalles-adicionales" aria-selected="false">
                                 Detalles
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="comentario-tab" data-toggle="tab" href="#comentario" role="tab" aria-controls="comentario" aria-selected="false">
+                            <a class="nav-link" id="comentario-tab" data-toggle="tab" href="#comentario" role="tab"
+                               aria-controls="comentario" aria-selected="false">
                                 Comentario
                             </a>
                         </li>
                     </ul>
-                    <div> </div>
+                    <div></div>
 
                     <!-- Contenido de las pestañas -->
                     <div class="tab-content" id="pedidoTabContent">
@@ -272,15 +342,17 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="cliente">Cliente</label>
-                                        <input name="cliente" th:value="${pedido.cliente.nombre} + ' ' + ${pedido.cliente.apellido}" class="form-control" disabled />
+                                        <input name="cliente"
+                                               th:value="${pedido.cliente.nombre} + ' ' + ${pedido.cliente.apellido}"
+                                               class="form-control" disabled/>
                                     </div>
                                 </div>
                                 <!-- Nº Pedido esta oculto pero sigueenviado el numero al servicio-->
                                 <div class="col-md-4" hidden>
                                     <div class="form-group">
                                         <label for="npedido">Nº Pedido</label>
-                                        <input type="hidden" th:if="${pedido.npedido != null}" th:field="*{npedido}" id="npedido" class="form-control" />
-                                        <input type="hidden" th:unless="${pedido.npedido != null}" th:value="${numeroPedido}" name="npedido" id="npedido" class="form-control" />
+                                        <input type="hidden" th:if="${pedido.npedido != null}" th:field="*{npedido}" id="npedidoForm" name="npedido" class="form-control" />
+                                        <input type="hidden" th:unless="${pedido.npedido != null}" th:value="${numeroPedido}" id="npedidoForm" name="npedido" class="form-control" />
                                         <small class="form-text text-danger" th:if="${#fields.hasErrors('npedido')}" th:errors="*{npedido}"></small>
                                     </div>
                                 </div>
@@ -344,14 +416,13 @@
                                 </div>
                             </div>
 
-
-                        <!-- Botón para añadir fotos -->
-                        <div class="form-group text-center mt-3">
-                            <button type="button" class="btn btn-info" data-toggle="modal" data-target="#addPhotoModal">
-                                <i class="fas fa-camera"></i> Añadir Fotos
-                            </button>
+                            <!-- Botón para añadir fotos -->
+                            <div class="form-group text-center mt-3">
+                                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#addPhotoModal">
+                                    <i class="fas fa-camera"></i> Añadir Fotos
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
                     <!-- Pestaña Detalles Adicionales -->
                     <div class="tab-pane fade" id="detalles-adicionales" role="tabpanel" aria-labelledby="detalles-adicionales-tab">
@@ -465,20 +536,12 @@
                     </div>
                     <div class="modal-body">
                         <form id="uploadForm" enctype="multipart/form-data" th:action="@{/pedidos/guardarFotos}" method="post">
-
-                            <div class="form-group row">
-                                <label for="files" class="col-sm-2 col-form-label" th:text="'Fotos'"></label>
-                                <div class="col-sm-6">
-                                    <input type="file" name="files" id="files" multiple>
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
-                                <div class="col-sm-2 d-flex justify-content-start">
-                                     <button class="btn btn-primary mr-2" id="submit" type="submit">Guardar</button>
-                                </div>
-                            </div>
+                            <input type="file" name="files" id="files" multiple>
+                            <input type="hidden" name="npedido" id="npedidoModal" th:value="${pedido.npedido}" />
+                            <input type="hidden" name="clienteId" id="clienteId" th:value="${pedido.getCliente().id}" />
+                            <button type="submit" class="btn btn-primary">Guardar</button>
                         </form>
+
                         <table id="fileListTable" class="table table-bordered">
 
                             <!-- La cabecera de la tabla se añadirá dinámicamente -->
@@ -488,192 +551,253 @@
             </div>
         </div>
 
+        <script src="https://cdn.ckeditor.com/ckeditor5/35.0.1/classic/ckeditor.js"></script>
+        <script>
+            // Variable global para almacenar los archivos seleccionados desde el modal
+            var archivosPendientes = [];
 
-<!-- Se incluye CKEditor para que el textarea de observaciones disponga de una barra de herramientas -->
-<script src="https://cdn.ckeditor.com/ckeditor5/35.0.1/classic/ckeditor.js"></script>
-<script>
-    <!-- Controla que salga la fecha si el estado a cambiado FINALIZADO -->
-    document.addEventListener("DOMContentLoaded", function() {
-        const estadoSelect = document.querySelector('select[name="estado"]');
-        const fechaContainer = document.getElementById('fechaFieldContainer');
+            // Controla que salga la fecha si el estado a cambiado FINALIZADO
+            document.addEventListener("DOMContentLoaded", function() {
+                const estadoSelect = document.querySelector('select[name="estado"]');
+                const fechaContainer = document.getElementById('fechaFieldContainer');
 
-        function toggleFechaField() {
-            // Comprueba si el valor del select es "terminado"
-            if(estadoSelect.value === 'Finalizado') {
-                fechaContainer.style.display = 'block';
-            } else {
-                fechaContainer.style.display = 'none';
+                function toggleFechaField() {
+                    // Comprueba si el valor del select es "Finalizado"
+                    if(estadoSelect.value === 'Finalizado') {
+                        fechaContainer.style.display = 'block';
+                    } else {
+                        fechaContainer.style.display = 'none';
+                    }
+                }
+
+                // Ejecuta la función al cargar la página
+                toggleFechaField();
+
+                // Escucha los cambios en el select para actualizar la visibilidad
+                estadoSelect.addEventListener('change', toggleFechaField);
+            });
+
+            ClassicEditor
+                .create(document.querySelector('#observacion'))
+                .catch(error => {
+                    console.error(error);
+                });
+        </script>
+        <script th:inline="javascript">
+
+
+
+
+            // Función para actualizar los tipos de pieza (se conserva)
+            function actualizarTipos() {
+                var pieza = document.getElementById('pieza').value;
+                var contTipo = document.getElementById('container-tipo');
+                var selectTipo = document.getElementById('tipo');
+                var lista = tiposPorPieza[pieza] || [];
+
+                // Si la pieza no tiene múltiples tipos, ocultamos todo el contenedor
+                if (lista.length <= 1 && ['Pulsera','Broche','Otros'].indexOf(pieza) !== -1) {
+                    contTipo.style.display = 'none';
+                    return;
+                } else {
+                    contTipo.style.display = 'block';
+                }
+
+                // Limpiar opciones
+                selectTipo.innerHTML = '<option value="">-- Selecciona Tipo --</option>';
+
+                // Rellenar con los nuevos
+                lista.forEach(function(t) {
+                    var opt = document.createElement('option');
+                    opt.value = t;
+                    opt.text  = t;
+                    selectTipo.add(opt);
+                });
             }
-        }
-
-        // Ejecuta la función al cargar la página
-        toggleFechaField();
-
-        // Escucha los cambios en el select para actualizar la visibilidad
-        estadoSelect.addEventListener('change', toggleFechaField);
-    });
-
-    ClassicEditor
-        .create(document.querySelector('#observacion'))
-        .catch(error => {
-            console.error(error);
-        });
-</script>
-<script th:inline="javascript">
 
 
-    $(document).ready(function() {
-
-        // Function to handle form submission and file uploading
-        $('#uploadForm').submit(function (event) {
-            event.preventDefault(); // Prevent default form submission
-
-            // Gather file names
-            var selectedFiles = document.getElementById('files').files;
-            var fileNamesList = [];
-            for (var i = 0; i < selectedFiles.length; i++) {
-                fileNamesList.push(selectedFiles[i].name);
-            }
-
-            // Update the hidden input with the file names (if exists)
-            var existingFileNames = $('#fileNamesJSON').val();
-            if (existingFileNames) {
-                var existingFileNamesArray = JSON.parse(existingFileNames);
-                fileNamesList = existingFileNamesArray.concat(fileNamesList);
-            }
-            $('#fileNamesJSON').val(JSON.stringify(fileNamesList));
-
-            // Prepare form data for AJAX request
-            var formData = new FormData(this);
-
-            // ✅ Get the npedido value from the hidden input
-            var npedido = $('input[name="npedido"]').val();
-
-            // ✅ Ensure npedido is included in the FormData
-            formData.append('npedido', npedido);
-            console.log(npedido)
-            // AJAX request to upload files
-            $.ajax({
-                type: $(this).attr('method'),
-                url: $(this).attr('action'),
-                data: formData,
-                cache: false,
-                contentType: false,
-                processData: false,
-                success: function (response) {
-                    console.log('Archivos subidos con éxito.');
-
-                    // Update file list on the page
-                    updateFileList(selectedFiles);
-                    // $('#files').val(''); // Clear file input
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error al subir los archivos: ', error);
+            // Al cargar la página, forzar llenado si ya hay valor en pedido.pieza (se conserva)
+            document.addEventListener('DOMContentLoaded', function() {
+                if (document.getElementById('pieza').value) {
+                    actualizarTipos();
+                    // Y si ya existe pedido.tipo, seleccionarlo:
+                    var tipoActual = /*[[${pedido.tipo}]]*/ '';
+                    if (tipoActual) {
+                        document.getElementById('tipo').value = tipoActual;
+                    }
                 }
             });
-        });
 
-// Function to update file list on the page
-        function updateFileList(selectedFiles) {
-            if (selectedFiles.length > 0) {
-                var fileListContainer = $('#fileListContainer');
+            //-------------* MODIFICADO: Manejo de archivos en el modal *-------------/
 
-                // Asegurarse de que la tabla está vacía antes de agregar nuevos elementos
+            $(document).ready(function() {
+
+                // Función para eliminar el archivo en el backend (se conserva)
+                function eliminarArchivo(fileName, npedido) {
+                    $.ajax({
+                        url: '/pedidos/eliminarFoto/' + fileName + '?npedido=' + npedido,
+                        type: 'GET',
+                        success: function (response) {
+                            alert('Archivo eliminado con éxito: ' + fileName + ' del pedido: ' + npedido);
+                        },
+                    });
+                }
+
+                // ✅ CORREGIDO: Evento al seleccionar archivos en el input del modal
+                document.getElementById('files').addEventListener('change', function(event) {
+                    // Obtener los nuevos archivos seleccionados
+                    const nuevosArchivos = Array.from(event.target.files);
+
+                    // ✅ AGREGAR en lugar de reemplazar
+                    nuevosArchivos.forEach(nuevoArchivo => {
+                        // Verificar si el archivo ya existe para evitar duplicados
+                        const archivoExiste = archivosPendientes.some(archivo =>
+                            archivo.name === nuevoArchivo.name &&
+                            archivo.size === nuevoArchivo.size &&
+                            archivo.lastModified === nuevoArchivo.lastModified
+                        );
+
+                        if (!archivoExiste) {
+                            archivosPendientes.push(nuevoArchivo);
+                        }
+                    });
+
+                    actualizarTabla(); // Actualiza la vista previa en el modal
+
+                    // Limpiar el input para permitir seleccionar los mismos archivos nuevamente
+                    event.target.value = '';
+                });
+            });
+
+            // MODIFICADO: Cuando se envía el formulario de fotos (en el modal)
+            $('#uploadForm').submit(function(event) {
+                event.preventDefault();
+
+                // Ya almacenamos los archivos en archivosPendientes en el evento 'change'.
+                // Ahora, solo cerramos el modal y notificamos al usuario.
+                $('#addPhotoModal').modal('hide');
+                //alert('Fotos seleccionadas. Pulse el botón principal "Guardar" para subir todo junto al pedido.');
+
+                // Limpiar el input de archivos para futuras selecciones sin perder la data en archivosPendientes
+                document.getElementById('files').value = '';
+            });
+
+            // ✅ CORREGIDO: Función para actualizar la tabla del modal
+            function actualizarTabla() {
                 var table = $('#fileListTable');
-                //  table.empty(); // Limpiar tabla antes de agregar archivos
+                table.empty(); // ✅ LIMPIAR la tabla antes de agregar nuevos elementos
 
-                // Añadir cabecera de la tabla si no está presente
-                if (table.find('thead').length === 0) {
-                    var tableHeader = $('<thead>').append(
+                if (archivosPendientes.length > 0) {
+                    var thead = $('<thead>').append(
                         $('<tr>').append(
                             $('<th>').text('Archivo'),
-                            $('<th>').text('Vista Previa'),
+                            $('<th>').text('Vista previa'),
                             $('<th>').text('Acciones')
                         )
                     );
-                    table.append(tableHeader);
-                }
+                    table.append(thead);
 
-                // Añadir los archivos seleccionados a la tabla
-                var tbody = $('<tbody>'); // Crear un nuevo cuerpo de tabla
-                for (var i = 0; i < selectedFiles.length; i++) {
-                    var fileName = selectedFiles[i].name;
-                    var fileURL = URL.createObjectURL(selectedFiles[i]);
+                    var tbody = $('<tbody>');
 
-                    var fileRow = $('<tr>').append(
-                        $('<td>').text(fileName),
-                        $('<td>').append(
-                            $('<img>').attr('src', fileURL).css('max-width', '50px')
-                        ),
-                        $('<td>').append(
-                            $('<button>').text('Eliminar').addClass('btn btn-danger').click(function () {
-                                var fileNameToDelete = $(this).closest('tr').find('td').eq(0).text();
-                                var npedido = $('input[name="npedido"]').val();
-                                console.log(npedido);
-                                eliminarArchivo(fileNameToDelete,npedido); // Llamada para eliminar el archivo en backend
-                                $(this).closest('tr').remove(); // Eliminar la fila de la tabla
-                            })
+                    // ✅ Usar for loop en lugar de forEach para evitar problemas con índices
+                    for (let i = 0; i < archivosPendientes.length; i++) {
+                        const file = archivosPendientes[i];
+                        const fileURL = URL.createObjectURL(file);
+
+                        const row = $('<tr>').append(
+                            $('<td>').text(file.name),
+                            $('<td>').append(
+                                $('<img>').attr('src', fileURL).css({
+                                    'max-width': '50px',
+                                    'border-radius': '4px',
+                                    'border': '1px solid #ccc'
+                                })
+                            ),
+                            $('<td>').append(
+                                $('<button>')
+                                    .text('Eliminar')
+                                    .addClass('btn btn-danger btn-sm')
+                                    .click((function(index) {
+                                        return function() {
+                                            // Eliminar del array global usando el índice capturado
+                                            archivosPendientes.splice(index, 1);
+                                            actualizarTabla(); // Re-renderizar la tabla
+                                        };
+                                    })(i)) // ✅ Capturar el índice correctamente
+                            )
+                        );
+                        tbody.append(row);
+                    }
+                    table.append(tbody);
+                } else {
+                    // Mostrar mensaje si no hay archivos
+                    table.append(
+                        $('<tr>').append(
+                            $('<td colspan="3" class="text-center text-muted">')
+                                .text('No se han seleccionado archivos.')
                         )
                     );
-                    tbody.append(fileRow); // Añadir la fila a la tabla
                 }
-
-                table.append(tbody); // Añadir el cuerpo de la tabla con las filas
             }
-        }
 
-        // Función para eliminar el archivo en el backend
+            // NUEVO: Manejar el envío del formulario principal (#pedidoForm)
+            $('#pedidoForm').submit(function(event) {
 
-        function eliminarArchivo(fileName, npedido) {
-            $.ajax({
-                url: '/pedidos/eliminarFoto/' + fileName + '?npedido=' + npedido, // Agregar npedido como parámetro
-                type: 'GET',
-                success: function (response) {
-                    alert('Archivo eliminado con éxito: ' + fileName + ' del pedido: ' + npedido);
-                },
+                // Comprobamos si hay archivos pendientes para subir
+                if (archivosPendientes.length > 0) {
 
+                    // 1. Prevenir el envío normal del formulario (para hacerlo con AJAX)
+                    event.preventDefault();
+
+                    // 2. Crear un objeto FormData a partir del formulario
+                    var formData = new FormData(this);
+
+                    // 3. Adjuntar cada archivo pendiente al FormData
+                    // 'files' debe coincidir con el @RequestParam(name = "files") en el controlador Java.
+                    archivosPendientes.forEach(function(file) {
+                        formData.append('files', file);
+                    });
+
+                    // 4. Enviar el formulario principal con los archivos adjuntos vía AJAX
+                    $.ajax({
+                        type: 'POST',
+                        url: $(this).attr('action'),
+                        data: formData,
+                        cache: false,
+                        contentType: false, // Importante para que el navegador configure el boundary
+                        processData: false, // Importante para enviar archivos
+                        success: function(response) {
+                            console.log("Pedido guardado y fotos subidas con éxito.");
+                            // El controlador Java debe retornar un JSON con 'redirectUrl'
+                            if (response && response.redirectUrl) {
+                                window.location.href = response.redirectUrl;
+                            } else {
+                                // Si no hay redirectUrl (p.ej. es un error 200 inesperado)
+                                alert("Pedido guardado, pero ocurrió un error en la redirección.");
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error al guardar el pedido con fotos:", error);
+                            // Muestra el error de validación del backend si existe
+                            var errorMessage = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : "Ocurrió un error desconocido al guardar el pedido.";
+                            alert("Error: " + errorMessage);
+                        }
+                    });
+                }
+                // Si no hay archivos pendientes, se permite el submit normal del formulario.
+                // Opcionalmente, podrías forzar el AJAX siempre para manejar la respuesta del backend de forma uniforme.
             });
-        }
+            fetch('/pedidos/form', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Redirige usando JavaScript
+                    window.location.href = data.redirectUrl;
+                });
 
-    });
-    function actualizarTipos() {
-        var pieza = document.getElementById('pieza').value;
-        var contTipo = document.getElementById('container-tipo');
-        var selectTipo = document.getElementById('tipo');
-        var lista = tiposPorPieza[pieza] || [];
-
-        // Si la pieza no tiene múltiples tipos, ocultamos todo el contenedor
-        if (lista.length <= 1 && ['Pulsera','Broche','Otros'].indexOf(pieza) !== -1) {
-            contTipo.style.display = 'none';
-            return;
-        } else {
-            contTipo.style.display = 'block';
-        }
-
-        // Limpiar opciones
-        selectTipo.innerHTML = '<option value="">-- Selecciona Tipo --</option>';
-
-        // Rellenar con los nuevos
-        lista.forEach(function(t) {
-            var opt = document.createElement('option');
-            opt.value = t;
-            opt.text  = t;
-            selectTipo.add(opt);
-        });
-    }
-
-    // Al cargar la página, forzar llenado si ya hay valor en pedido.pieza
-    document.addEventListener('DOMContentLoaded', function() {
-        if (document.getElementById('pieza').value) {
-            actualizarTipos();
-            // Y si ya existe pedido.tipo, seleccionarlo:
-            var tipoActual = /*[[${pedido.tipo}]]*/ '';
-            if (tipoActual) {
-                document.getElementById('tipo').value = tipoActual;
-            }
-        }
-    });
-</script>
+        </script>
     </section>
 </div>
 </body>
