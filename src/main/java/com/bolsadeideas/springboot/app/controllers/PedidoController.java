@@ -82,6 +82,8 @@ public class PedidoController {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired
+    private StringRedisTemplate redisTemplate;
 
     @ModelAttribute("fotosTemporales")
     public List<String> inicializarFotosTemporales() {
@@ -396,31 +398,29 @@ public class PedidoController {
         }
     }
 
-
     @PostMapping("/form")
-    public ResponseEntity<?> guardar(@ModelAttribute @Valid Pedido pedido,
-                                     BindingResult result, Model model,
-                                     @RequestParam("observacion") String observacion,
-                                     @RequestParam("estado") String estado,
-                                     @RequestParam("tipoPedido") String tipoPedido,
-                                     @RequestParam("grupo") String grupo,
-                                     @RequestParam("pieza") String pieza,
-                                     @RequestParam(name = "peso", required = false) String peso,
-                                     @RequestParam(name = "horas", required = false) String horas,
-                                     @RequestParam(name = "cobrado", required = false) String cobrado,
-                                     @RequestParam(name = "fechaFinalizado", required = false)
-                                     @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaFinalizado,
-                                     @RequestParam(name = "fechaEntrega", required = false)
-                                     @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaEntrega,
-                                     @RequestParam(name = "empleado", required = false) String empleado,
-                                     @RequestParam(name = "ref", required = false) String ref,
-                                     RedirectAttributes flash, SessionStatus status,
-                                     @RequestParam(name = "fileNamesJSON", required = false) String fileNamesJSON,
-                                     @RequestParam(name = "files", required = false) MultipartFile[] files) {
+    public ResponseEntity<?> guardar(
+            @ModelAttribute @Valid Pedido pedido,
+            BindingResult result, Model model,
+            @RequestParam("observacion") String observacion,
+            @RequestParam("estado") String estado,
+            @RequestParam("tipoPedido") String tipoPedido,
+            @RequestParam("grupo") String grupo,
+            @RequestParam("pieza") String pieza,
+            @RequestParam(name = "peso", required = false) String peso,
+            @RequestParam(name = "horas", required = false) String horas,
+            @RequestParam(name = "cobrado", required = false) String cobrado,
+            @RequestParam(name = "fechaFinalizado", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaFinalizado,
+            @RequestParam(name = "fechaEntrega", required = false)
+            @DateTimeFormat(pattern = "yyyy-MM-dd") Date fechaEntrega,
+            @RequestParam(name = "empleado", required = false) String empleado,
+            @RequestParam(name = "ref", required = false) String ref,
+            RedirectAttributes flash, SessionStatus status,
+            @RequestParam(name = "fileNamesJSON", required = false) String fileNamesJSON,
+            @RequestParam(name = "files", required = false) MultipartFile[] files
+    ) {
 
-        // -------------------------------------------------------------------------
-        // 1. Sanitización de datos de entrada
-        // -------------------------------------------------------------------------
         Long npedido = pedido.getNpedido();
         Double pesoDouble = parsePeso(peso);
         Double cobradoDouble = parseCobrado(cobrado);
@@ -428,12 +428,12 @@ public class PedidoController {
         sanitizeClienteNombre(pedido);
 
         // -------------------------------------------------------------------------
-        // 2. Lógica de actualización de pedido existente
+        // 1. Lógica de actualización de pedido existente
         // -------------------------------------------------------------------------
         if (npedido != null && npedido > 0) {
             Pedido pedidoExistente = pedidoService.findOne(npedido);
             if (pedidoExistente != null) {
-                // Actualizamos los datos
+                // Actualizamos el pedido existente
                 actualizarPedidoExistente(pedidoExistente, observacion, estado, tipoPedido, grupo, pieza,
                         pesoDouble, horasSaneadas, cobradoDouble, fechaEntrega,
                         fechaFinalizado, empleado, ref, flash);
@@ -445,7 +445,7 @@ public class PedidoController {
 
                 // Finalizamos sesión y devolvemos respuesta AJAX con redirección
                 status.setComplete();
-                String redirectUrl = "/pedidos/form/" + pedidoExistente.getCliente().getId();
+                String redirectUrl = "/pedidos/form/" + pedidoExistente.getCliente().getId();  // Redirigir al formulario del cliente
                 return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl, "info", "Pedido actualizado con éxito"));
             } else {
                 log.warn("Pedido con npedido={} no encontrado. Se creará uno nuevo.", npedido);
@@ -453,7 +453,7 @@ public class PedidoController {
         }
 
         // -------------------------------------------------------------------------
-        // 3. Lógica de creación de nuevo pedido
+        // 2. Lógica de creación de nuevo pedido
         // -------------------------------------------------------------------------
         guardarNuevoPedido(pedido, flash);
 
@@ -464,10 +464,13 @@ public class PedidoController {
 
         // Finalizamos sesión y devolvemos respuesta AJAX con redirección
         status.setComplete();
-        String redirectUrl = "/pedidos/form/" + pedido.getCliente().getId();
-        log.info("Nuevo pedido creado con npedido={}",pedido.getCliente().getId());
-        return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl, "info", " Pedido y archivos guardados con éxito"));
+        String redirectUrl = "/pedidos/form/" + pedido.getCliente().getId();  // Siempre redirige al formulario del cliente, sea nuevo o actualizado
+        log.info("Nuevo pedido creado con npedido={}", pedido.getCliente().getId());
+
+        return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl, "info", "Pedido y archivos guardados con éxito"));
     }
+
+//se ha cambado por esta version
 
 
 // -------------------------------------------------------------------------
@@ -505,8 +508,7 @@ public class PedidoController {
             pedido.getCliente().setNombre(nombreCompleto);
         }
     }
-    @Autowired
-    private StringRedisTemplate redisTemplate;
+
 
 // ---------------------------------------------------------------------------------
 // MÉTODO AUXILIAR para Subir Archivos (se centraliza la lógica de /guardarFotos)
