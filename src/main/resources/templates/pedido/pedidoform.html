@@ -743,59 +743,53 @@
             // NUEVO: Manejar el envío del formulario principal (#pedidoForm)
             $('#pedidoForm').submit(function(event) {
 
-                // Comprobamos si hay archivos pendientes para subir
-                if (archivosPendientes.length > 0) {
+                // 1. Siempre prevenimos el envío normal del formulario
+                event.preventDefault();
 
-                    // 1. Prevenir el envío normal del formulario (para hacerlo con AJAX)
-                    event.preventDefault();
+                // 2. Crear un objeto FormData a partir del formulario
+                var formData = new FormData(this);
 
-                    // 2. Crear un objeto FormData a partir del formulario
-                    var formData = new FormData(this);
-
-                    // 3. Adjuntar cada archivo pendiente al FormData
-                    // 'files' debe coincidir con el @RequestParam(name = "files") en el controlador Java.
+                // 3. Si hay archivos pendientes, los añadimos
+                if (typeof archivosPendientes !== 'undefined' && archivosPendientes.length > 0) {
                     archivosPendientes.forEach(function(file) {
-                        formData.append('files', file);
-                    });
-
-                    // 4. Enviar el formulario principal con los archivos adjuntos vía AJAX
-                    $.ajax({
-                        type: 'POST',
-                        url: $(this).attr('action'),
-                        data: formData,
-                        cache: false,
-                        contentType: false, // Importante para que el navegador configure el boundary
-                        processData: false, // Importante para enviar archivos
-                        success: function(response) {
-                            console.log("Pedido guardado y fotos subidas con éxito.");
-                            // El controlador Java debe retornar un JSON con 'redirectUrl'
-                            if (response && response.redirectUrl) {
-                                window.location.href = response.redirectUrl;
-                            } else {
-                                // Si no hay redirectUrl (p.ej. es un error 200 inesperado)
-                                alert("Pedido guardado, pero ocurrió un error en la redirección.");
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                            console.error("Error al guardar el pedido con fotos:", error);
-                            // Muestra el error de validación del backend si existe
-                            var errorMessage = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : "Ocurrió un error desconocido al guardar el pedido.";
-                            alert("Error: " + errorMessage);
-                        }
+                        formData.append('files', file); // 'files' coincide con @RequestParam(name="files")
                     });
                 }
-                // Si no hay archivos pendientes, se permite el submit normal del formulario.
-                // Opcionalmente, podrías forzar el AJAX siempre para manejar la respuesta del backend de forma uniforme.
-            });
-            fetch('/pedidos/form', {
-                method: 'POST',
-                body: formData
-            })
-                .then(response => response.json())
-                .then(data => {
-                    // Redirige usando JavaScript
-                    window.location.href = data.redirectUrl;
+
+                // 4. Enviar SIEMPRE el formulario vía AJAX
+                $.ajax({
+                    type: 'POST',
+                    url: $(this).attr('action'), // normalmente /pedidos/form
+                    data: formData,
+                    cache: false,
+                    contentType: false, // necesario para multipart/form-data
+                    processData: false, // no transformar FormData en querystring
+                    success: function(response) {
+                        console.log("Respuesta del backend:", response);
+
+                        // El controlador devuelve algo como:
+                        // { redirectUrl: "/pedidos/form/265", info: "Pedido actualizado con éxito" }
+
+                        if (response && response.info) {
+                            console.log(response.info); // si quieres, muestra un toast o alert
+                        }
+
+                        if (response && response.redirectUrl) {
+                            window.location.href = response.redirectUrl; // redirige al formulario del cliente
+                        } else {
+                            alert("Pedido guardado, pero no se recibió URL de redirección.");
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error al guardar el pedido:", error);
+                        var errorMessage =
+                            xhr.responseJSON && xhr.responseJSON.message
+                                ? xhr.responseJSON.message
+                                : "Ocurrió un error desconocido al guardar el pedido.";
+                        alert("Error: " + errorMessage);
+                    }
                 });
+            });
 
         </script>
     </section>
