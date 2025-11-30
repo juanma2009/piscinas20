@@ -10,6 +10,7 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+
     <script th:inline="javascript">
         /*<![CDATA[*/
         // Mapa que llevaste en el model como tiposPorPieza
@@ -273,12 +274,35 @@
                 padding: 10px;
                 white-space: nowrap;
             }
+            /* Spinner de guardado pantalla completa */
+            #spinnerGuardado {
+                position: fixed;           /* Se pega a la ventana, no al card */
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.3);  /* Fondo semitransparente */
+                display: none;             /* Oculto por defecto */
+                z-index: 9999;
+
+                /* Centrar el icono */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #spinnerGuardado i {
+                font-size: 3rem;
+                color: #fff;
+            }
+
         }
     </style>
 </head>
 
 <body>
-<div layout:fragment="content">
+<div id="pedidoContent" layout:fragment="content">
+
     <div id="messege"></div>
 
     <section class="content-header">
@@ -521,7 +545,9 @@
 
                 </form>
             </div>
-
+            <div id="spinnerGuardado" class="overlay" style="display:none; z-index: 9999;">
+                <i class="fa fa-refresh fa-spin"></i>
+            </div>
         </div>
 
         <!-- Modal for file upload -->
@@ -739,12 +765,14 @@
                     );
                 }
             }
-
-            // NUEVO: Manejar el envío del formulario principal (#pedidoForm)
-            $('#pedidoForm').submit(function(event) {
+            // Manejar el envío del formulario principal (#pedidoForm)
+            $(document).on('submit', '#pedidoForm', function(event) {
 
                 // 1. Siempre prevenimos el envío normal del formulario
                 event.preventDefault();
+
+                // Mostrar spinner antes de cualquier envío
+                $("#spinnerGuardado").show();
 
                 // 2. Crear un objeto FormData a partir del formulario
                 var formData = new FormData(this);
@@ -767,16 +795,24 @@
                     success: function(response) {
                         console.log("Respuesta del backend:", response);
 
-                        // El controlador devuelve algo como:
-                        // { redirectUrl: "/pedidos/form/265", info: "Pedido actualizado con éxito" }
-
                         if (response && response.info) {
-                            console.log(response.info); // si quieres, muestra un toast o alert
+                            console.log(response.info); // si quieres, muestra un toast o un toast de AdminLTE
                         }
 
                         if (response && response.redirectUrl) {
-                            window.location.href = response.redirectUrl; // redirige al formulario del cliente
+                            // 🔥 Cargar solo el contenido nuevo, sin recargar toda la página
+                            $.get(response.redirectUrl, function(html) {
+                                var nuevoContenido = $(html).find('#pedidoContent').html();
+                                $('#pedidoContent').html(nuevoContenido);
+
+                                // Actualizar URL del navegador sin recargar
+                                history.pushState(null, "", response.redirectUrl);
+
+                                // Ocultar spinner al terminar
+                                $("#spinnerGuardado").hide();
+                            });
                         } else {
+                            $("#spinnerGuardado").hide();
                             alert("Pedido guardado, pero no se recibió URL de redirección.");
                         }
                     },
@@ -786,10 +822,12 @@
                             xhr.responseJSON && xhr.responseJSON.message
                                 ? xhr.responseJSON.message
                                 : "Ocurrió un error desconocido al guardar el pedido.";
+                        $("#spinnerGuardado").hide();
                         alert("Error: " + errorMessage);
                     }
                 });
             });
+
 
         </script>
     </section>
