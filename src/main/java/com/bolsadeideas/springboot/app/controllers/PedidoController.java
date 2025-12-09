@@ -419,6 +419,7 @@ public class PedidoController {
             RedirectAttributes flash, SessionStatus status,
             @RequestParam(name = "fileNamesJSON", required = false) String fileNamesJSON,
             @RequestParam(name = "files", required = false) MultipartFile[] files
+
     ) {
 
         Long npedido = pedido.getNpedido();
@@ -470,20 +471,30 @@ public class PedidoController {
         return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl, "info", "Pedido y archivos guardados con éxito"));
     }
 
-//se ha cambado por esta version
+
 
 
 // -------------------------------------------------------------------------
 // 4. Métodos auxiliares para sanitización de datos
 // -------------------------------------------------------------------------
 
-    // Método para convertir el valor de 'peso' de String a Double
     private Double parsePeso(String peso) {
-        if (peso != null && !peso.trim().isEmpty()) {
-            return Double.valueOf(peso.trim().replace(",", "."));
+
+        if (peso == null || peso.trim().isEmpty()) {
+            return 0.0;
         }
-        return 0.0;  // Si no hay peso, devolvemos 0.0
+
+        try {
+            // Reemplazar coma por punto
+            String normalizado = peso.trim().replace(",", ".");
+            return Double.parseDouble(normalizado);
+
+        } catch (NumberFormatException e) {
+            // ⚠️ Manda un mensaje de error al front
+            throw new IllegalArgumentException("El campo PESO solo admite valores numéricos.");
+        }
     }
+
 
     // Método para convertir el valor de 'cobrado' de String a Double
     private Double parseCobrado(String cobrado) {
