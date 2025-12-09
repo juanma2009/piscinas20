@@ -1,0 +1,16 @@
+1. Fragmento de scripts mal ubicado
+- El layout no “pegaba” los <script> al final del <body>, así que el código nunca llegaba al navegador.
+- Lección: Define un fragmento (por ejemplo layout:fragment="scripts") en tu layout y coloca ahí todas las inclusiones y tu JS custom.
+
+2. Binding estático antes de existir el elemento
+- Se hacía $('#pieza').on('change', …) antes de que el <select id="pieza"> existiera en el DOM, por lo que no enganchaba nada.
+- Lección: Para elementos que se renderizan tarde (Thymeleaf, AJAX, componentes dinámicos), usa delegated binding:
+  $(document).on('change', '#pieza', handler);
+
+3. Duplicado de librerías / orden de carga
+- Tenías dos versiones de jQuery (3.1.1 en el <head> y 3.6.0 al final), generando conflictos.
+- Lección: Carga siempre una sola versión, y hazlo antes de tu código que dependa de ella.
+
+4. Verificación con console.log y Network
+- Insertar console.log('script cargado!') y console.log($('#pieza').length) permitió saber si el JS corría y si el selector encontraba el elemento.
+- Lección: Usa prints en consola y revisa la pestaña Network → XHR para validar tus peticiones AJAX y respuestas.

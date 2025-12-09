@@ -10,6 +10,7 @@
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
     <script th:inline="javascript">
         /*<![CDATA[*/
@@ -295,6 +296,42 @@
                 font-size: 3rem;
                 color: #fff;
             }
+            /*RESPONSIVE LOS BOTONES Y NORMAL CUANDO NO ESTA EN ESE RESPONSIVO
+            /* Estilos generales */
+            .btn i {
+                font-size: 1.5rem; /* Tamaño del icono */
+            }
+
+            /* Estilos responsivos */
+            @media screen and (max-width: 1268px) {
+                /* Ocultar texto en pantallas pequeñas */
+                .btn span {
+                    display: none;
+                }
+
+                /* Mostrar solo los iconos */
+                .btn i {
+                    display: inline-block; /* Muestra el icono */
+                }
+
+                /* Asegúrate de que el tamaño del botón no cambie demasiado */
+                .btn {
+                    padding: 8px;
+                    font-size: 1.5rem;
+                }
+            }
+
+            /* Asegura que el texto se muestre en pantallas grandes */
+            @media screen and (min-width: 1268px) {
+                /* Mostrar el texto y ocultar el icono */
+                .btn i {
+                    display: none; /* Ocultar el icono */
+                }
+
+                .btn span {
+                    display: inline; /* Mostrar el texto */
+                }
+            }
 
         }
     </style>
@@ -315,17 +352,18 @@
                 <div class="col-md-8">
                     <div class="btn-group btn-group-toggle">
                         <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary">
-                            <i class="fas fa-list"></i> Pedidos
+                            <i class="fas fa-list"></i> <span>Pedidos</span>
                         </a>
                         <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary">
-                            <i class="fas fa-images"></i> Galería
+                            <i class="fas fa-images"></i> <span>Galería</span>
                         </a>
                         <a th:href="@{/listar}" class="btn btn-outline-primary">
-                            <i class="fas fa-user"></i> Clientes
+                            <i class="fas fa-user"></i> <span>Clientes</span>
                         </a>
                         <a th:href="@{/form}" class="btn btn-outline-primary">
-                            <i class="fas fa-user-plus"></i> Nuevo Cliente
+                            <i class="fas fa-user-plus"></i> <span>Nuevo Cliente</span>
                         </a>
+
                     </div>
                 </div>
             </div>
@@ -669,31 +707,41 @@
                     });
                 }
 
-                // ✅ CORREGIDO: Evento al seleccionar archivos en el input del modal
+                // 📸 Evento al seleccionar archivos en el input del modal
                 document.getElementById('files').addEventListener('change', function(event) {
-                    // Obtener los nuevos archivos seleccionados
                     const nuevosArchivos = Array.from(event.target.files);
 
-                    // ✅ AGREGAR en lugar de reemplazar
-                    nuevosArchivos.forEach(nuevoArchivo => {
-                        // Verificar si el archivo ya existe para evitar duplicados
-                        const archivoExiste = archivosPendientes.some(archivo =>
-                            archivo.name === nuevoArchivo.name &&
-                            archivo.size === nuevoArchivo.size &&
-                            archivo.lastModified === nuevoArchivo.lastModified
-                        );
+                    console.log("Archivos seleccionados:", nuevosArchivos);
 
-                        if (!archivoExiste) {
-                            archivosPendientes.push(nuevoArchivo);
+                    nuevosArchivos.forEach(function (file) {
+                        if (!file) {
+                            return;
+                        }
+
+                        // ⚠ Algunos proveedores (como Google Drive) dan size=0 o metadatos raros:
+                        // si quieres, puedes saltar completamente los realmente vacíos:
+                        if (file.size === 0) {
+                            console.warn("Saltando archivo vacío o no descargable desde el proveedor:", file.name);
+                            return;
+                        }
+
+                        // ✅ NO usar size/lastModified para detectar duplicados: rompe con Drive
+                        const yaIncluido = archivosPendientes.some(function (f) {
+                            return f.name === file.name;
+                        });
+
+                        if (!yaIncluido) {
+                            archivosPendientes.push(file);
                         }
                     });
 
-                    actualizarTabla(); // Actualiza la vista previa en el modal
+                    actualizarTabla();
 
-                    // Limpiar el input para permitir seleccionar los mismos archivos nuevamente
+                    // limpiar el input para poder volver a elegir
                     event.target.value = '';
                 });
             });
+
 
             // MODIFICADO: Cuando se envía el formulario de fotos (en el modal)
             $('#uploadForm').submit(function(event) {
