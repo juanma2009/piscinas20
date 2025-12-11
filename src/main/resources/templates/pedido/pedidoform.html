@@ -903,6 +903,7 @@
                     },
                     error: function(xhr, status, error) {
                         console.error("Error al guardar el pedido:", error);
+                        console.log(xhr);  // Ver la respuesta completa del servidor
                         var errorMessage =
                             xhr.responseJSON && xhr.responseJSON.message
                                 ? xhr.responseJSON.message

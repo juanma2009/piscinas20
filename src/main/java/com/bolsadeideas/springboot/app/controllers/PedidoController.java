@@ -48,6 +48,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.annotation.PostConstruct;
 import javax.validation.Valid;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/pedidos")
@@ -421,6 +422,10 @@ public class PedidoController {
             @RequestParam(name = "files", required = false) MultipartFile[] files
 
     ) {
+        log.info("Guardando el pedido: " + pedido.getNpedido());
+        log.info(String.format("Guardando el pedido: %s", Arrays.stream(files)
+                .map(MultipartFile::getOriginalFilename)  // Obtener el nombre de cada archivo
+                .collect(Collectors.joining(", "))));  // Unir todos los nombres en una cadena separada por comas
 
         Long npedido = pedido.getNpedido();
         Double pesoDouble = parsePeso(peso);
