@@ -419,6 +419,7 @@ public class PedidoController {
             RedirectAttributes flash, SessionStatus status,
             @RequestParam(name = "fileNamesJSON", required = false) String fileNamesJSON,
             @RequestParam(name = "files", required = false) MultipartFile[] files
+
     ) {
 
         Long npedido = pedido.getNpedido();
@@ -470,7 +471,7 @@ public class PedidoController {
         return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl, "info", "Pedido y archivos guardados con éxito"));
     }
 
-//se ha cambado por esta version
+
 
 
 // -------------------------------------------------------------------------

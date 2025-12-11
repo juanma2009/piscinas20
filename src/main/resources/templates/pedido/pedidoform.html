@@ -566,13 +566,10 @@
                             <textarea id="observacion" name="observacion" class="form-control" th:text="${pedido.observacion}"></textarea>
                         </div>
                     </div>
-
-
-
-
+                        <!-- Campo oculto para el fileId de Google Drive -->
+                    <input type="hidden" name="googleDriveFileId" id="googleDriveFileId" value="" />
 
                     <!-- Contenedor de archivos -->
-
                     <input type="hidden" name="fileNamesJSON" id="fileNamesJSON" multiple />
 
                     <!-- Botones del formulario -->
@@ -603,6 +600,8 @@
                             <input type="file" name="files" id="files" multiple>
                             <input type="hidden" name="npedido" id="npedidoModal" th:value="${pedido.npedido}" />
                             <input type="hidden" name="clienteId" id="clienteId" th:value="${pedido.getCliente().id}" />
+                            <!-- Campo oculto para almacenar el ID del archivo de Google Drive -->
+                            <input type="hidden" name="googleDriveFileId" id="googleDriveFileIdModal" />
                             <button type="submit" class="btn btn-primary">Guardar</button>
                         </form>
 
@@ -617,8 +616,46 @@
 
         <script src="https://cdn.ckeditor.com/ckeditor5/35.0.1/classic/ckeditor.js"></script>
         <script>
+
             // Variable global para almacenar los archivos seleccionados desde el modal
             var archivosPendientes = [];
+
+            // Asignar el googleDriveFileIds cuando se seleccione un archivo de Google Drive
+            function pickerCallback(data) {
+                if (data.action === google.picker.Action.PICKED) {
+                    // Obtener los IDs de los archivos seleccionados
+                    const fileIds = data.docs.map(doc => doc.id);
+
+                    // Crear un array para almacenar las representaciones de los archivos seleccionados
+                    const selectedFiles = [];
+
+                    // Por cada archivo seleccionado, obtener los datos y añadirlo a archivosPendientes
+                    fileIds.forEach((fileId) => {
+                        // Llamada a la API de Google Drive para obtener detalles del archivo
+                        gapi.client.drive.files.get({
+                            'fileId': fileId,
+                            'fields': 'id, name, mimeType'
+                        }).then(function(response) {
+                            const file = response.result;
+
+                            // Crear un objeto File simulado para añadirlo a archivosPendientes
+                            const fileObj = {
+                                name: file.name,
+                                id: file.id,
+                                mimeType: file.mimeType
+                            };
+
+                            // Añadir el archivo a la lista de archivos pendientes
+                            archivosPendientes.push(fileObj);
+
+                            // Opcionalmente, puedes añadirlo a la tabla para que el usuario lo vea
+                            actualizarTabla();
+                        });
+                    });
+                }
+            }
+
+
 
             // Controla que salga la fecha si el estado a cambiado FINALIZADO
             document.addEventListener("DOMContentLoaded", function() {
@@ -815,48 +852,48 @@
             }
             // Manejar el envío del formulario principal (#pedidoForm)
             $(document).on('submit', '#pedidoForm', function(event) {
+                event.preventDefault(); // Prevenimos el envío normal del formulario
 
-                // 1. Siempre prevenimos el envío normal del formulario
-                event.preventDefault();
-
-                // Mostrar spinner antes de cualquier envío
+                // Mostrar el spinner mientras se procesa el envío
                 $("#spinnerGuardado").show();
 
-                // 2. Crear un objeto FormData a partir del formulario
+                // Crear un objeto FormData a partir del formulario
                 var formData = new FormData(this);
 
-                // 3. Si hay archivos pendientes, los añadimos
+                // Añadir los archivos pendientes (locales y de Google Drive) a FormData
                 if (typeof archivosPendientes !== 'undefined' && archivosPendientes.length > 0) {
                     archivosPendientes.forEach(function(file) {
+                        // Para los archivos de Google Drive, normalmente solo enviamos los metadatos,
+                        // pero si es necesario descargar el archivo, se puede hacer antes de enviarlo.
                         formData.append('files', file); // 'files' coincide con @RequestParam(name="files")
                     });
                 }
 
-                // 4. Enviar SIEMPRE el formulario vía AJAX
+                // Enviar el formulario vía AJAX
                 $.ajax({
                     type: 'POST',
-                    url: $(this).attr('action'), // normalmente /pedidos/form
+                    url: $(this).attr('action'), // URL del formulario, normalmente /pedidos/form
                     data: formData,
                     cache: false,
-                    contentType: false, // necesario para multipart/form-data
-                    processData: false, // no transformar FormData en querystring
+                    contentType: false, // Necesario para multipart/form-data
+                    processData: false, // No transformar FormData en querystring
                     success: function(response) {
                         console.log("Respuesta del backend:", response);
-
+                        // Código de éxito
                         if (response && response.info) {
-                            console.log(response.info); // si quieres, muestra un toast o un toast de AdminLTE
+                            console.log(response.info); // Mostrar un mensaje de éxito (ej. toast)
                         }
 
                         if (response && response.redirectUrl) {
-                            // 🔥 Cargar solo el contenido nuevo, sin recargar toda la página
+                            // Redirigir al nuevo contenido sin recargar toda la página
                             $.get(response.redirectUrl, function(html) {
                                 var nuevoContenido = $(html).find('#pedidoContent').html();
                                 $('#pedidoContent').html(nuevoContenido);
 
-                                // Actualizar URL del navegador sin recargar
+                                // Actualizar la URL del navegador sin recargar
                                 history.pushState(null, "", response.redirectUrl);
 
-                                // Ocultar spinner al terminar
+                                // Ocultar el spinner
                                 $("#spinnerGuardado").hide();
                             });
                         } else {
