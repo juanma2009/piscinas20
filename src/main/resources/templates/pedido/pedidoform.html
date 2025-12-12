@@ -853,14 +853,30 @@
                 }
 
                 var totalTamaño = 0;
+                var archivosCorrompidos = [];
+                
                 for (let i = 0; i < archivosPendientes.length; i++) {
-                    totalTamaño += archivosPendientes[i].size;
+                    var file = archivosPendientes[i];
+                    totalTamaño += file.size;
+                    
+                    if (file.size === 0) {
+                        archivosCorrompidos.push(file.name + " (0 bytes - archivo vacío)");
+                    }
+                    if (file.size > 50 * 1024 * 1024) {
+                        archivosCorrompidos.push(file.name + " (" + (file.size / 1024 / 1024).toFixed(2) + " MB - demasiado grande)");
+                    }
                 }
+                
                 var totalMB = (totalTamaño / 1024 / 1024).toFixed(2);
                 console.log("📦 Tamaño total a enviar: " + totalMB + " MB");
                 
-                if (totalTamaño > 100 * 1024 * 1024) {
-                    alert("⚠️ ADVERTENCIA: Los archivos pesan " + totalMB + " MB.\nGoogle Drive podría tener problemas con archivos >100MB.\nIntenta descargar las imágenes primero y luego cargarlas.");
+                if (archivosCorrompidos.length > 0) {
+                    alert("⚠️ PROBLEMAS DETECTADOS EN ARCHIVOS:\n\n" + archivosCorrompidos.join('\n') + "\n\n📌 SOLUCIÓN para Google Drive:\n1. Abre Google Drive en tu navegador\n2. Haz CLICK DERECHO en la imagen\n3. Selecciona 'Descargar'\n4. Una vez descargada, selecciona el archivo descargado aquí");
+                    return false;
+                }
+                
+                if (totalTamaño > 50 * 1024 * 1024) {
+                    alert("⚠️ ADVERTENCIA: Los archivos pesan " + totalMB + " MB.\nEsto tardará más tiempo en Heroku (max 30s).\nSi falla, intenta con archivos más pequeños o uno a uno.");
                 }
                 
                 var urlAccion = $(this).attr('action');
@@ -869,6 +885,8 @@
                 console.log("📦 Content-Type: multipart/form-data (automático con FormData)");
                 console.log("⏱️ Timeout: 120000ms");
 
+                console.log("🚀 INICIANDO ENVÍO...");
+                
                 $.ajax({
                     type: 'POST',
                     url: $(this).attr('action'),
@@ -877,12 +895,16 @@
                     contentType: false,
                     processData: false,
                     timeout: 120000,
+                    dataType: 'json',
                     xhr: function() {
                         var xhr = new window.XMLHttpRequest();
                         xhr.upload.addEventListener("progress", function(evt) {
                             if (evt.lengthComputable) {
                                 var percentComplete = (evt.loaded / evt.total) * 100;
-                                console.log("Cargando... " + percentComplete.toFixed(2) + "%");
+                                var mb_enviados = (evt.loaded / 1024 / 1024).toFixed(2);
+                                var mb_total = (evt.total / 1024 / 1024).toFixed(2);
+                                console.log("📤 Cargando... " + percentComplete.toFixed(1) + "% (" + mb_enviados + "MB / " + mb_total + "MB)");
+                                $("#spinnerGuardado").text("Cargando archivo: " + percentComplete.toFixed(0) + "%");
                             }
                         }, false);
                         return xhr;
@@ -919,8 +941,11 @@
                             errorMessage = "⏱️ TIMEOUT: La solicitud tardó demasiado. El servidor no respondió en 120 segundos.";
                             detalleError = "Intenta con menos/archivos más pequeños o revisa la conexión a internet.";
                         } else if (xhr.status === 0) {
-                            errorMessage = "🔌 ERROR DE CONEXIÓN O CORS";
-                            detalleError = "La solicitud no pudo completarse. Posibles causas:\n- Servidor no responde\n- Problema de CORS\n- Archivos demasiado grandes\n- Google Drive: intenta descargar las imágenes primero\n\nEstado: " + xhr.statusText;
+                            errorMessage = "🔌 ERROR DE CONEXIÓN - GOOGLE DRIVE DETECTADO";
+                            detalleError = "📌 SOLUCIÓN:\n\n1. Abre Google Drive en tu navegador (NO en la app móvil)\n2. Para CADA imagen:\n   - Click derecho → Descargar\n   - Espera a que se descargue completamente\n3. Luego selecciona los archivos descargados aquí\n\n⚠️ NO selecciones directamente desde Google Drive, debe estar descargado en tu dispositivo.\n\nSi sigues teniendo error, intenta con UNA sola imagen primero.";
+                        } else if (xhr.status === 408 || status === 'timeout') {
+                            errorMessage = "⏱️ TIMEOUT - Solicitud tardó demasiado";
+                            detalleError = "El servidor tardó más de 2 minutos en responder.\n\nSoluciones:\n1. Intenta con archivos más pequeños\n2. Carga una imagen a la vez\n3. Asegúrate que los archivos están descargados de Google Drive (no en streaming)";
                         } else {
                             try {
                                 var respJson = null;
