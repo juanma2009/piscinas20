@@ -823,27 +823,51 @@
 
                 event.preventDefault();
 
-                if (archivosPendientes.length > 0) {
-                    console.log("Enviando " + archivosPendientes.length + " archivos...");
-                }
-
                 $("#spinnerGuardado").show();
 
                 var formData = new FormData(this);
+                
+                console.log("📋 DATOS DEL FORMULARIO:");
+                var camposForm = [];
+                var formIterator = formData.entries();
+                for(var pair of formIterator) {
+                    if (pair[0] !== 'files') {
+                        console.log("   " + pair[0] + ": " + pair[1]);
+                        camposForm.push(pair[0] + ": " + (pair[1] ? pair[1].toString().substring(0, 50) : "empty"));
+                    }
+                }
 
                 if (typeof archivosPendientes !== 'undefined' && archivosPendientes.length > 0) {
-                    console.log("Añadiendo " + archivosPendientes.length + " archivos al formulario");
+                    console.log("📁 Añadiendo " + archivosPendientes.length + " archivos al formulario");
                     var resumenArchivos = [];
                     archivosPendientes.forEach(function(file, index) {
                         var infoArchivo = "Archivo " + (index+1) + ": " + file.name + " (" + (file.size/1024).toFixed(2) + " KB, tipo: " + file.type + ")";
-                        console.log(infoArchivo);
+                        console.log("   " + infoArchivo);
                         resumenArchivos.push(infoArchivo);
                         formData.append('files', file);
                     });
-                    alert("📤 DATOS ENVIADOS:\n\nArchivos seleccionados:\n" + resumenArchivos.join('\n'));
+                    var datosCompletos = "📤 DATOS COMPLETOS A ENVIAR:\n\nCampos del formulario:\n" + camposForm.join('\n') + "\n\nArchivos:\n" + resumenArchivos.join('\n');
+                    alert(datosCompletos);
                 } else {
-                    console.log("No hay archivos pendientes para enviar");
+                    console.log("ℹ️ No hay archivos pendientes para enviar");
                 }
+
+                var totalTamaño = 0;
+                for (let i = 0; i < archivosPendientes.length; i++) {
+                    totalTamaño += archivosPendientes[i].size;
+                }
+                var totalMB = (totalTamaño / 1024 / 1024).toFixed(2);
+                console.log("📦 Tamaño total a enviar: " + totalMB + " MB");
+                
+                if (totalTamaño > 100 * 1024 * 1024) {
+                    alert("⚠️ ADVERTENCIA: Los archivos pesan " + totalMB + " MB.\nGoogle Drive podría tener problemas con archivos >100MB.\nIntenta descargar las imágenes primero y luego cargarlas.");
+                }
+                
+                var urlAccion = $(this).attr('action');
+                console.log("🔗 URL destino: " + urlAccion);
+                console.log("📋 Método: POST");
+                console.log("📦 Content-Type: multipart/form-data (automático con FormData)");
+                console.log("⏱️ Timeout: 120000ms");
 
                 $.ajax({
                     type: 'POST',
@@ -852,8 +876,19 @@
                     cache: false,
                     contentType: false,
                     processData: false,
+                    timeout: 120000,
+                    xhr: function() {
+                        var xhr = new window.XMLHttpRequest();
+                        xhr.upload.addEventListener("progress", function(evt) {
+                            if (evt.lengthComputable) {
+                                var percentComplete = (evt.loaded / evt.total) * 100;
+                                console.log("Cargando... " + percentComplete.toFixed(2) + "%");
+                            }
+                        }, false);
+                        return xhr;
+                    },
                     success: function(response) {
-                        console.log("Respuesta del backend:", response);
+                        console.log("✅ Respuesta del backend:", response);
                         archivosPendientes = [];
 
                         if (response && response.redirectUrl) {
@@ -870,31 +905,52 @@
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error("Error al guardar el pedido:", error);
-                        console.error("Status:", xhr.status);
-                        console.error("Response:", xhr.responseText);
+                        console.error("❌ Error al guardar el pedido");
+                        console.error("   Error type:", error);
+                        console.error("   Status:", xhr.status);
+                        console.error("   Status text:", xhr.statusText);
+                        console.error("   Response text:", xhr.responseText);
+                        console.error("   Ready state:", xhr.readyState);
                         
                         var errorMessage = "Ocurrió un error desconocido al guardar el pedido.";
                         var detalleError = "";
                         
-                        try {
-                            if (xhr.responseJSON && xhr.responseJSON.message) {
-                                errorMessage = xhr.responseJSON.message;
-                                detalleError = xhr.responseJSON.message;
-                            } else if (xhr.responseText) {
-                                detalleError = xhr.responseText;
-                                if (xhr.responseText.includes("<!DOCTYPE")) {
-                                    detalleError = "Error HTML del servidor. Ver consola.";
+                        if (status === 'timeout') {
+                            errorMessage = "⏱️ TIMEOUT: La solicitud tardó demasiado. El servidor no respondió en 120 segundos.";
+                            detalleError = "Intenta con menos/archivos más pequeños o revisa la conexión a internet.";
+                        } else if (xhr.status === 0) {
+                            errorMessage = "🔌 ERROR DE CONEXIÓN O CORS";
+                            detalleError = "La solicitud no pudo completarse. Posibles causas:\n- Servidor no responde\n- Problema de CORS\n- Archivos demasiado grandes\n- Google Drive: intenta descargar las imágenes primero\n\nEstado: " + xhr.statusText;
+                        } else {
+                            try {
+                                var respJson = null;
+                                try {
+                                    respJson = JSON.parse(xhr.responseText);
+                                } catch(parseError) {
+                                    respJson = null;
                                 }
+                                
+                                if (respJson && respJson.message) {
+                                    errorMessage = respJson.message;
+                                    detalleError = "Tipo: " + (respJson.type || respJson.fullType || "Desconocido") + 
+                                                   "\nMensaje detallado: " + respJson.message +
+                                                   (respJson.cause ? "\nCausa: " + respJson.cause : "") +
+                                                   (respJson.failedAt ? "\nFallo en: " + respJson.failedAt : "");
+                                } else if (xhr.responseText) {
+                                    detalleError = xhr.responseText;
+                                    if (xhr.responseText.includes("<!DOCTYPE")) {
+                                        detalleError = "Error HTML del servidor (ver consola del navegador)";
+                                    }
+                                }
+                            } catch(e) {
+                                detalleError = xhr.responseText || "Sin detalles disponibles";
                             }
-                        } catch(e) {
-                            detalleError = xhr.responseText || "Sin detalles disponibles";
                         }
                         
                         console.log("Detalle completo del error:", detalleError);
                         
                         $("#spinnerGuardado").hide();
-                        alert("❌ ERROR AL GUARDAR:\n\nCódigo HTTP: " + xhr.status + "\nMensaje: " + errorMessage + "\n\nDetalle: " + detalleError.substring(0, 200));
+                        alert("❌ ERROR AL GUARDAR:\n\nCódigo HTTP: " + xhr.status + " (" + xhr.statusText + ")\nTipo de error: " + error + "\nMensaje: " + errorMessage + "\n\nDetalle: " + detalleError.substring(0, 300));
                     }
                 });
             });

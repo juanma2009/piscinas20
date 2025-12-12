@@ -341,11 +341,11 @@ public class PedidoController {
     public ResponseEntity<?> guardar(
             @ModelAttribute @Valid Pedido pedido,
             BindingResult result, Model model,
-            @RequestParam("observacion") String observacion,
-            @RequestParam("estado") String estado,
-            @RequestParam("tipoPedido") String tipoPedido,
-            @RequestParam("grupo") String grupo,
-            @RequestParam("pieza") String pieza,
+            @RequestParam(name = "observacion", required = false) String observacion,
+            @RequestParam(name = "estado", required = false) String estado,
+            @RequestParam(name = "tipoPedido", required = false) String tipoPedido,
+            @RequestParam(name = "grupo", required = false) String grupo,
+            @RequestParam(name = "pieza", required = false) String pieza,
             @RequestParam(name = "peso", required = false) String peso,
             @RequestParam(name = "horas", required = false) String horas,
             @RequestParam(name = "cobrado", required = false) String cobrado,
@@ -361,7 +361,19 @@ public class PedidoController {
 
     ) {
         try {
-            log.info("🔵 INICIO - Guardando pedido. Cliente: {}, Estado: {}", pedido.getCliente().getNombre(), estado);
+            log.info("🔵 INICIO - Guardando pedido");
+            log.info("   Cliente: {} {}", pedido.getCliente() != null ? pedido.getCliente().getNombre() : "NULL", pedido.getCliente() != null ? pedido.getCliente().getId() : "");
+            log.info("   Parámetros recibidos:");
+            log.info("     - observacion: {}", observacion != null ? observacion.substring(0, Math.min(50, observacion.length())) : "NULL");
+            log.info("     - estado: {}", estado);
+            log.info("     - tipoPedido: {}", tipoPedido);
+            log.info("     - grupo: {}", grupo);
+            log.info("     - pieza: {}", pieza);
+            log.info("     - peso: {}", peso);
+            log.info("     - horas: {}", horas);
+            log.info("     - cobrado: {}", cobrado);
+            log.info("     - empleado: {}", empleado);
+            log.info("     - ref: {}", ref);
             log.info("🔵 Archivos recibidos: {}", files != null ? files.length : 0);
             if (files != null && files.length > 0) {
                 for (int i = 0; i < files.length; i++) {
@@ -376,16 +388,31 @@ public class PedidoController {
         try {
             if (result.hasErrors()) {
                 log.warn("⚠️ Errores de validación en el formulario del pedido");
-                return ResponseEntity.badRequest().body(Map.of("error", "Existen errores en el formulario"));
+                java.util.List<String> errores = result.getFieldErrors().stream()
+                    .map(e -> e.getField() + ": " + e.getDefaultMessage())
+                    .collect(java.util.stream.Collectors.toList());
+                log.error("   Errores encontrados: {}", errores);
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Existen errores en el formulario",
+                    "details", errores
+                ));
             }
 
             Long npedido = pedido.getNpedido();
+            log.info("📊 Parseando parámetros...");
+            
             Double pesoDouble = parsePeso(peso);
             Double cobradoDouble = parseCobrado(cobrado);
             String horasSaneadas = parseHoras(horas);
             sanitizeClienteNombre(pedido);
+            
+            log.info("📊 Parámetros parseados:");
+            log.info("   - peso: {} -> {}", peso, pesoDouble);
+            log.info("   - cobrado: {} -> {}", cobrado, cobradoDouble);
+            log.info("   - horas: {} -> {}", horas, horasSaneadas);
 
             boolean esActualizacion = npedido != null && npedido > 0;
+            log.info("📊 ¿Es actualización? {} (npedido: {})", esActualizacion, npedido);
 
             if (esActualizacion) {
                 Pedido pedidoExistente = pedidoService.findOne(npedido);
@@ -423,13 +450,28 @@ public class PedidoController {
 
             return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl, "info", "Pedido y archivos guardados con éxito"));
         } catch (Exception e) {
-            log.error("❌ ERROR CRÍTICO en guardar pedido: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of(
-                "error", "Error al guardar el pedido",
-                "message", e.getMessage(),
-                "type", e.getClass().getSimpleName(),
-                "timestamp", new java.util.Date()
-            ));
+            log.error("❌ ERROR CRÍTICO en guardar pedido: {}", e.getMessage());
+            log.error("   Tipo de excepción: {}", e.getClass().getName());
+            log.error("   Causa: {}", e.getCause() != null ? e.getCause().getMessage() : "Sin causa");
+            log.error("   Stack trace:", e);
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error al guardar el pedido");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("type", e.getClass().getSimpleName());
+            errorResponse.put("fullType", e.getClass().getName());
+            errorResponse.put("timestamp", new java.util.Date());
+            
+            if (e.getCause() != null) {
+                errorResponse.put("cause", e.getCause().getMessage());
+            }
+            
+            StackTraceElement[] stackTraceElements = e.getStackTrace();
+            if (stackTraceElements.length > 0) {
+                errorResponse.put("failedAt", stackTraceElements[0].getClassName() + "." + stackTraceElements[0].getMethodName() + " línea " + stackTraceElements[0].getLineNumber());
+            }
+            
+            return ResponseEntity.status(500).body(errorResponse);
         }
     }
 
