@@ -833,10 +833,14 @@
 
                 if (typeof archivosPendientes !== 'undefined' && archivosPendientes.length > 0) {
                     console.log("Añadiendo " + archivosPendientes.length + " archivos al formulario");
+                    var resumenArchivos = [];
                     archivosPendientes.forEach(function(file, index) {
-                        console.log("Archivo " + (index+1) + ": " + file.name + " (" + (file.size/1024).toFixed(2) + " KB)");
+                        var infoArchivo = "Archivo " + (index+1) + ": " + file.name + " (" + (file.size/1024).toFixed(2) + " KB, tipo: " + file.type + ")";
+                        console.log(infoArchivo);
+                        resumenArchivos.push(infoArchivo);
                         formData.append('files', file);
                     });
+                    alert("📤 DATOS ENVIADOS:\n\nArchivos seleccionados:\n" + resumenArchivos.join('\n'));
                 } else {
                     console.log("No hay archivos pendientes para enviar");
                 }
@@ -869,14 +873,28 @@
                         console.error("Error al guardar el pedido:", error);
                         console.error("Status:", xhr.status);
                         console.error("Response:", xhr.responseText);
+                        
                         var errorMessage = "Ocurrió un error desconocido al guardar el pedido.";
+                        var detalleError = "";
+                        
                         try {
                             if (xhr.responseJSON && xhr.responseJSON.message) {
                                 errorMessage = xhr.responseJSON.message;
+                                detalleError = xhr.responseJSON.message;
+                            } else if (xhr.responseText) {
+                                detalleError = xhr.responseText;
+                                if (xhr.responseText.includes("<!DOCTYPE")) {
+                                    detalleError = "Error HTML del servidor. Ver consola.";
+                                }
                             }
-                        } catch(e) {}
+                        } catch(e) {
+                            detalleError = xhr.responseText || "Sin detalles disponibles";
+                        }
+                        
+                        console.log("Detalle completo del error:", detalleError);
+                        
                         $("#spinnerGuardado").hide();
-                        alert("Error: " + errorMessage);
+                        alert("❌ ERROR AL GUARDAR:\n\nCódigo HTTP: " + xhr.status + "\nMensaje: " + errorMessage + "\n\nDetalle: " + detalleError.substring(0, 200));
                     }
                 });
             });
