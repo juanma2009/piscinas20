@@ -275,6 +275,8 @@ public class PedidoController {
 
 
     private void actualizarPedidoExistente(Pedido pedidoExistente, String observacion, String estado, String tipoPedido, String grupo, String pieza, Double peso, String horas, Double cobrado, Date fechaEntrega, Date fechaFinalizado, String empleado, String ref, RedirectAttributes flash) {
+        log.info("📝 Iniciando actualización de pedido: {}", pedidoExistente.getNpedido());
+        
         pedidoExistente.setObservacion(observacion);
         pedidoExistente.setEstado(estado);
         pedidoExistente.setTipoPedido(tipoPedido);
@@ -288,6 +290,8 @@ public class PedidoController {
         pedidoExistente.setRef(ref);
         pedidoExistente.setEmpleado(empleado);
         pedidoExistente.setPieza(pieza);
+        
+        log.info("📋 Datos actualizados - Estado: {}, Peso: {}, Cobrado: {}", estado, peso, cobrado);
 
         try {
             if ("Fin".equalsIgnoreCase(pedidoExistente.getEstado()) && !pedidoExistente.getEnviadoSms()) {
@@ -322,10 +326,14 @@ public class PedidoController {
 
     private void guardarNuevoPedido(Pedido pedido, RedirectAttributes flash) {
         try {
+            log.info("💾 Guardando nuevo pedido - npedido: {}, cliente: {}", pedido.getNpedido(), pedido.getCliente().getNombre());
             pedidoService.save(pedido);
+            log.info("✅ Pedido guardado exitosamente - npedido: {}", pedido.getNpedido());
             flash.addFlashAttribute("info", "Pedido guardado con éxito");
         } catch (Exception e) {
+            log.error("❌ ERROR al guardar el pedido: {}", e.getMessage(), e);
             flash.addFlashAttribute("error", "Error al guardar el pedido: " + e.getMessage());
+            throw new RuntimeException("Error al guardar el pedido: " + e.getMessage(), e);
         }
     }
 
@@ -352,55 +360,77 @@ public class PedidoController {
             @RequestParam(name = "files", required = false) MultipartFile[] files
 
     ) {
-        log.info("Guardando pedido. Cliente: {}, Estado: {}", pedido.getCliente().getNombre(), estado);
-
-        if (result.hasErrors()) {
-            log.warn("Errores de validación en el formulario del pedido");
-            return ResponseEntity.badRequest().body(Map.of("error", "Existen errores en el formulario"));
-        }
-
-        Long npedido = pedido.getNpedido();
-        Double pesoDouble = parsePeso(peso);
-        Double cobradoDouble = parseCobrado(cobrado);
-        String horasSaneadas = parseHoras(horas);
-        sanitizeClienteNombre(pedido);
-
-        boolean esActualizacion = npedido != null && npedido > 0;
-
-        if (esActualizacion) {
-            Pedido pedidoExistente = pedidoService.findOne(npedido);
-            if (pedidoExistente != null) {
-                log.info("Actualizando pedido existente: {}", npedido);
-                actualizarPedidoExistente(pedidoExistente, observacion, estado, tipoPedido, grupo, pieza,
-                        pesoDouble, horasSaneadas, cobradoDouble, fechaEntrega,
-                        fechaFinalizado, empleado, ref, flash);
-
-                if (files != null && files.length > 0) {
-                    log.info("Procesando {} archivo(s) para el pedido {}", files.length, npedido);
-                    subirYGuardarArchivos(files, npedido, pedidoExistente.getCliente().getId(), flash);
+        try {
+            log.info("🔵 INICIO - Guardando pedido. Cliente: {}, Estado: {}", pedido.getCliente().getNombre(), estado);
+            log.info("🔵 Archivos recibidos: {}", files != null ? files.length : 0);
+            if (files != null && files.length > 0) {
+                for (int i = 0; i < files.length; i++) {
+                    log.info("  📄 Archivo {}: nombre='{}', tamaño={} bytes, tipo='{}'", 
+                        i+1, files[i].getOriginalFilename(), files[i].getSize(), files[i].getContentType());
                 }
-
-                status.setComplete();
-                String redirectUrl = "/pedidos/form/" + pedidoExistente.getCliente().getId();
-                return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl, "info", "Pedido actualizado con éxito"));
-            } else {
-                log.warn("Pedido con npedido={} no encontrado. Se creará uno nuevo.", npedido);
             }
+        } catch (Exception e) {
+            log.warn("⚠️ Error al loguear información inicial", e);
         }
 
-        log.info("Creando nuevo pedido para cliente: {}", pedido.getCliente().getNombre());
-        guardarNuevoPedido(pedido, flash);
+        try {
+            if (result.hasErrors()) {
+                log.warn("⚠️ Errores de validación en el formulario del pedido");
+                return ResponseEntity.badRequest().body(Map.of("error", "Existen errores en el formulario"));
+            }
 
-        if (files != null && files.length > 0) {
-            log.info("Procesando {} archivo(s) para el nuevo pedido {}", files.length, pedido.getNpedido());
-            subirYGuardarArchivos(files, pedido.getNpedido(), pedido.getCliente().getId(), flash);
+            Long npedido = pedido.getNpedido();
+            Double pesoDouble = parsePeso(peso);
+            Double cobradoDouble = parseCobrado(cobrado);
+            String horasSaneadas = parseHoras(horas);
+            sanitizeClienteNombre(pedido);
+
+            boolean esActualizacion = npedido != null && npedido > 0;
+
+            if (esActualizacion) {
+                Pedido pedidoExistente = pedidoService.findOne(npedido);
+                if (pedidoExistente != null) {
+                    log.info("🔄 Actualizando pedido existente: {}", npedido);
+                    actualizarPedidoExistente(pedidoExistente, observacion, estado, tipoPedido, grupo, pieza,
+                            pesoDouble, horasSaneadas, cobradoDouble, fechaEntrega,
+                            fechaFinalizado, empleado, ref, flash);
+
+                    if (files != null && files.length > 0) {
+                        log.info("📁 Procesando {} archivo(s) para el pedido {}", files.length, npedido);
+                        subirYGuardarArchivos(files, npedido, pedidoExistente.getCliente().getId(), flash);
+                    }
+
+                    status.setComplete();
+                    String redirectUrl = "/pedidos/form/" + pedidoExistente.getCliente().getId();
+                    log.info("✅ Pedido actualizado correctamente");
+                    return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl, "info", "Pedido actualizado con éxito"));
+                } else {
+                    log.warn("⚠️ Pedido con npedido={} no encontrado. Se creará uno nuevo.", npedido);
+                }
+            }
+
+            log.info("🆕 Creando nuevo pedido para cliente: {}", pedido.getCliente().getNombre());
+            guardarNuevoPedido(pedido, flash);
+
+            if (files != null && files.length > 0) {
+                log.info("📁 Procesando {} archivo(s) para el nuevo pedido {}", files.length, pedido.getNpedido());
+                subirYGuardarArchivos(files, pedido.getNpedido(), pedido.getCliente().getId(), flash);
+            }
+
+            status.setComplete();
+            String redirectUrl = "/pedidos/form/" + pedido.getCliente().getId();
+            log.info("✅ Pedido {} creado correctamente", pedido.getNpedido());
+
+            return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl, "info", "Pedido y archivos guardados con éxito"));
+        } catch (Exception e) {
+            log.error("❌ ERROR CRÍTICO en guardar pedido: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error al guardar el pedido",
+                "message", e.getMessage(),
+                "type", e.getClass().getSimpleName(),
+                "timestamp", new java.util.Date()
+            ));
         }
-
-        status.setComplete();
-        String redirectUrl = "/pedidos/form/" + pedido.getCliente().getId();
-        log.info("Pedido {} creado correctamente", pedido.getNpedido());
-
-        return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl, "info", "Pedido y archivos guardados con éxito"));
     }
 
 
@@ -457,7 +487,10 @@ public class PedidoController {
 // MÉTODO AUXILIAR para Subir Archivos (se centraliza la lógica de /guardarFotos)
 // ---------------------------------------------------------------------------------
 private void subirYGuardarArchivos(MultipartFile[] fotos, Long npedido, Long clienteId, RedirectAttributes flash) {
+    log.info("📸 INICIO subirYGuardarArchivos - npedido: {}, clienteId: {}, totalArchivos: {}", npedido, clienteId, fotos != null ? fotos.length : 0);
+    
     if (fotos == null || fotos.length == 0) {
+        log.warn("⚠️ No hay archivos para subir");
         return;
     }
 
@@ -466,11 +499,12 @@ private void subirYGuardarArchivos(MultipartFile[] fotos, Long npedido, Long cli
 
     for (MultipartFile foto : fotos) {
         if (foto.isEmpty()) {
-            log.warn("Archivo vacío detectado: {}", foto.getOriginalFilename());
+            log.warn("⚠️ Archivo vacío detectado: {}", foto.getOriginalFilename());
             continue;
         }
 
         String nombreOriginal = foto.getOriginalFilename();
+        log.info("📄 Procesando archivo: {}, tamaño: {} bytes, tipo: {}", nombreOriginal, foto.getSize(), foto.getContentType());
 
         if (!validarTipoMime(foto.getContentType(), nombreOriginal)) {
             String error = "Archivo no es una imagen válida: " + nombreOriginal;
@@ -522,8 +556,10 @@ private void subirYGuardarArchivos(MultipartFile[] fotos, Long npedido, Long cli
     }
 
     if (archivosProcesados == 0 && errores.length() == 0) {
-        log.warn("Ningún archivo válido encontrado para procesar");
+        log.warn("⚠️ Ningún archivo válido encontrado para procesar");
     }
+    
+    log.info("🎬 FIN subirYGuardarArchivos - Procesados: {}, Errores: {}", archivosProcesados, errores.length() > 0 ? "Sí" : "No");
 }
 
 private boolean validarTipoMime(String contentType, String fileName) {
