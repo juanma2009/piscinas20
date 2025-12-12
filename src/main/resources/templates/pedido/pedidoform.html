@@ -1,1160 +1,534 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorator="admin/admin_layout">
-<head>
-    <!-- Agregar jQuery -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <link rel="stylesheet" href="cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-    <script th:inline="javascript">
-        /*<![CDATA[*/
-        var tiposPorPieza = /*[[${tiposPorPieza}]]*/ {};
-        /*]]>*/
-    </script>
-
-    <style>
-        /*boton modal*/
-        .btn {
-            border-radius: 8px !important;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-            transition: all 0.2s ease-in-out;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            border: none;
-        }
-
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #0069d9, #004a99);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #28a745, #1e7e34);
-            border: none;
-        }
-
-        .btn-success:hover {
-            background: linear-gradient(135deg, #34c759, #1e7e34);
-        }
-
-        /*dentro del modal*/
-        .gap-2 > * {
-            margin-right: 8px;
-        }
-
-        .gap-2 > *:last-child {
-            margin-right: 0;
-        }
-
-        /* 🔹 Mejora visual del modal */
-        .modal-xl {
-            max-width: 95%;
-        }
-
-        .modal-content {
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            border: none;
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, #0062cc, #004085);
-            color: white;
-            border-radius: 15px 15px 0 0;
-            padding: 20px;
-            border-bottom: none;
-        }
-
-        .modal-header .close {
-            color: white;
-            opacity: 0.8;
-            text-shadow: none;
-        }
-
-        .modal-header .close:hover {
-            opacity: 1;
-        }
-
-        .modal-body {
-            background-color: #f8f9fa;
-            padding: 25px;
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-
-        .modal-footer {
-            border-top: 1px solid #dee2e6;
-            background-color: #fff;
-            border-radius: 0 0 15px 15px;
-            padding: 15px 25px;
-        }
-
-        /* 🔹 Botones uniformes */
-        .btn {
-            border-radius: 8px !important;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-            transition: all 0.2s ease-in-out;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        /*loading*/
-        #loadingOverlay .progress {
-            box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
-        }
-
-        #loadingOverlay .progress-bar {
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        .estado-pendiente {
-            background-color: #f8d7da; /* Rojo claro */
-        }
-
-        .estado-terminado {
-            background-color: #d4edda; /* Verde claro */
-        }
-
-        /* Estilos para el modal moderno */
-        .file-upload-area {
-            border: 3px dashed #4e73df;
-            border-radius: 12px;
-            padding: 40px 20px;
-            text-align: center;
-            background: #f8f9fc;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 20px;
-        }
-
-        .file-upload-area:hover {
-            background: #e3e6f0;
-            border-color: #2e59d9;
-        }
-
-        .file-upload-area.dragover {
-            background: #d1e7ff;
-            border-color: #0062cc;
-            transform: scale(1.02);
-        }
-
-        .upload-icon {
-            font-size: 48px;
-            color: #4e73df;
-            margin-bottom: 15px;
-        }
-
-        .upload-text {
-            font-size: 18px;
-            font-weight: 600;
-            color: #5a5c69;
-            margin-bottom: 10px;
-        }
-
-        .upload-subtext {
-            font-size: 14px;
-            color: #858796;
-            margin-bottom: 5px;
-        }
-
-        .file-preview-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .file-preview-card {
-            background: white;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .file-preview-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .file-preview-card .file-icon {
-            font-size: 32px;
-            text-align: center;
-            margin-bottom: 10px;
-            color: #4e73df;
-        }
-
-        .file-preview-card .file-name {
-            font-size: 12px;
-            font-weight: 600;
-            color: #5a5c69;
-            text-align: center;
-            word-break: break-word;
-            margin-bottom: 5px;
-        }
-
-        .file-preview-card .file-size {
-            font-size: 11px;
-            color: #858796;
-            text-align: center;
-        }
-
-        .file-preview-card .file-remove {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: #e74a3b;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .file-preview-card:hover .file-remove {
-            opacity: 1;
-        }
-
-        .file-info-badge {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 10px;
-        }
-
-        /* Tabla de archivos mejorada */
-        .files-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-top: 20px;
-        }
-
-        .files-table thead th {
-            background: #4e73df;
-            color: white;
-            font-weight: 600;
-            padding: 12px 15px;
-            border: none;
-        }
-
-        .files-table tbody tr {
-            background: white;
-            transition: background 0.2s;
-        }
-
-        .files-table tbody tr:hover {
-            background: #f8f9fc;
-        }
-
-        .files-table tbody td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #e3e6f0;
-            vertical-align: middle;
-        }
-
-        .file-preview-img {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-        }
-
-        .file-source-badge {
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-weight: 600;
-        }
-
-        .badge-local {
-            background: #28a745;
-            color: white;
-        }
-
-        .badge-cloud {
-            background: #17a2b8;
-            color: white;
-        }
-
-        /* Progress bar para upload */
-        .upload-progress {
-            margin-top: 15px;
-        }
-
-        .progress {
-            height: 8px;
-            border-radius: 4px;
-            background: #e3e6f0;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            background: linear-gradient(90deg, #4e73df, #2e59d9);
-            transition: width 0.3s ease;
-        }
-
-        /* Contador de archivos */
-        .file-counter {
-            display: inline-flex;
-            align-items: center;
-            background: #4e73df;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-
-        .card-header.bg-white {
-            background-color: white !important;
-        }
-
-        .card-header bg-primary text-white {
-            width: 100%;
-            height: 100px;
-            border-radius: 10px 10px 0 0;
-        }
-
-        /* Establecer un padding y margen general para todas las secciones internas */
-        .container-fluid,
-        .card,
-        .card-body,
-        .card-header,
-        section.content-header {
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        /* Asegura que las tarjetas no queden pegadas entre sí o a los bordes */
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Control uniforme para las tablas */
-        .table {
-            margin-bottom: 1rem;
-        }
-
-        /* Espaciado entre botones */
-        .btn-group .btn {
-            margin-right: 0.5rem;
-        }
-
-        /* Botones pequeños con padding uniforme */
-        .btn-sm {
-            padding: 0.4rem 0.75rem;
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, #0062cc, #004085); /* Gradiente de azul */
-            color: white;
-            padding: 15px;
-            font-weight: bold;
-            text-transform: uppercase; /* Texto en mayúsculas */
-            font-size: 1.25rem; /* Aumentar el tamaño de la fuente */
-            border-radius: 8px 8px 0 0; /* Bordes redondeados */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra ligera */
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card-header:hover {
-            background-color: #0056b3; /* Tono más oscuro de azul */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
-        }
-
-        body {
-            width: 100vw;
-            min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
-            overflow-x: hidden;
-            background-color: #f9f9f9; /* opcional: fondo más suave */
-        }
-
-        html, body {
-            height: 100%; /* Asegura que el contenido cubra toda la pantalla */
-            margin: 0; /* Elimina márgenes por defecto */
-            padding: 0; /* Elimina el padding por defecto */
-            overflow: hidden; /* Oculta el scroll si no es necesario */
-        }
-
-        /* Hace la tabla responsiva */
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto; /* Permite scroll horizontal si es necesario */
-            -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en móviles */
-        }
-
-        /* Ajuste general de la tabla */
-        .table td, .table th {
-            white-space: nowrap; /* Evita que el contenido de las celdas se corte */
-            font-size: 14px;
-            padding: 8px;
-        }
-
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .table td,
-        .table th {
-            white-space: nowrap;
-            font-size: 14px;
-            padding: 8px;
-        }
-
-        @media screen and (min-width: 1268px) {
-            html, body {
-                overflow-x: hidden;
-                width: 100%;
-                margin: 0;
-                padding: 0;
-            }
-
-            .container-fluid {
-                width: 100%;
-                max-width: 100vw;
-                padding: 0;
-                margin: 0 auto;
-                overflow-x: hidden;
-            }
-
-            .tab-content {
-                margin-top: 20px;
-            }
-
-            /* Contenedor scrollable de la tabla */
-            .dataTables_scrollBody {
-                width: 100% !important;
-                max-width: 100% !important;
-                height: 290px; /* 🔹 Altura fija de la tabla visible */
-                overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
-                overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
-                display: block;
-            }
-
-            /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
-            .dataTables_scrollBody table {
-                width: 100% !important;
-                max-width: 100%;
-                min-width: auto !important;
-                table-layout: auto;
-            }
-
-            .dataTables_scrollBody th,
-            .dataTables_scrollBody td {
-                padding: 10px;
-                white-space: nowrap;
-            }
-            /* Spinner de guardado pantalla completa */
-            #spinnerGuardado {
-                position: fixed;           /* Se pega a la ventana, no al card */
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.3);  /* Fondo semitransparente */
-                display: none;             /* Oculto por defecto */
-                z-index: 9999;
-
-                /* Centrar el icono */
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            #spinnerGuardado i {
-                font-size: 3rem;
-                color: #fff;
-            }
-            /*RESPONSIVE LOS BOTONES Y NORMAL CUANDO NO ESTA EN ESE RESPONSIVO
-            /* Estilos generales */
-            .btn i {
-                font-size: 1.5rem; /* Tamaño del icono */
-            }
-
-            /* Estilos responsivos */
-            @media screen and (max-width: 1268px) {
-                /* Ocultar texto en pantallas pequeñas */
-                .btn span {
-                    display: none;
-                }
-
-                /* Mostrar solo los iconos */
-                .btn i {
-                    display: inline-block; /* Muestra el icono */
-                }
-
-                /* Asegúrate de que el tamaño del botón no cambie demasiado */
-                .btn {
-                    padding: 8px;
-                    font-size: 1.5rem;
-                }
-            }
-
-            /* Asegura que el texto se muestre en pantallas grandes */
-            @media screen and (min-width: 1268px) {
-                /* Mostrar el texto y ocultar el icono */
-                .btn i {
-                    display: none; /* Ocultar el icono */
-                }
-
-                .btn span {
-                    display: inline; /* Mostrar el texto */
-                }
-            }
-
-        }
-    </style>
-</head>
-
-<body>
-<div id="pedidoContent" layout:fragment="content">
-
-    <div id="messege"></div>
-
-    <section class="content-header">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <div th:text="${titulo}"></div> <!-- Título de la tarjeta -->
-            </div>
-            <!-- Botones de navegación -->
-            <div class="row justify-content-between align-items-center">
-                <div class="col-md-8">
-                    <div class="btn-group btn-group-toggle">
-                        <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary">
-                            <i class="fas fa-list"></i> <span>Pedidos</span>
-                        </a>
-                        <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary">
-                            <i class="fas fa-images"></i> <span>Galería</span>
-                        </a>
-                        <a th:href="@{/listar}" class="btn btn-outline-primary">
-                            <i class="fas fa-user"></i> <span>Clientes</span>
-                        </a>
-                        <a th:href="@{/form}" class="btn btn-outline-primary">
-                            <i class="fas fa-user-plus"></i> <span>Nuevo Cliente</span>
-                        </a>
-
-                    </div>
-                </div>
-            </div>
-            <div></div>
-            <div class="container-fluid mt-3">
-                <form id="pedidoForm" th:action="@{/pedidos/form/}" enctype="multipart/form-data" th:object="${pedido}"
-                      method="post">
-                    <!-- Navegación de pestañas -->
-                    <ul class="nav nav-tabs" id="pedidoTab" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active" id="detalles-tab" data-toggle="tab" href="#detalles" role="tab"
-                               aria-controls="detalles" aria-selected="true">
-                                Informacion General
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="detalles-adicionales-tab" data-toggle="tab" href="#detalles-adicionales"
-                               role="tab" aria-controls="detalles-adicionales" aria-selected="false">
-                                Detalles
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="comentario-tab" data-toggle="tab" href="#comentario" role="tab"
-                               aria-controls="comentario" aria-selected="false">
-                                Comentario
-                            </a>
-                        </li>
-                    </ul>
-                    <div></div>
-
-                    <!-- Contenido de las pestañas -->
-                    <div class="tab-content" id="pedidoTabContent">
-                        <!-- Pestaña Información General -->
-                        <div class="tab-pane fade show active" id="detalles" role="tabpanel" aria-labelledby="detalles-tab">
-                            <!-- Nueva fila: Cliente, Nº Pedido y Estado -->
-                            <div class="row">
-                                <!-- Cliente -->
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="cliente">Cliente</label>
-                                        <input name="cliente"
-                                               th:value="${pedido.cliente.nombre} + ' ' + ${pedido.cliente.apellido}"
-                                               class="form-control" disabled/>
-                                    </div>
-                                </div>
-                                <!-- Nº Pedido esta oculto pero sigueenviado el numero al servicio-->
-                                <div class="col-md-4" hidden>
-                                    <div class="form-group">
-                                        <label for="npedido">Nº Pedido</label>
-                                        <input type="hidden" th:if="${pedido.npedido != null}" th:field="*{npedido}" id="npedidoForm" name="npedido" class="form-control" />
-                                        <input type="hidden" th:unless="${pedido.npedido != null}" th:value="${numeroPedido}" id="npedidoForm" name="npedido" class="form-control" />
-                                        <small class="form-text text-danger" th:if="${#fields.hasErrors('npedido')}" th:errors="*{npedido}"></small>
-                                    </div>
-                                </div>
-
-                                <!-- Empleado -->
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="empleado">Empleado</label>
-                                        <select name="empleado" class="form-control" th:field="*{empleado}">
-                                            <option th:each="empleado : ${empleado}" th:value="${empleado}" th:text="${empleado}"></option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            <!-- Resto de campos en Información General -->
-                            <div class="row">
-                                <!-- Estado -->
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="estado">Estado</label>
-                                        <select name="estado" class="form-control" th:field="*{estado}">
-                                            <option th:each="estado : ${estados}" th:value="${estado}" th:text="${estado}"></option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <!-- Fecha sin el estado es finalizdo salga el campo fecha Finalizado-->
-                                <div class="col-md-4" id="">
-                                    <div class="form-group">
-                                        <label for="fechaEntrega">Fecha Entregado</label>
-                                        <input type="date" name="fechaEntrega" class="form-control" th:field="*{fechaEntrega}" />
-                                    </div>
-                                </div>
-                                <div class="col-md-4" id="fechaFieldContainer">
-                                    <div class="form-group">
-                                        <label for="fechaFinalizado">Fecha Finalizado</label>
-                                        <input type="date" name="fechaFinalizado" class="form-control" th:field="*{fechaFinalizado}" />
-                                    </div>
-                                </div>
-
-                                <!-- Referencia -->
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="ref">Referencia</label>
-                                        <input name="ref" th:value="${pedido.ref}" class="form-control" />
-                                    </div>
-                                </div>
-                                <!-- Servicio -->
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="tipoPedido">Servicio</label>
-                                        <select id="tipoPedido" name="tipoPedido" class="form-control" th:field="*{tipoPedido}">
-                                            <option th:each="s : ${servicios}"
-                                                    th:value="${s}"
-                                                    th:text="${s}"
-                                                    th:selected="${pedido.tipoPedido == s}">
-                                            </option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Botón para añadir fotos -->
-                            <div class="form-group text-center mt-3">
-                                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#addPhotoModal">
-                                    <i class="fas fa-camera"></i> Añadir Fotos
-                                </button>
-                                <span id="fileCounter" class="file-counter" style="display: none;">
-                                    <i class="fas fa-file mr-1"></i>
-                                    <span id="fileCount">0</span> archivos
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Pestaña Detalles Adicionales -->
-                        <div class="tab-pane fade" id="detalles-adicionales" role="tabpanel" aria-labelledby="detalles-adicionales-tab">
-
-                            <div class="row">
-
-
-
-                                <!-- Metal -->
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="grupo">Metal</label>
-                                        <select id="grupo" name="grupo" class="form-control" th:field="*{grupo}">
-                                            <option th:each="m : ${metales}"
-                                                    th:value="${m}"
-                                                    th:text="${m}">
-                                            </option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- Pieza -->
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="pieza">Pieza</label>
-                                        <select id="pieza" name="pieza" class="form-control" th:field="*{pieza}"
-                                                onchange="actualizarTipos()">
-                                            <option value="">-- Selecciona Pieza --</option>
-                                            <option th:each="p : ${piezas}"
-                                                    th:value="${p}"
-                                                    th:text="${p}"
-                                                    th:selected="${pedido.pieza == p}">
-                                            </option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- Tipo (dinámico) -->
-                                <div class="col-md-4" id="container-tipo">
-                                    <div class="form-group">
-                                        <label for="tipo">Tipo</label>
-                                        <select id="tipo" name="tipo" class="form-control" th:field="*{tipo}">
-                                            <option value="">-- Primero elige Pieza --</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-
-                            <div class="row">
-                                <!-- Peso -->
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label for="peso">Peso</label>
-                                        <input name="peso" th:value="${pedido.peso}" class="form-control"/>
-                                    </div>
-                                </div>
-                                <!-- Horas -->
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label for="horas">Horas</label>
-                                        <input name="horas" th:value="${pedido.horas}" class="form-control"/>
-                                    </div>
-                                </div>
-                                <!-- Cobrado -->
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label for="cobrado">Cobrado</label>
-                                        <input name="cobrado" th:value="${pedido.cobrado}" class="form-control"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Pestaña Comentario -->
-                        <div class="tab-pane fade" id="comentario" role="tabpanel" aria-labelledby="comentario-tab">
-                            <div class="form-group">
-                                <label for="observacion">Observaciones</label>
-                                <textarea id="observacion" name="observacion" class="form-control" th:text="${pedido.observacion}"></textarea>
-                            </div>
-                        </div>
-
-
-
-
-
-                        <!-- Contenedor de archivos -->
-
-                        <input type="hidden" name="fileNamesJSON" id="fileNamesJSON" multiple />
-
-                        <!-- Botones del formulario -->
-                        <div class="form-group">
-                            <input type="submit" th:value="${titulo}" class="btn btn-primary" />
-                            <button type="reset" class="btn btn-secondary">Resetear</button>
-                        </div>
-
-                </form>
-            </div>
-            <div id="spinnerGuardado" class="overlay" style="display:none; z-index: 9999;">
-                <i class="fa fa-refresh fa-spin"></i>
-            </div>
-        </div>
-
-        <!-- Modal for file upload MODERNIZADO -->
-        <div class="modal fade" id="addPhotoModal" tabindex="-1" role="dialog" aria-labelledby="addPhotoModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-xl" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addPhotoModalLabel">
-                            <i class="fas fa-cloud-upload-alt mr-2"></i>
-                            Añadir Archivos
-                        </h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <!-- Área de arrastrar y soltar -->
-                        <div class="file-upload-area" id="dropZone">
-                            <div class="upload-icon">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                            </div>
-                            <div class="upload-text">
-                                Arrastra y suelta tus archivos aquí
-                            </div>
-                            <div class="upload-subtext">
-                                O haz clic para seleccionar archivos
-                            </div>
-                            <div class="upload-subtext">
-                                <small>Puedes seleccionar desde tu dispositivo, Google Drive, Dropbox, etc.</small>
-                            </div>
-                            <div class="upload-subtext">
-                                <small>Formatos aceptados: imágenes (JPG, PNG, GIF), PDF, documentos (DOC, DOCX)</small>
-                            </div>
-                        </div>
-
-                        <!-- Input de archivo oculto -->
-                        <input type="file"
-                               id="filesInput"
-                               name="files"
-                               multiple
-                               style="display: none;"
-                               accept="image/*,.pdf,.doc,.docx,.txt">
-
-                        <!-- Vista previa en grid -->
-                        <div id="filePreviewGrid" class="file-preview-grid"></div>
-
-                        <!-- Tabla de archivos -->
-                        <div class="table-responsive mt-4" id="filesTableContainer" style="display: none;">
-                            <table class="files-table">
-                                <thead>
-                                <tr>
-                                    <th>Archivo</th>
-                                    <th>Tipo</th>
-                                    <th>Tamaño</th>
-                                    <th>Origen</th>
-                                    <th>Vista Previa</th>
-                                    <th>Acciones</th>
-                                </tr>
-                                </thead>
-                                <tbody id="filesTableBody">
-                                <!-- Se llenará dinámicamente -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                            <i class="fas fa-times mr-2"></i> Cancelar
-                        </button>
-                        <button type="button" class="btn btn-success" onclick="saveFiles()">
-                            <i class="fas fa-save mr-2"></i> Guardar Archivos
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <script src="https://cdn.ckeditor.com/ckeditor5/35.0.1/classic/ckeditor.js"></script>
-        <script>
-            // Variable global para almacenar los archivos seleccionados
-            var archivosPendientes = [];
-            var dropZone = null;
-            var filesInput = null;
-
-            // Función para formatear el tamaño del archivo
-            function formatFileSize(bytes) {
-                if (bytes === 0) return '0 Bytes';
-                const k = 1024;
-                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            }
-
-            // Función para obtener el icono según el tipo de archivo
-            function getFileIcon(fileType) {
-                if (fileType.startsWith('image/')) {
-                    return 'fas fa-file-image';
-                } else if (fileType === 'application/pdf') {
-                    return 'fas fa-file-pdf';
-                } else if (fileType.includes('document') || fileType.includes('msword')) {
-                    return 'fas fa-file-word';
-                } else if (fileType.includes('text')) {
-                    return 'fas fa-file-alt';
-                } else {
-                    return 'fas fa-file';
-                }
-            }
-
-            // 🔹 MEJORADA: Función para detectar el origen del archivo
-            function detectFileSource(file) {
-                if (!file) return 'Desconocido';
-
-                // Para Android: verificar si es archivo de Google Drive
-                if (file.name && (
-                    file.name.includes('drive.google.com') ||
-                    file.name.toLowerCase().includes('drive') ||
-                    (file.webkitRelativePath && file.webkitRelativePath.includes('Google Drive'))
-                )) {
-                    return 'Google Drive';
-                }
-
-                // Archivos con size 0 o sin type pueden ser de la nube en Android
-                if (file.size === 0 || !file.type || file.type === '') {
-                    return 'Google Drive';
-                }
-
-                return 'Local';
-            }
-
-            // 🔹 NUEVA: Función para procesar archivos de Android/Google Drive
-            async function processAndroidFile(file) {
-                return new Promise((resolve, reject) => {
-                    try {
-                        // Si el archivo ya es válido, usarlo directamente
-                        if (file.size > 0 && file instanceof File) {
-                            resolve(file);
-                            return;
-                        }
-
-                        // Para archivos problemáticos de Google Drive
-                        const reader = new FileReader();
-
-                        reader.onload = function(e) {
-                            try {
-                                // Crear un nuevo Blob con los datos
-                                const arrayBuffer = e.target.result;
-                                const blob = new Blob([arrayBuffer], {
-                                    type: file.type || 'application/octet-stream'
-                                });
-
-                                // Crear un nuevo File válido
-                                const processedFile = new File([blob], file.name, {
-                                    type: blob.type,
-                                    lastModified: new Date().getTime()
-                                });
-
-                                // Copiar propiedades adicionales
-                                processedFile.source = file.source;
-
-                                resolve(processedFile);
-                            } catch (innerError) {
-                                console.error('Error al procesar archivo:', innerError);
-                                // Devolver el archivo original como fallback
-                                resolve(file);
-                            }
-                        };
-
-                        reader.onerror = function(error) {
-                            console.error('Error al leer archivo:', error);
-                            // Fallback: devolver el archivo original
-                            resolve(file);
-                        };
-
-                        // Intentar leer el archivo de diferentes maneras
-                        if (file.arrayBuffer) {
-                            file.arrayBuffer()
-                                .then(arrayBuffer => reader.readAsArrayBuffer(new Blob([arrayBuffer])))
-                                .catch(() => reader.readAsArrayBuffer(new Blob([])));
-                        } else {
-                            reader.readAsArrayBuffer(file);
-                        }
-                    } catch (error) {
-                        console.error('Error en processAndroidFile:', error);
-                        // Fallback: devolver el archivo original
-                        resolve(file);
-                    }
-                });
-            }
-
-            // Inicialización cuando el DOM está listo
-            document.addEventListener('DOMContentLoaded', function() {
-                // Control de fecha cuando estado es Finalizado
-                const estadoSelect = document.querySelector('select[name="estado"]');
-                const fechaContainer = document.getElementById('fechaFieldContainer');
-
-                function toggleFechaField() {
-                    if(estadoSelect.value === 'Finalizado') {
-                        fechaContainer.style.display = 'block';
-                    } else {
-                        fechaContainer.style.display = 'none';
-                    }
-                }
-
-                toggleFechaField();
-                estadoSelect.addEventListener('change', toggleFechaField);
-
-                // Inicializar drag and drop
-                initializeDragAndDrop();
-
-                // Actualizar contador si hay archivos
-                updateFileCounter();
-
-                // 🔹 NUEVO: Mostrar advertencia para Android
-                if (/Android/i.test(navigator.userAgent)) {
-                    setTimeout(() => {
-                        console.log('Dispositivo Android detectado');
-                    }, 1000);
-                }
+<script>
+    // 🔹 DEBUG: Variable para control de logs
+    var DEBUG_MODE = true;
+    var DEBUG_LOG = [];
+
+    // Función de logging para depuración
+    function logDebug(message, data = null) {
+        if (DEBUG_MODE) {
+            console.log('🔍 DEBUG:', message, data || '');
+            DEBUG_LOG.push({
+                timestamp: new Date().toISOString(),
+                message: message,
+                data: data
             });
 
-            // Función para inicializar drag and drop
-            function initializeDragAndDrop() {
-                dropZone = document.getElementById('dropZone');
-                filesInput = document.getElementById('filesInput');
+            // También mostrar en consola móvil si es Android
+            if (/Android/i.test(navigator.userAgent)) {
+                console.log('📱 ANDROID DEBUG:', message, data || '');
+            }
+        }
+    }
 
-                if (!dropZone || !filesInput) return;
+    // Función para mostrar alerta de depuración
+    function showDebugAlert(title, message, data = null) {
+        if (DEBUG_MODE) {
+            const debugMsg = `${title}\n\n${message}\n\n${data ? JSON.stringify(data, null, 2) : ''}`;
+            console.warn('⚠️ DEBUG ALERT:', title, data || '');
+            alert(debugMsg);
+        }
+    }
 
-                // Click en el área de drop
-                dropZone.addEventListener('click', function() {
-                    filesInput.click();
-                });
+    // Variable global para almacenar los archivos seleccionados
+    var archivosPendientes = [];
+    var dropZone = null;
+    var filesInput = null;
 
-                // Drag and drop events
-                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                    dropZone.addEventListener(eventName, preventDefaults, false);
-                });
+    // Función para formatear el tamaño del archivo
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
 
-                function preventDefaults(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
+    // Función para obtener el icono según el tipo de archivo
+    function getFileIcon(fileType) {
+        if (fileType.startsWith('image/')) {
+            return 'fas fa-file-image';
+        } else if (fileType === 'application/pdf') {
+            return 'fas fa-file-pdf';
+        } else if (fileType.includes('document') || fileType.includes('msword')) {
+            return 'fas fa-file-word';
+        } else if (fileType.includes('text')) {
+            return 'fas fa-file-alt';
+        } else {
+            return 'fas fa-file';
+        }
+    }
 
-                // Highlight drop zone when dragging over
-                ['dragenter', 'dragover'].forEach(eventName => {
-                    dropZone.addEventListener(eventName, highlight, false);
-                });
+    // 🔹 MEJORADA: Función para detectar el origen del archivo
+    function detectFileSource(file) {
+        try {
+            logDebug('detectFileSource - Inicio', {
+                nombre: file?.name,
+                tamaño: file?.size,
+                tipo: file?.type,
+                esFile: file instanceof File,
+                esBlob: file instanceof Blob
+            });
 
-                ['dragleave', 'drop'].forEach(eventName => {
-                    dropZone.addEventListener(eventName, unhighlight, false);
-                });
+            if (!file) {
+                logDebug('detectFileSource - Archivo nulo');
+                return 'Desconocido';
+            }
 
-                function highlight() {
-                    dropZone.classList.add('dragover');
-                }
+            // Para Android: verificar si es archivo de Google Drive
+            if (file.name) {
+                const nameLower = file.name.toLowerCase();
+                const isGoogleDrive = nameLower.includes('drive.google.com') ||
+                    nameLower.includes('drive') ||
+                    (file.webkitRelativePath && file.webkitRelativePath.includes('Google Drive'));
 
-                function unhighlight() {
-                    dropZone.classList.remove('dragover');
-                }
-
-                // Handle dropped files
-                dropZone.addEventListener('drop', handleDrop, false);
-
-                // Handle selected files from input
-                filesInput.addEventListener('change', handleFileSelect, false);
-
-                // 🔹 NUEVO: Añadir mensaje de advertencia para Android
-                if (/Android/i.test(navigator.userAgent)) {
-                    const warningMsg = document.createElement('div');
-                    warningMsg.className = 'alert alert-warning mt-3';
-                    warningMsg.innerHTML = `
-                <i class="fas fa-mobile-alt mr-2"></i>
-                <strong>Consejo para Android:</strong> Para archivos de Google Drive,
-                es mejor descargarlos primero a tu dispositivo y luego seleccionarlos.
-            `;
-                    dropZone.parentNode.insertBefore(warningMsg, dropZone.nextSibling);
+                if (isGoogleDrive) {
+                    logDebug('detectFileSource - Detectado Google Drive por nombre', file.name);
+                    return 'Google Drive';
                 }
             }
 
-            // Manejar archivos arrastrados
-            async function handleDrop(e) {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                await handleFiles(files);
+            // Archivos con size 0 o sin type pueden ser de la nube en Android
+            if (file.size === 0 || !file.type || file.type === '') {
+                logDebug('detectFileSource - Archivo sospechoso (size 0 o sin type)', {
+                    size: file.size,
+                    type: file.type
+                });
+                return 'Google Drive (sospechoso)';
             }
 
-            // Manejar archivos seleccionados
-            async function handleFileSelect(e) {
-                const files = e.target.files;
-                await handleFiles(files);
-                // Limpiar input para permitir seleccionar los mismos archivos otra vez
-                e.target.value = '';
-            }
+            logDebug('detectFileSource - Archivo local normal');
+            return 'Local';
 
-            // 🔹 MODIFICADA: Procesar archivos con soporte para Android/Google Drive
-            async function handleFiles(files) {
-                const newFiles = Array.from(files);
+        } catch (error) {
+            logDebug('detectFileSource - Error', error);
+            return 'Error al detectar';
+        }
+    }
 
-                // Procesar cada archivo secuencialmente
-                for (let file of newFiles) {
-                    // Verificar si el archivo ya existe
-                    const alreadyExists = archivosPendientes.some(existingFile =>
-                        existingFile.name === file.name && existingFile.size === file.size
-                    );
+    // 🔹 NUEVA: Función para procesar archivos de Android/Google Drive
+    async function processAndroidFile(file) {
+        logDebug('processAndroidFile - Inicio', {
+            nombre: file?.name,
+            tamaño: file?.size,
+            tipo: file?.type
+        });
 
-                    if (!alreadyExists) {
-                        // Detectar origen
-                        file.source = detectFileSource(file);
+        return new Promise((resolve, reject) => {
+            try {
+                showDebugAlert('Procesando archivo', `Iniciando procesamiento de: ${file?.name || 'sin nombre'}`);
 
-                        try {
-                            let finalFile = file;
-
-                            // 🔹 Procesar archivos problemáticos de Google Drive en Android
-                            if (file.source === 'Google Drive' &&
-                                (/Android/i.test(navigator.userAgent) || file.size === 0)) {
-
-                                console.log('Procesando archivo de Google Drive:', file.name);
-                                finalFile = await processAndroidFile(file);
-                                finalFile.source = 'Google Drive (procesado)';
-                            }
-
-                            // Crear URL para vista previa si es imagen
-                            if (finalFile.type.startsWith('image/')) {
-                                try {
-                                    finalFile.previewUrl = URL.createObjectURL(finalFile);
-                                } catch (e) {
-                                    console.warn('No se pudo crear vista previa para:', finalFile.name);
-                                }
-                            }
-
-                            archivosPendientes.push(finalFile);
-
-                        } catch (error) {
-                            console.error('Error procesando archivo:', file.name, error);
-                            // Añadir archivo original como fallback
-                            archivosPendientes.push(file);
-                        }
-
-                        // Actualizar vistas después de cada archivo
-                        updateFilePreview();
-                        updateFilesTable();
-                        updateFileCounter();
-                    }
-                }
-            }
-
-            // Actualizar vista previa en grid
-            function updateFilePreview() {
-                const previewGrid = document.getElementById('filePreviewGrid');
-                if (!previewGrid) return;
-
-                if (archivosPendientes.length === 0) {
-                    previewGrid.innerHTML = '';
+                // Si el archivo ya es válido, usarlo directamente
+                if (file.size > 0 && file instanceof File) {
+                    logDebug('processAndroidFile - Archivo ya válido, no requiere procesamiento');
+                    showDebugAlert('Archivo válido', `El archivo ${file.name} ya es válido`);
+                    resolve(file);
                     return;
                 }
 
-                let html = '';
-                archivosPendientes.forEach((file, index) => {
-                    const fileIcon = getFileIcon(file.type);
-                    const fileSize = formatFileSize(file.size);
+                logDebug('processAndroidFile - Intentando procesar archivo problemático');
 
-                    html += `
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    try {
+                        logDebug('FileReader onload - Datos leídos', {
+                            resultadoTipo: typeof e.target.result,
+                            tamañoResultado: e.target.result instanceof ArrayBuffer ? e.target.result.byteLength : 'no ArrayBuffer'
+                        });
+
+                        showDebugAlert('Archivo leído', `Se leyó el archivo: ${file.name}`);
+
+                        // Crear un nuevo Blob con los datos
+                        const arrayBuffer = e.target.result;
+                        const blob = new Blob([arrayBuffer], {
+                            type: file.type || 'application/octet-stream'
+                        });
+
+                        logDebug('Blob creado', {
+                            blobSize: blob.size,
+                            blobType: blob.type
+                        });
+
+                        // Crear un nuevo File válido
+                        const processedFile = new File([blob], file.name, {
+                            type: blob.type,
+                            lastModified: new Date().getTime()
+                        });
+
+                        // Copiar propiedades adicionales
+                        processedFile.source = file.source + ' (procesado)';
+
+                        logDebug('File creado exitosamente', {
+                            nuevoTamaño: processedFile.size,
+                            nuevoTipo: processedFile.type,
+                            esFile: processedFile instanceof File
+                        });
+
+                        showDebugAlert('Archivo procesado', `Archivo ${file.name} procesado exitosamente`);
+
+                        resolve(processedFile);
+                    } catch (innerError) {
+                        logDebug('Error al procesar archivo en onload', innerError);
+                        showDebugAlert('Error en procesamiento', `Error al procesar ${file.name}: ${innerError.message}`);
+                        reject(new Error(`Error procesando ${file.name}: ${innerError.message}`));
+                    }
+                };
+
+                reader.onerror = function(error) {
+                    logDebug('FileReader error', {
+                        error: error,
+                        readyState: reader.readyState,
+                        errorCode: reader.error
+                    });
+                    showDebugAlert('Error de lectura', `No se pudo leer el archivo ${file.name} desde Google Drive`);
+                    reject(new Error(`No se pudo leer el archivo desde Google Drive: ${error}`));
+                };
+
+                reader.onabort = function() {
+                    logDebug('FileReader abortado');
+                    showDebugAlert('Lectura abortada', `La lectura del archivo ${file.name} fue abortada`);
+                    reject(new Error('Lectura abortada'));
+                };
+
+                // Intentar leer el archivo de diferentes maneras
+                logDebug('Intentando leer archivo con diferentes métodos');
+
+                if (file.arrayBuffer) {
+                    logDebug('Usando file.arrayBuffer()');
+                    file.arrayBuffer()
+                        .then(arrayBuffer => {
+                            logDebug('arrayBuffer obtenido', { tamaño: arrayBuffer.byteLength });
+                            reader.readAsArrayBuffer(new Blob([arrayBuffer]));
+                        })
+                        .catch(error => {
+                            logDebug('Error en arrayBuffer()', error);
+                            showDebugAlert('Error arrayBuffer', `Error con arrayBuffer: ${error.message}`);
+                            reader.readAsArrayBuffer(new Blob([]));
+                        });
+                } else {
+                    logDebug('Usando reader.readAsArrayBuffer directamente');
+                    reader.readAsArrayBuffer(file);
+                }
+
+            } catch (error) {
+                logDebug('Error general en processAndroidFile', error);
+                showDebugAlert('Error general', `Error procesando archivo: ${error.message}`);
+                reject(error);
+            }
+        });
+    }
+
+    // Inicialización cuando el DOM está listo
+    document.addEventListener('DOMContentLoaded', function() {
+        logDebug('DOMContentLoaded - Inicio');
+        showDebugAlert('App iniciada', 'La aplicación se ha cargado correctamente');
+
+        // Detectar dispositivo y navegador
+        const userAgent = navigator.userAgent;
+        const isAndroid = /Android/i.test(userAgent);
+        const isChrome = /Chrome/i.test(userAgent);
+
+        logDebug('Información del navegador', {
+            userAgent: userAgent,
+            isAndroid: isAndroid,
+            isChrome: isChrome,
+            platform: navigator.platform
+        });
+
+        if (isAndroid) {
+            showDebugAlert('Android detectado', `Dispositivo Android detectado\n\nUser Agent: ${userAgent}`);
+        }
+
+        // Control de fecha cuando estado es Finalizado
+        const estadoSelect = document.querySelector('select[name="estado"]');
+        const fechaContainer = document.getElementById('fechaFieldContainer');
+
+        function toggleFechaField() {
+            if(estadoSelect.value === 'Finalizado') {
+                fechaContainer.style.display = 'block';
+            } else {
+                fechaContainer.style.display = 'none';
+            }
+        }
+
+        toggleFechaField();
+        estadoSelect.addEventListener('change', toggleFechaField);
+
+        // Inicializar drag and drop
+        initializeDragAndDrop();
+
+        // Actualizar contador si hay archivos
+        updateFileCounter();
+
+        logDebug('DOMContentLoaded - Finalizado');
+    });
+
+    // Función para inicializar drag and drop
+    function initializeDragAndDrop() {
+        logDebug('initializeDragAndDrop - Inicio');
+
+        dropZone = document.getElementById('dropZone');
+        filesInput = document.getElementById('filesInput');
+
+        if (!dropZone || !filesInput) {
+            logDebug('initializeDragAndDrop - Elementos no encontrados', {
+                dropZone: !!dropZone,
+                filesInput: !!filesInput
+            });
+            showDebugAlert('Error de inicialización', 'No se encontraron los elementos para drag and drop');
+            return;
+        }
+
+        // Click en el área de drop
+        dropZone.addEventListener('click', function() {
+            logDebug('dropZone click');
+            filesInput.click();
+        });
+
+        // Drag and drop events
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Highlight drop zone when dragging over
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            dropZone.classList.add('dragover');
+        }
+
+        function unhighlight() {
+            dropZone.classList.remove('dragover');
+        }
+
+        // Handle dropped files
+        dropZone.addEventListener('drop', function(e) {
+            logDebug('Archivos arrastrados');
+            handleDrop(e);
+        }, false);
+
+        // Handle selected files from input
+        filesInput.addEventListener('change', function(e) {
+            logDebug('Archivos seleccionados por input', {
+                cantidad: e.target.files?.length || 0
+            });
+            handleFileSelect(e);
+        }, false);
+
+        // 🔹 DEBUG: Mostrar información del input file
+        logDebug('Input file configurado', {
+            accept: filesInput.accept,
+            multiple: filesInput.multiple
+        });
+
+        // 🔹 NUEVO: Añadir mensaje de advertencia para Android
+        if (/Android/i.test(navigator.userAgent)) {
+            const warningMsg = document.createElement('div');
+            warningMsg.className = 'alert alert-warning mt-3';
+            warningMsg.innerHTML = `
+                <i class="fas fa-mobile-alt mr-2"></i>
+                <strong>MODO DEBUG ACTIVADO</strong><br>
+                <small>Dispositivo Android detectado. Si hay problemas con Google Drive, descarga los archivos primero.</small>
+            `;
+            dropZone.parentNode.insertBefore(warningMsg, dropZone.nextSibling);
+        }
+
+        logDebug('initializeDragAndDrop - Finalizado');
+    }
+
+    // Manejar archivos arrastrados
+    async function handleDrop(e) {
+        logDebug('handleDrop - Inicio');
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        logDebug('Archivos en dataTransfer', {
+            cantidad: files.length,
+            tipos: Array.from(files).map(f => f.type)
+        });
+        await handleFiles(files);
+    }
+
+    // Manejar archivos seleccionados
+    async function handleFileSelect(e) {
+        logDebug('handleFileSelect - Inicio', {
+            cantidadArchivos: e.target.files?.length || 0
+        });
+
+        const files = e.target.files;
+
+        if (!files || files.length === 0) {
+            logDebug('handleFileSelect - No hay archivos');
+            showDebugAlert('Sin archivos', 'No se seleccionaron archivos');
+            return;
+        }
+
+        // Mostrar información de cada archivo
+        Array.from(files).forEach((file, i) => {
+            logDebug(`Archivo ${i + 1}`, {
+                nombre: file.name,
+                tamaño: file.size,
+                tipo: file.type,
+                lastModified: file.lastModified,
+                webkitRelativePath: file.webkitRelativePath
+            });
+        });
+
+        await handleFiles(files);
+
+        // Limpiar input para permitir seleccionar los mismos archivos otra vez
+        e.target.value = '';
+
+        logDebug('handleFileSelect - Finalizado');
+    }
+
+    // 🔹 MODIFICADA: Procesar archivos con soporte para Android/Google Drive
+    async function handleFiles(files) {
+        logDebug('handleFiles - Inicio', {
+            cantidadTotal: files.length
+        });
+
+        const newFiles = Array.from(files);
+
+        // Procesar cada archivo secuencialmente
+        for (let i = 0; i < newFiles.length; i++) {
+            const file = newFiles[i];
+
+            logDebug(`Procesando archivo ${i + 1}/${newFiles.length}`, {
+                nombre: file.name,
+                índice: i
+            });
+
+            // Verificar si el archivo ya existe
+            const alreadyExists = archivosPendientes.some(existingFile =>
+                existingFile.name === file.name && existingFile.size === file.size
+            );
+
+            if (!alreadyExists) {
+                // Detectar origen
+                file.source = detectFileSource(file);
+                logDebug('Origen detectado', {
+                    nombre: file.name,
+                    origen: file.source
+                });
+
+                try {
+                    let finalFile = file;
+
+                    // 🔹 Procesar archivos problemáticos de Google Drive en Android
+                    const isAndroid = /Android/i.test(navigator.userAgent);
+                    const isGoogleDrive = file.source.includes('Google');
+
+                    if (isGoogleDrive && (isAndroid || file.size === 0)) {
+                        logDebug('Procesando archivo de Google Drive', {
+                            nombre: file.name,
+                            esAndroid: isAndroid,
+                            tamaño: file.size
+                        });
+
+                        showDebugAlert('Procesando Google Drive',
+                            `Archivo: ${file.name}\nTamaño: ${file.size}\nDispositivo: ${isAndroid ? 'Android' : 'Otro'}`);
+
+                        finalFile = await processAndroidFile(file);
+                        finalFile.source = 'Google Drive (procesado)';
+
+                        logDebug('Archivo procesado exitosamente', {
+                            nombre: finalFile.name,
+                            tamañoOriginal: file.size,
+                            tamañoProcesado: finalFile.size
+                        });
+                    }
+
+                    // Crear URL para vista previa si es imagen
+                    if (finalFile.type && finalFile.type.startsWith('image/')) {
+                        try {
+                            finalFile.previewUrl = URL.createObjectURL(finalFile);
+                            logDebug('Vista previa creada', {
+                                nombre: finalFile.name,
+                                previewUrl: finalFile.previewUrl ? 'Creada' : 'No creada'
+                            });
+                        } catch (previewError) {
+                            logDebug('Error creando vista previa', previewError);
+                            showDebugAlert('Error vista previa',
+                                `No se pudo crear vista previa para: ${finalFile.name}\nError: ${previewError.message}`);
+                        }
+                    }
+
+                    archivosPendientes.push(finalFile);
+                    logDebug('Archivo añadido a pendientes', {
+                        nombre: finalFile.name,
+                        totalPendientes: archivosPendientes.length
+                    });
+
+                } catch (error) {
+                    logDebug('Error procesando archivo', {
+                        nombre: file.name,
+                        error: error.message,
+                        stack: error.stack
+                    });
+
+                    showDebugAlert('Error crítico',
+                        `Fallo al procesar: ${file.name}\n\nError: ${error.message}\n\nSe omitirá este archivo.`);
+
+                    // Añadir archivo original como fallback
+                    archivosPendientes.push(file);
+                }
+
+                // Actualizar vistas después de cada archivo
+                updateFilePreview();
+                updateFilesTable();
+                updateFileCounter();
+            } else {
+                logDebug('Archivo duplicado, omitiendo', {
+                    nombre: file.name
+                });
+            }
+        }
+
+        logDebug('handleFiles - Finalizado', {
+            archivosProcesados: newFiles.length,
+            archivosPendientes: archivosPendientes.length
+        });
+
+        if (archivosPendientes.length > 0) {
+            showDebugAlert('Procesamiento completado',
+                `Se procesaron ${newFiles.length} archivo(s)\nTotal pendientes: ${archivosPendientes.length}`);
+        }
+    }
+
+    // Actualizar vista previa en grid
+    function updateFilePreview() {
+        logDebug('updateFilePreview', {
+            cantidadArchivos: archivosPendientes.length
+        });
+
+        const previewGrid = document.getElementById('filePreviewGrid');
+        if (!previewGrid) {
+            logDebug('updateFilePreview - Elemento no encontrado');
+            return;
+        }
+
+        if (archivosPendientes.length === 0) {
+            previewGrid.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        archivosPendientes.forEach((file, index) => {
+            const fileIcon = getFileIcon(file.type);
+            const fileSize = formatFileSize(file.size);
+
+            html += `
                 <div class="file-preview-card">
                     <span class="file-info-badge">${file.source || 'Archivo'}</span>
                     <div class="file-icon">
@@ -1167,38 +541,44 @@
                     </button>
                 </div>
             `;
-                });
+        });
 
-                previewGrid.innerHTML = html;
+        previewGrid.innerHTML = html;
+        logDebug('updateFilePreview - HTML actualizado');
+    }
+
+    // Actualizar tabla de archivos
+    function updateFilesTable() {
+        logDebug('updateFilesTable');
+
+        const tableBody = document.getElementById('filesTableBody');
+        const tableContainer = document.getElementById('filesTableContainer');
+
+        if (!tableBody || !tableContainer) {
+            logDebug('updateFilesTable - Elementos no encontrados');
+            return;
+        }
+
+        if (archivosPendientes.length === 0) {
+            tableContainer.style.display = 'none';
+            tableBody.innerHTML = '';
+            return;
+        }
+
+        tableContainer.style.display = 'block';
+
+        let html = '';
+        archivosPendientes.forEach((file, index) => {
+            const fileIcon = getFileIcon(file.type);
+            const fileSize = formatFileSize(file.size);
+            const sourceBadge = (file.source && file.source.includes('Google')) ? 'badge-cloud' : 'badge-local';
+
+            let previewHtml = 'No disponible';
+            if (file.type && file.type.startsWith('image/') && file.previewUrl) {
+                previewHtml = `<img src="${file.previewUrl}" class="file-preview-img" alt="Vista previa">`;
             }
 
-            // Actualizar tabla de archivos
-            function updateFilesTable() {
-                const tableBody = document.getElementById('filesTableBody');
-                const tableContainer = document.getElementById('filesTableContainer');
-
-                if (!tableBody || !tableContainer) return;
-
-                if (archivosPendientes.length === 0) {
-                    tableContainer.style.display = 'none';
-                    tableBody.innerHTML = '';
-                    return;
-                }
-
-                tableContainer.style.display = 'block';
-
-                let html = '';
-                archivosPendientes.forEach((file, index) => {
-                    const fileIcon = getFileIcon(file.type);
-                    const fileSize = formatFileSize(file.size);
-                    const sourceBadge = (file.source && file.source.includes('Google')) ? 'badge-cloud' : 'badge-local';
-
-                    let previewHtml = 'No disponible';
-                    if (file.type.startsWith('image/') && file.previewUrl) {
-                        previewHtml = `<img src="${file.previewUrl}" class="file-preview-img" alt="Vista previa">`;
-                    }
-
-                    html += `
+            html += `
                 <tr>
                     <td>
                         <i class="${fileIcon} mr-2"></i>
@@ -1219,230 +599,458 @@
                     </td>
                 </tr>
             `;
-                });
+        });
 
-                tableBody.innerHTML = html;
-            }
+        tableBody.innerHTML = html;
+        logDebug('updateFilesTable - Tabla actualizada', {
+            filas: archivosPendientes.length
+        });
+    }
 
-            // Eliminar un archivo
-            function removeFile(index) {
-                if (archivosPendientes[index].previewUrl) {
-                    URL.revokeObjectURL(archivosPendientes[index].previewUrl);
-                }
+    // Eliminar un archivo
+    function removeFile(index) {
+        logDebug('removeFile', { índice: index });
 
-                archivosPendientes.splice(index, 1);
-                updateFilePreview();
-                updateFilesTable();
-                updateFileCounter();
-            }
-
-            // Actualizar contador de archivos
-            function updateFileCounter() {
-                const counter = document.getElementById('fileCounter');
-                const countElement = document.getElementById('fileCount');
-
-                if (counter && countElement) {
-                    if (archivosPendientes.length > 0) {
-                        counter.style.display = 'inline-flex';
-                        countElement.textContent = archivosPendientes.length;
-                    } else {
-                        counter.style.display = 'none';
-                    }
-                }
-            }
-
-            // Guardar archivos y cerrar modal
-            function saveFiles() {
-                $('#addPhotoModal').modal('hide');
-                updateFileCounter();
-
-                // Mostrar mensaje de éxito
-                if (archivosPendientes.length > 0) {
-                    showToast('success', `${archivosPendientes.length} archivo(s) listo(s) para guardar.`);
-                }
-            }
-
-            // Mostrar toast de notificación
-            function showToast(type, message) {
-                // Puedes usar toast de Bootstrap o crear uno simple
-                alert(message);
-            }
-
-            ClassicEditor
-                .create(document.querySelector('#observacion'))
-                .catch(error => {
-                    console.error(error);
-                });
-        </script>
-        <script th:inline="javascript">
-            // Función para actualizar los tipos de pieza (se conserva)
-            function actualizarTipos() {
-                var pieza = document.getElementById('pieza').value;
-                var contTipo = document.getElementById('container-tipo');
-                var selectTipo = document.getElementById('tipo');
-                var lista = tiposPorPieza[pieza] || [];
-
-                // Si la pieza no tiene múltiples tipos, ocultamos todo el contenedor
-                if (lista.length <= 1 && ['Pulsera','Broche','Otros'].indexOf(pieza) !== -1) {
-                    contTipo.style.display = 'none';
-                    return;
-                } else {
-                    contTipo.style.display = 'block';
-                }
-
-                // Limpiar opciones
-                selectTipo.innerHTML = '<option value="">-- Selecciona Tipo --</option>';
-
-                // Rellenar con los nuevos
-                lista.forEach(function(t) {
-                    var opt = document.createElement('option');
-                    opt.value = t;
-                    opt.text  = t;
-                    selectTipo.add(opt);
-                });
-            }
-
-            // Al cargar la página, forzar llenado si ya hay valor en pedido.pieza (se conserva)
-            document.addEventListener('DOMContentLoaded', function() {
-                if (document.getElementById('pieza').value) {
-                    actualizarTipos();
-                    // Y si ya existe pedido.tipo, seleccionarlo:
-                    var tipoActual = /*[[${pedido.tipo}]]*/ '';
-                    if (tipoActual) {
-                        document.getElementById('tipo').value = tipoActual;
-                    }
-                }
+        if (archivosPendientes[index]) {
+            logDebug('Archivo a eliminar', {
+                nombre: archivosPendientes[index].name
             });
 
-            // 🔹 MODIFICADA: Manejar el envío del formulario principal (#pedidoForm)
-            $(document).on('submit', '#pedidoForm', async function(event) {
-                event.preventDefault();
+            if (archivosPendientes[index].previewUrl) {
+                URL.revokeObjectURL(archivosPendientes[index].previewUrl);
+                logDebug('URL de vista previa revocada');
+            }
+        }
 
-                // Mostrar spinner antes de cualquier envío
-                $("#spinnerGuardado").show();
+        archivosPendientes.splice(index, 1);
+        updateFilePreview();
+        updateFilesTable();
+        updateFileCounter();
 
-                try {
-                    // Procesar archivos problemáticos antes de enviar
-                    const processedFiles = [];
+        logDebug('Archivo eliminado', {
+            archivosRestantes: archivosPendientes.length
+        });
+    }
 
-                    for (let i = 0; i < archivosPendientes.length; i++) {
-                        const file = archivosPendientes[i];
+    // Actualizar contador de archivos
+    function updateFileCounter() {
+        logDebug('updateFileCounter', {
+            archivosPendientes: archivosPendientes.length
+        });
 
-                        // Solo procesar si es de Google Drive y parece problemático
-                        if (file.source && file.source.includes('Google') &&
-                            (file.size === 0 || !file.type || file.type === '')) {
+        const counter = document.getElementById('fileCounter');
+        const countElement = document.getElementById('fileCount');
 
-                            try {
-                                const processed = await processAndroidFile(file);
-                                processedFiles.push(processed);
-                                console.log('Archivo procesado:', file.name);
-                            } catch (processError) {
-                                console.warn('No se pudo procesar archivo:', file.name, processError);
-                                // Usar archivo original como fallback
-                                processedFiles.push(file);
-                            }
-                        } else {
-                            processedFiles.push(file);
+        if (counter && countElement) {
+            if (archivosPendientes.length > 0) {
+                counter.style.display = 'inline-flex';
+                countElement.textContent = archivosPendientes.length;
+                logDebug('Contador actualizado', { valor: archivosPendientes.length });
+            } else {
+                counter.style.display = 'none';
+                logDebug('Contador ocultado');
+            }
+        } else {
+            logDebug('updateFileCounter - Elementos no encontrados');
+        }
+    }
+
+    // Guardar archivos y cerrar modal
+    function saveFiles() {
+        logDebug('saveFiles - Guardando archivos', {
+            cantidad: archivosPendientes.length
+        });
+
+        showDebugAlert('Guardando archivos',
+            `Se guardarán ${archivosPendientes.length} archivo(s) en la lista de pendientes`);
+
+        $('#addPhotoModal').modal('hide');
+        updateFileCounter();
+
+        // Mostrar mensaje de éxito
+        if (archivosPendientes.length > 0) {
+            showToast('success', `${archivosPendientes.length} archivo(s) listo(s) para guardar.`);
+        }
+    }
+
+    // Mostrar toast de notificación
+    function showToast(type, message) {
+        logDebug('showToast', { tipo: type, mensaje: message });
+        alert(message);
+    }
+
+    ClassicEditor
+        .create(document.querySelector('#observacion'))
+        .catch(error => {
+            logDebug('Error CKEditor', error);
+        });
+
+    // 🔹 NUEVO: Función para exportar logs de depuración
+    function exportDebugLogs() {
+        const logText = DEBUG_LOG.map(entry =>
+            `[${entry.timestamp}] ${entry.message} ${entry.data ? JSON.stringify(entry.data) : ''}`
+        ).join('\n');
+
+        const blob = new Blob([logText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `debug_log_${new Date().toISOString().slice(0,19)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        logDebug('Logs exportados', { entradas: DEBUG_LOG.length });
+        showDebugAlert('Logs exportados', `Se exportaron ${DEBUG_LOG.length} entradas de depuración`);
+    }
+
+    // 🔹 NUEVO: Botón para exportar logs (para depuración en producción)
+    document.addEventListener('DOMContentLoaded', function() {
+        // Crear botón de debug flotante
+        const debugBtn = document.createElement('button');
+        debugBtn.id = 'debugBtn';
+        debugBtn.innerHTML = '🐛 DEBUG';
+        debugBtn.style.position = 'fixed';
+        debugBtn.style.bottom = '20px';
+        debugBtn.style.right = '20px';
+        debugBtn.style.zIndex = '99999';
+        debugBtn.style.background = '#dc3545';
+        debugBtn.style.color = 'white';
+        debugBtn.style.border = 'none';
+        debugBtn.style.borderRadius = '50%';
+        debugBtn.style.width = '50px';
+        debugBtn.style.height = '50px';
+        debugBtn.style.fontSize = '10px';
+        debugBtn.style.cursor = 'pointer';
+        debugBtn.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+        debugBtn.title = 'Exportar logs de depuración';
+
+        debugBtn.onclick = function() {
+            exportDebugLogs();
+        };
+
+        document.body.appendChild(debugBtn);
+    });
+</script>
+<script th:inline="javascript">
+    // 🔹 DEBUG: Log adicional para Thymeleaf
+    console.log('🔍 THYMELEAF DEBUG - tiposPorPieza:', tiposPorPieza);
+
+    // Función para actualizar los tipos de pieza (se conserva)
+    function actualizarTipos() {
+        logDebug('actualizarTipos - Inicio');
+
+        var pieza = document.getElementById('pieza').value;
+        var contTipo = document.getElementById('container-tipo');
+        var selectTipo = document.getElementById('tipo');
+        var lista = tiposPorPieza[pieza] || [];
+
+        logDebug('actualizarTipos - Datos', {
+            piezaSeleccionada: pieza,
+            tiposDisponibles: lista,
+            cantidadTipos: lista.length
+        });
+
+        // Si la pieza no tiene múltiples tipos, ocultamos todo el contenedor
+        if (lista.length <= 1 && ['Pulsera','Broche','Otros'].indexOf(pieza) !== -1) {
+            contTipo.style.display = 'none';
+            logDebug('actualizarTipos - Contenedor ocultado');
+            return;
+        } else {
+            contTipo.style.display = 'block';
+            logDebug('actualizarTipos - Contenedor mostrado');
+        }
+
+        // Limpiar opciones
+        selectTipo.innerHTML = '<option value="">-- Selecciona Tipo --</option>';
+
+        // Rellenar con los nuevos
+        lista.forEach(function(t) {
+            var opt = document.createElement('option');
+            opt.value = t;
+            opt.text  = t;
+            selectTipo.add(opt);
+        });
+
+        logDebug('actualizarTipos - Finalizado', {
+            opcionesAgregadas: lista.length
+        });
+    }
+
+    // Al cargar la página, forzar llenado si ya hay valor en pedido.pieza (se conserva)
+    document.addEventListener('DOMContentLoaded', function() {
+        logDebug('Thymeleaf DOMContentLoaded - Inicio');
+
+        if (document.getElementById('pieza').value) {
+            actualizarTipos();
+            // Y si ya existe pedido.tipo, seleccionarlo:
+            var tipoActual = /*[[${pedido.tipo}]]*/ '';
+            if (tipoActual) {
+                document.getElementById('tipo').value = tipoActual;
+                logDebug('Tipo preseleccionado', { tipo: tipoActual });
+            }
+        }
+
+        logDebug('Thymeleaf DOMContentLoaded - Finalizado');
+    });
+
+    // 🔹 MODIFICADA: Manejar el envío del formulario principal (#pedidoForm)
+    $(document).on('submit', '#pedidoForm', async function(event) {
+        event.preventDefault();
+
+        logDebug('Envío formulario - Inicio');
+        showDebugAlert('Iniciando envío', 'Comenzando el proceso de guardado del pedido...');
+
+        // Mostrar spinner antes de cualquier envío
+        $("#spinnerGuardado").show();
+
+        try {
+            // 🔹 DEBUG: Registrar información del formulario
+            const formData = new FormData(this);
+            const formEntries = {};
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'files') {
+                    formEntries[key] = value;
+                }
+            }
+
+            logDebug('Datos del formulario', formEntries);
+
+            // Procesar archivos problemáticos antes de enviar
+            const processedFiles = [];
+
+            logDebug('Procesando archivos para envío', {
+                totalArchivos: archivosPendientes.length
+            });
+
+            for (let i = 0; i < archivosPendientes.length; i++) {
+                const file = archivosPendientes[i];
+
+                logDebug(`Procesando archivo ${i + 1}/${archivosPendientes.length} para envío`, {
+                    nombre: file.name,
+                    tamaño: file.size,
+                    tipo: file.type,
+                    origen: file.source
+                });
+
+                // Solo procesar si es de Google Drive y parece problemático
+                if (file.source && file.source.includes('Google') &&
+                    (file.size === 0 || !file.type || file.type === '')) {
+
+                    try {
+                        showDebugAlert('Procesando archivo para envío',
+                            `Convirtiendo archivo de Google Drive: ${file.name}`);
+
+                        const processed = await processAndroidFile(file);
+                        processedFiles.push(processed);
+
+                        logDebug('Archivo procesado exitosamente para envío', {
+                            nombre: processed.name,
+                            tamañoOriginal: file.size,
+                            tamañoProcesado: processed.size
+                        });
+
+                    } catch (processError) {
+                        logDebug('Error procesando archivo para envío', {
+                            nombre: file.name,
+                            error: processError.message
+                        });
+
+                        showDebugAlert('Error en archivo',
+                            `No se pudo procesar ${file.name}. Se intentará con el original.\nError: ${processError.message}`);
+
+                        // Usar archivo original como fallback
+                        processedFiles.push(file);
+                    }
+                } else {
+                    processedFiles.push(file);
+                }
+            }
+
+            // 🔹 VALIDACIÓN FINAL: Verificar que los archivos sean válidos
+            const validFiles = processedFiles.filter(file => {
+                const isValid = file && file.name && (file instanceof File || file instanceof Blob);
+
+                if (!isValid) {
+                    logDebug('Archivo inválido detectado', {
+                        archivo: file,
+                        esFile: file instanceof File,
+                        esBlob: file instanceof Blob
+                    });
+                }
+
+                return isValid;
+            });
+
+            logDebug('Validación de archivos', {
+                total: processedFiles.length,
+                válidos: validFiles.length,
+                inválidos: processedFiles.length - validFiles.length
+            });
+
+            showDebugAlert('Archivos validados',
+                `Total: ${processedFiles.length}\nVálidos: ${validFiles.length}\nInválidos: ${processedFiles.length - validFiles.length}`);
+
+            if (validFiles.length !== processedFiles.length) {
+                logDebug('Algunos archivos son inválidos', {
+                    archivosInválidos: processedFiles.filter(f => !(f && f.name && (f instanceof File || f instanceof Blob)))
+                });
+            }
+
+            // 2. Crear un objeto FormData a partir del formulario
+            var formData = new FormData(this);
+
+            // 3. Añadir archivos procesados
+            validFiles.forEach(function(file) {
+                formData.append('files', file);
+                logDebug('Archivo añadido al FormData', { nombre: file.name });
+            });
+
+            logDebug('FormData preparado para envío', {
+                totalArchivosEnFormData: validFiles.length,
+                tamañoEstimado: validFiles.reduce((sum, f) => sum + (f.size || 0), 0)
+            });
+
+            // 4. Enviar SIEMPRE el formulario vía AJAX
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: formData,
+                cache: false,
+                contentType: false,
+                processData: false,
+                timeout: 30000, // 🔹 Aumentar timeout para archivos grandes
+                xhr: function() {
+                    var xhr = new window.XMLHttpRequest();
+                    // Upload progress
+                    xhr.upload.addEventListener("progress", function(evt) {
+                        if (evt.lengthComputable) {
+                            var percentComplete = evt.loaded / evt.total * 100;
+                            logDebug('Progreso de upload', {
+                                porcentaje: percentComplete.toFixed(2),
+                                loaded: evt.loaded,
+                                total: evt.total
+                            });
+                            console.log('📤 Upload:', percentComplete.toFixed(2) + '%');
                         }
+                    }, false);
+                    return xhr;
+                },
+                beforeSend: function() {
+                    logDebug('AJAX beforeSend - Enviando petición');
+                    showDebugAlert('Enviando datos', 'Iniciando envío al servidor...');
+                },
+                success: function(response) {
+                    logDebug('AJAX success - Respuesta recibida', response);
+                    showDebugAlert('Respuesta del servidor', 'El servidor respondió correctamente');
+
+                    if (response && response.info) {
+                        logDebug('Información adicional', response.info);
                     }
 
-                    // 🔹 VALIDACIÓN FINAL: Verificar que los archivos sean válidos
-                    const validFiles = processedFiles.filter(file => {
-                        // Aceptar archivos aunque tengan size 0 (puede ser Google Drive)
-                        return file && file.name && (file instanceof File || file instanceof Blob);
-                    });
-
-                    console.log('Archivos válidos para enviar:', validFiles.length);
-
-                    // 2. Crear un objeto FormData a partir del formulario
-                    var formData = new FormData(this);
-
-                    // 3. Añadir archivos procesados
-                    validFiles.forEach(function(file) {
-                        formData.append('files', file);
-                    });
-
-                    // 4. Enviar SIEMPRE el formulario vía AJAX
-                    $.ajax({
-                        type: 'POST',
-                        url: $(this).attr('action'),
-                        data: formData,
-                        cache: false,
-                        contentType: false,
-                        processData: false,
-                        timeout: 30000, // 🔹 Aumentar timeout para archivos grandes
-                        success: function(response) {
-                            console.log("Respuesta del backend:", response);
-
-                            if (response && response.info) {
-                                console.log(response.info);
+                    if (response && response.redirectUrl) {
+                        // Limpiar archivos después de guardar exitosamente
+                        archivosPendientes.forEach(file => {
+                            if (file.previewUrl) {
+                                URL.revokeObjectURL(file.previewUrl);
                             }
+                        });
+                        archivosPendientes = [];
+                        updateFileCounter();
 
-                            if (response && response.redirectUrl) {
-                                // Limpiar archivos después de guardar exitosamente
-                                archivosPendientes.forEach(file => {
-                                    if (file.previewUrl) {
-                                        URL.revokeObjectURL(file.previewUrl);
-                                    }
-                                });
-                                archivosPendientes = [];
-                                updateFileCounter();
+                        logDebug('Redireccionando', { url: response.redirectUrl });
+                        showDebugAlert('Redireccionando', `Guardado exitoso. Redirigiendo a: ${response.redirectUrl}`);
 
-                                // 🔥 Cargar solo el contenido nuevo, sin recargar toda la página
-                                $.get(response.redirectUrl, function(html) {
-                                    var nuevoContenido = $(html).find('#pedidoContent').html();
-                                    $('#pedidoContent').html(nuevoContenido);
+                        // 🔥 Cargar solo el contenido nuevo, sin recargar toda la página
+                        $.get(response.redirectUrl, function(html) {
+                            var nuevoContenido = $(html).find('#pedidoContent').html();
+                            $('#pedidoContent').html(nuevoContenido);
 
-                                    // Actualizar URL del navegador sin recargar
-                                    history.pushState(null, "", response.redirectUrl);
+                            // Actualizar URL del navegador sin recargar
+                            history.pushState(null, "", response.redirectUrl);
 
-                                    // Ocultar spinner al terminar
-                                    $("#spinnerGuardado").hide();
-                                });
-                            } else {
-                                $("#spinnerGuardado").hide();
-                                alert("Pedido guardado, pero no se recibió URL de redirección.");
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                            console.error("Error al guardar el pedido:", error);
-
-                            // 🔹 MEJOR MANEJO DE ERRORES PARA ANDROID
-                            let errorMessage = "Ocurrió un error al guardar el pedido.";
-
-                            if (status === "timeout") {
-                                errorMessage = "El tiempo de espera se agotó. Los archivos pueden ser muy grandes o hay problemas de conexión.";
-                            } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                                errorMessage = xhr.responseJSON.message;
-                            } else if (/Android/i.test(navigator.userAgent)) {
-                                errorMessage = "Error en Android. Si estás usando archivos de Google Drive, intenta descargarlos primero a tu dispositivo.";
-                            }
-
+                            // Ocultar spinner al terminar
                             $("#spinnerGuardado").hide();
 
-                            // 🔹 OFRECER SOLUCIÓN ALTERNATIVA
-                            if (confirm(errorMessage + "\n\n¿Quieres intentar guardar sin los archivos adjuntos?")) {
-                                // Eliminar archivos y reintentar
-                                archivosPendientes = [];
-                                updateFileCounter();
-                                $(event.target).submit();
-                            }
-                        }
+                            logDebug('Redirección completada');
+                            showDebugAlert('Operación completada', 'El pedido se guardó exitosamente');
+                        });
+                    } else {
+                        $("#spinnerGuardado").hide();
+                        logDebug('Respuesta sin redirectUrl', response);
+                        showDebugAlert('Advertencia', 'Pedido guardado, pero no se recibió URL de redirección.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    logDebug('AJAX error', {
+                        status: status,
+                        error: error,
+                        xhrStatus: xhr.status,
+                        xhrStatusText: xhr.statusText,
+                        responseText: xhr.responseText
                     });
 
-                } catch (error) {
-                    console.error("Error preparando archivos:", error);
+                    // 🔹 MEJOR MANEJO DE ERRORES PARA ANDROID
+                    let errorMessage = "Ocurrió un error al guardar el pedido.";
+
+                    if (status === "timeout") {
+                        errorMessage = "El tiempo de espera se agotó (30 segundos). Los archivos pueden ser muy grandes o hay problemas de conexión.";
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (xhr.status === 413) {
+                        errorMessage = "Los archivos son demasiado grandes. El servidor rechazó la petición.";
+                    } else if (xhr.status === 415) {
+                        errorMessage = "Tipo de archivo no soportado.";
+                    } else if (xhr.status === 500) {
+                        errorMessage = "Error interno del servidor.";
+                    } else if (/Android/i.test(navigator.userAgent)) {
+                        errorMessage = "Error en Android. Si estás usando archivos de Google Drive, intenta:\n1. Descargarlos primero a tu dispositivo\n2. Reducir el tamaño de los archivos\n3. Intentar con menos archivos";
+                    }
+
+                    showDebugAlert('Error de envío',
+                        `Status: ${status}\nError: ${error}\n\n${errorMessage}\n\nCódigo HTTP: ${xhr.status}\nRespuesta: ${xhr.responseText?.substring(0, 200) || 'Sin respuesta'}`);
+
                     $("#spinnerGuardado").hide();
 
-                    if (/Android/i.test(navigator.userAgent)) {
-                        alert("Problema con archivos de Google Drive. Intenta:\n1. Descargar los archivos a tu dispositivo primero\n2. Usar archivos más pequeños\n3. Intentar con menos archivos a la vez");
-                    } else {
-                        alert("Error procesando archivos: " + error.message);
+                    // 🔹 OFRECER SOLUCIÓN ALTERNATIVA
+                    if (confirm(`ERROR: ${errorMessage}\n\n¿Quieres intentar guardar sin los archivos adjuntos?`)) {
+                        // Eliminar archivos y reintentar
+                        logDebug('Reintentando sin archivos');
+                        archivosPendientes = [];
+                        updateFileCounter();
+                        $(event.target).submit();
                     }
+                },
+                complete: function() {
+                    logDebug('AJAX complete - Petición finalizada');
                 }
             });
-        </script>
-    </section>
-</div>
-</body>
-</html>
+
+        } catch (error) {
+            logDebug('Error general preparando archivos', {
+                error: error.message,
+                stack: error.stack
+            });
+
+            showDebugAlert('Error crítico en cliente',
+                `Error procesando archivos:\n\n${error.message}\n\nStack: ${error.stack}`);
+
+            $("#spinnerGuardado").hide();
+
+            if (/Android/i.test(navigator.userAgent)) {
+                alert("🚨 PROBLEMA EN ANDROID DETECTADO 🚨\n\n" +
+                    "Error: " + error.message + "\n\n" +
+                    "Solución sugerida:\n" +
+                    "1. Descarga los archivos de Google Drive a tu dispositivo\n" +
+                    "2. Usa archivos más pequeños\n" +
+                    "3. Intenta con menos archivos a la vez\n" +
+                    "4. Reinicia la aplicación\n\n" +
+                    "Información para soporte:\n" +
+                    "User Agent: " + navigator.userAgent);
+            } else {
+                alert("Error procesando archivos: " + error.message);
+            }
+        }
+    });
+</script>
