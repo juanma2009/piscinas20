@@ -1,0 +1,10 @@
+Add alert messages for Android debugging
+
+Add step-by-step alerts to show progress:
+- PASO 1: Guardando datos del pedido
+- PASO 1 COMPLETADO: Muestra npedido y si hay archivos
+- PASO 2: Subiendo archivos
+- PASO 2 COMPLETADO: Muestra cantidad de archivos subidos
+- Error handlers mejorados para ambos pasos
+
+Permite usuarios en Android/mobile ver el progreso sin DevTools

@@ -1,0 +1,10 @@
+Two-step upload: separate form data from files
+
+- PASO 1: Save pedido data only (fast, no timeout)
+- PASO 2: Upload files separately (async, no Heroku timeout)
+
+Fixes Google Drive upload errors (HTTP 0) by:
+- Splitting form submission and file upload into 2 sequential requests
+- Reducing first request size (only form data)
+- Using new POST /pedidos/subir-archivos/{npedido} endpoint
+- Maintaining backwards compatibility with existing flows
