@@ -361,7 +361,7 @@ public class PedidoController {
 
     ) {
         try {
-            log.info("🔵 INICIO - Guardando pedido");
+            log.info("🔵 INICIO - Guardando pedido (SOLO DATOS DEL FORMULARIO, SIN ARCHIVOS)");
             log.info("   Cliente: {} {}", pedido.getCliente() != null ? pedido.getCliente().getNombre() : "NULL", pedido.getCliente() != null ? pedido.getCliente().getId() : "");
             log.info("   Parámetros recibidos:");
             log.info("     - observacion: {}", observacion != null ? observacion.substring(0, Math.min(50, observacion.length())) : "NULL");
@@ -374,12 +374,9 @@ public class PedidoController {
             log.info("     - cobrado: {}", cobrado);
             log.info("     - empleado: {}", empleado);
             log.info("     - ref: {}", ref);
-            log.info("🔵 Archivos recibidos: {}", files != null ? files.length : 0);
+            log.info("ℹ️ Archivos recibidos (solo referencia): {}", files != null ? files.length : 0);
             if (files != null && files.length > 0) {
-                for (int i = 0; i < files.length; i++) {
-                    log.info("  📄 Archivo {}: nombre='{}', tamaño={} bytes, tipo='{}'", 
-                        i+1, files[i].getOriginalFilename(), files[i].getSize(), files[i].getContentType());
-                }
+                log.info("   Nota: Los {} archivo(s) se subirán en una petición SEPARADA después de crear/actualizar el pedido", files.length);
             }
         } catch (Exception e) {
             log.warn("⚠️ Error al loguear información inicial", e);
@@ -422,19 +419,22 @@ public class PedidoController {
                             pesoDouble, horasSaneadas, cobradoDouble, fechaEntrega,
                             fechaFinalizado, empleado, ref, flash);
 
-                    if (files != null && files.length > 0) {
-                        log.info("📁 Procesando {} archivo(s) para el pedido {}", files.length, npedido);
-                        subirYGuardarArchivos(files, npedido, pedidoExistente.getCliente().getId(), flash);
-                    }
-
                     status.setComplete();
                     log.info("✅ Pedido actualizado correctamente");
-                    return ResponseEntity.ok(Map.of(
-                        "success", true, 
-                        "info", "Pedido actualizado con éxito",
-                        "npedido", pedidoExistente.getNpedido(),
-                        "clienteId", pedidoExistente.getCliente().getId()
-                    ));
+                    
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("success", true);
+                    response.put("info", "Pedido actualizado con éxito");
+                    response.put("npedido", pedidoExistente.getNpedido());
+                    response.put("clienteId", pedidoExistente.getCliente().getId());
+                    response.put("tieneArchivos", files != null && files.length > 0);
+                    
+                    if (files != null && files.length > 0) {
+                        log.info("📁 {} archivo(s) pendientes de subir asincronamente para pedido {}", files.length, npedido);
+                        response.put("archivosASubir", files.length);
+                    }
+                    
+                    return ResponseEntity.ok(response);
                 } else {
                     log.warn("⚠️ Pedido con npedido={} no encontrado. Se creará uno nuevo.", npedido);
                 }
@@ -443,21 +443,23 @@ public class PedidoController {
             log.info("🆕 Creando nuevo pedido para cliente: {}", pedido.getCliente().getNombre());
             guardarNuevoPedido(pedido, flash);
 
-            if (files != null && files.length > 0) {
-                log.info("📁 Procesando {} archivo(s) para el nuevo pedido {}", files.length, pedido.getNpedido());
-                subirYGuardarArchivos(files, pedido.getNpedido(), pedido.getCliente().getId(), flash);
-            }
-
             status.setComplete();
-            log.info("✅ Pedido {} creado correctamente", pedido.getNpedido());
+            log.info("✅ Pedido {} creado correctamente (SIN ARCHIVOS)", pedido.getNpedido());
 
-            return ResponseEntity.ok(Map.of(
-                "success", true, 
-                "info", "Pedido creado con éxito",
-                "npedido", pedido.getNpedido(),
-                "clienteId", pedido.getCliente().getId(),
-                "isNew", true
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("info", "Pedido creado con éxito");
+            response.put("npedido", pedido.getNpedido());
+            response.put("clienteId", pedido.getCliente().getId());
+            response.put("isNew", true);
+            response.put("tieneArchivos", files != null && files.length > 0);
+            
+            if (files != null && files.length > 0) {
+                log.info("📁 {} archivo(s) pendientes de subir asincronamente para pedido {}", files.length, pedido.getNpedido());
+                response.put("archivosASubir", files.length);
+            }
+            
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("❌ ERROR CRÍTICO en guardar pedido: {}", e.getMessage());
             log.error("   Tipo de excepción: {}", e.getClass().getName());
@@ -1008,6 +1010,119 @@ private boolean validarTipoMime(String contentType, String fileName) {
         }
 
         return "redirect:/pedidos/formEditar/{}" + pedidoId;
+    }
+
+    @PostMapping("/subir-archivos/{npedido}")
+    public ResponseEntity<?> subirArchivos(
+            @PathVariable Long npedido,
+            @RequestParam(name = "files", required = false) MultipartFile[] files,
+            RedirectAttributes flash
+    ) {
+        try {
+            log.info("📸 INICIO subirArchivos - npedido: {}, archivos: {}", npedido, files != null ? files.length : 0);
+            
+            Pedido pedido = pedidoService.findOne(npedido);
+            if (pedido == null) {
+                log.warn("❌ Pedido {} no encontrado", npedido);
+                return ResponseEntity.status(404).body(Map.of(
+                    "error", "Pedido no encontrado",
+                    "npedido", npedido
+                ));
+            }
+
+            if (files == null || files.length == 0) {
+                log.info("✅ No hay archivos para subir");
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "info", "No hay archivos para subir",
+                    "archivosSubidos", 0
+                ));
+            }
+
+            int archivosProcesados = 0;
+            StringBuilder errores = new StringBuilder();
+
+            for (MultipartFile foto : files) {
+                String nombreOriginal = foto.getOriginalFilename();
+                long tamaño = foto.getSize();
+                String contentType = foto.getContentType();
+                
+                log.info("🔍 Validando archivo: {} ({} bytes, MIME: {})", nombreOriginal, tamaño, contentType);
+                
+                if (foto.isEmpty()) {
+                    log.warn("❌ Archivo vacío: {}", nombreOriginal);
+                    errores.append("• Archivo vacío (0 bytes): ").append(nombreOriginal).append("\n");
+                    continue;
+                }
+
+                if (!validarTipoMime(contentType, nombreOriginal)) {
+                    String error = "Archivo no es una imagen válida (MIME: " + contentType + "): " + nombreOriginal;
+                    log.warn("❌ {}", error);
+                    errores.append("• ").append(error).append("\n");
+                    continue;
+                }
+                
+                log.info("✅ Archivo validado: {}", nombreOriginal);
+
+                try {
+                    byte[] imageBytes = foto.getBytes();
+
+                    if (imageBytes.length == 0) {
+                        log.warn("Archivo sin contenido: {}", nombreOriginal);
+                        errores.append("• Archivo vacío: ").append(nombreOriginal).append("\n");
+                        continue;
+                    }
+
+                    String fileName = "pedido_" + npedido + "_" + System.currentTimeMillis();
+
+                    log.info("Subiendo archivo {} ({} KB) a Cloudinary...", nombreOriginal, imageBytes.length / 1024);
+                    String imageUrl = cloudinaryService.uploadImage(imageBytes, npedido, fileName);
+
+                    log.info("Archivo subido con éxito: {} -> {}", nombreOriginal, imageUrl);
+
+                    String mensaje = npedido + ";" + nombreOriginal + ";" + fileName;
+                    redisTemplate.opsForValue().set("archivo_" + npedido + "_" + System.currentTimeMillis(), mensaje);
+                    redisQueueProducer.sendMessage(mensaje);
+
+                    archivosProcesados++;
+                    log.info("Mensaje enviado a Redis: {}", mensaje);
+
+                } catch (IOException e) {
+                    String error = "Error al leer archivo " + nombreOriginal + ": " + e.getMessage();
+                    log.error(error, e);
+                    errores.append("• ").append(error).append("\n");
+                } catch (Exception e) {
+                    String error = "Error al subir " + nombreOriginal + " a Cloudinary: " + e.getMessage();
+                    log.error(error, e);
+                    errores.append("• ").append(error).append("\n");
+                }
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", archivosProcesados > 0);
+            response.put("archivosSubidos", archivosProcesados);
+            response.put("npedido", npedido);
+
+            if (archivosProcesados > 0) {
+                log.info("✅ {} archivo(s) subido(s)", archivosProcesados);
+                response.put("info", "✓ " + archivosProcesados + " archivo(s) subido(s) con éxito.");
+            }
+
+            if (errores.length() > 0) {
+                log.warn("⚠️ Errores al procesar archivos:\n{}", errores.toString());
+                response.put("warnings", errores.toString());
+            }
+
+            log.info("🎬 FIN subirArchivos - Procesados: {}/{}", archivosProcesados, files.length);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("❌ ERROR en subirArchivos: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error al subir archivos",
+                "message", e.getMessage()
+            ));
+        }
     }
 
 
