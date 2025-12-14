@@ -901,18 +901,25 @@
                     processData: false,
                     timeout: 30000,
                     dataType: 'json',
+                    beforeSend: function() {
+                        alert("⏳ PASO 1 en proceso: Guardando datos del pedido...\n\nEspera a que aparezca el siguiente mensaje.");
+                    },
                     success: function(response) {
                         console.log("✅ PASO 1 completado: Pedido guardado", response);
                         var npedido = response.npedido;
                         var clienteId = response.clienteId;
                         var tieneArchivos = response.tieneArchivos;
                         
+                        alert("✅ PASO 1 COMPLETADO\n\nPedido #" + npedido + " guardado correctamente\n\nTieneArchivos: " + tieneArchivos + "\narchivosPendientes.length: " + archivosPendientes.length);
+                        
                         if (tieneArchivos && archivosPendientes.length > 0) {
+                            alert("🚀 Iniciando PASO 2: Subiendo " + archivosPendientes.length + " archivo(s) a /pedidos/subir-archivos/" + npedido);
                             console.log("📁 PASO 2: Subiendo " + archivosPendientes.length + " archivo(s)...");
                             
                             var formDataArchivos = new FormData();
                             for (let i = 0; i < archivosPendientes.length; i++) {
                                 formDataArchivos.append('files', archivosPendientes[i]);
+                                console.log("   Archivo " + (i+1) + ": " + archivosPendientes[i].name + " (" + (archivosPendientes[i].size/1024).toFixed(2) + " KB)");
                             }
                             
                             $.ajax({
@@ -942,12 +949,9 @@
                                     archivosPendientes = [];
                                     $("#spinnerGuardado").hide();
                                     
-                                    var mensajeFinal = response.info;
-                                    if (respArchivos.archivosSubidos > 0) {
-                                        mensajeFinal += "\n✓ " + respArchivos.archivosSubidos + " archivo(s) subido(s)";
-                                    }
+                                    var mensajeFinal = "✅ PASO 2 COMPLETADO\n\n" + response.info + "\n\n✓ " + respArchivos.archivosSubidos + " archivo(s) subido(s) correctamente";
                                     if (respArchivos.warnings) {
-                                        mensajeFinal += "\n⚠️ Advertencias:\n" + respArchivos.warnings;
+                                        mensajeFinal += "\n\n⚠️ Advertencias:\n" + respArchivos.warnings;
                                     }
                                     
                                     alert(mensajeFinal);
@@ -963,10 +967,20 @@
                                 error: function(xhr, status, error) {
                                     console.error("❌ Error al subir archivos en PASO 2", error);
                                     $("#spinnerGuardado").hide();
-                                    alert("❌ Error al subir archivos:\n" + (xhr.responseJSON?.message || error));
+                                    
+                                    var errorMsg = "❌ ERROR EN PASO 2: No se pudieron subir los archivos\n\n";
+                                    if (xhr.status === 404) {
+                                        errorMsg += "Pedido #" + npedido + " no encontrado en el servidor";
+                                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                                        errorMsg += xhr.responseJSON.message;
+                                    } else {
+                                        errorMsg += "Error: " + (error || "Desconocido");
+                                    }
+                                    
+                                    alert(errorMsg);
                                     
                                     console.log("⚠️ El pedido FUE guardado correctamente, pero hubo problemas subiendo los archivos");
-                                    alert("El pedido se guardó, pero algunos archivos tuvieron error.\n\nPuedes intentar subirlos nuevamente después.");
+                                    alert("⚠️ IMPORTANTE:\n\nEl pedido #" + npedido + " se guardó correctamente.\n\nPero los archivos NO se subieron.\n\nPuedes intentar subirlos nuevamente después desde la sección 'Añadir Fotos'.");
                                     
                                     if (response.isNew) {
                                         location.href = "/pedidos/form/" + clienteId;
@@ -979,7 +993,7 @@
                             console.log("ℹ️ Sin archivos para subir");
                             archivosPendientes = [];
                             $("#spinnerGuardado").hide();
-                            alert(response.info || "Pedido guardado correctamente");
+                            alert("✅ PROCESO COMPLETADO\n\n" + response.info + "\n\n(Sin archivos para subir)");
                             
                             if (response.isNew) {
                                 console.log("📝 Nuevo pedido creado. Redirigiendo a cliente " + clienteId);
@@ -991,55 +1005,42 @@
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error("❌ Error al guardar el pedido");
+                        console.error("❌ Error en PASO 1: No se pudo guardar el pedido");
                         console.error("   Error type:", error);
                         console.error("   Status:", xhr.status);
                         console.error("   Status text:", xhr.statusText);
-                        console.error("   Response text:", xhr.responseText);
-                        console.error("   Ready state:", xhr.readyState);
                         
-                        var errorMessage = "Ocurrió un error desconocido al guardar el pedido.";
+                        var errorMessage = "❌ ERROR EN PASO 1: No se pudo guardar el pedido\n\n";
                         var detalleError = "";
                         
                         if (status === 'timeout') {
-                            errorMessage = "⏱️ TIMEOUT: La solicitud tardó demasiado. El servidor no respondió en 120 segundos.";
-                            detalleError = "Intenta con menos/archivos más pequeños o revisa la conexión a internet.";
+                            errorMessage += "⏱️ TIMEOUT: La solicitud tardó demasiado (>30 segundos)";
+                            detalleError = "El servidor no respondió a tiempo.\n\nSoluciones:\n1. Revisa tu conexión a internet\n2. Intenta nuevamente en unos segundos\n3. Si persiste, contacta al administrador";
                         } else if (xhr.status === 0) {
-                            errorMessage = "🔌 ERROR DE CONEXIÓN - GOOGLE DRIVE DETECTADO";
-                            detalleError = "📌 SOLUCIÓN:\n\n1. Abre Google Drive en tu navegador (NO en la app móvil)\n2. Para CADA imagen:\n   - Click derecho → Descargar\n   - Espera a que se descargue completamente\n3. Luego selecciona los archivos descargados aquí\n\n⚠️ NO selecciones directamente desde Google Drive, debe estar descargado en tu dispositivo.\n\nSi sigues teniendo error, intenta con UNA sola imagen primero.";
-                        } else if (xhr.status === 408 || status === 'timeout') {
-                            errorMessage = "⏱️ TIMEOUT - Solicitud tardó demasiado";
-                            detalleError = "El servidor tardó más de 2 minutos en responder.\n\nSoluciones:\n1. Intenta con archivos más pequeños\n2. Carga una imagen a la vez\n3. Asegúrate que los archivos están descargados de Google Drive (no en streaming)";
-                        } else {
+                            errorMessage += "🔌 ERROR DE CONEXIÓN";
+                            detalleError = "No hay conexión con el servidor.\n\nVerifica:\n1. Que tienes conexión a internet\n2. Que el servidor está disponible\n3. Intenta nuevamente";
+                        } else if (xhr.status === 400) {
+                            errorMessage += "⚠️ ERROR 400: Datos inválidos en el formulario";
+                            detalleError = "Algunos campos del formulario tienen datos inválidos.\n\nRevisa todos los campos obligatorios.";
+                        } else if (xhr.status === 500) {
+                            errorMessage += "🔴 ERROR 500: Error interno del servidor";
                             try {
-                                var respJson = null;
-                                try {
-                                    respJson = JSON.parse(xhr.responseText);
-                                } catch(parseError) {
-                                    respJson = null;
-                                }
-                                
+                                var respJson = JSON.parse(xhr.responseText);
                                 if (respJson && respJson.message) {
-                                    errorMessage = respJson.message;
-                                    detalleError = "Tipo: " + (respJson.type || respJson.fullType || "Desconocido") + 
-                                                   "\nMensaje detallado: " + respJson.message +
-                                                   (respJson.cause ? "\nCausa: " + respJson.cause : "") +
-                                                   (respJson.failedAt ? "\nFallo en: " + respJson.failedAt : "");
-                                } else if (xhr.responseText) {
-                                    detalleError = xhr.responseText;
-                                    if (xhr.responseText.includes("<!DOCTYPE")) {
-                                        detalleError = "Error HTML del servidor (ver consola del navegador)";
-                                    }
+                                    detalleError = respJson.message;
                                 }
                             } catch(e) {
-                                detalleError = xhr.responseText || "Sin detalles disponibles";
+                                detalleError = "Error del servidor. Intenta nuevamente.";
                             }
+                        } else {
+                            errorMessage += "❌ Error HTTP " + xhr.status;
+                            detalleError = "Error desconocido: " + xhr.statusText;
                         }
                         
-                        console.log("Detalle completo del error:", detalleError);
+                        console.log("Detalle completo del error en PASO 1:", detalleError);
                         
                         $("#spinnerGuardado").hide();
-                        alert("❌ ERROR AL GUARDAR:\n\nCódigo HTTP: " + xhr.status + " (" + xhr.statusText + ")\nTipo de error: " + error + "\nMensaje: " + errorMessage + "\n\nDetalle: " + detalleError.substring(0, 300));
+                        alert(errorMessage + "\n\nDetalle:\n" + detalleError);
                     }
                 });
             });
