@@ -758,8 +758,7 @@
             }
 
 
-
-            // ✅ CORREGIDO: Función para actualizar la tabla del modal
+            // ✅ Función para actualizar la tabla del modal
             function actualizarTabla() {
                 var table = $('#fileListTable');
                 table.empty();
@@ -871,12 +870,8 @@
                 console.log("📦 Tamaño total a enviar: " + totalMB + " MB");
                 
                 if (archivosCorrompidos.length > 0) {
-                    alert("⚠️ PROBLEMAS DETECTADOS EN ARCHIVOS:\n\n" + archivosCorrompidos.join('\n') + "\n\n📌 SOLUCIÓN para Google Drive:\n1. Abre Google Drive en tu navegador\n2. Haz CLICK DERECHO en la imagen\n3. Selecciona 'Descargar'\n4. Una vez descargada, selecciona el archivo descargado aquí");
+                    alert("⚠️ PROBLEMAS DETECTADOS EN ARCHIVOS:\n\n" + archivosCorrompidos.join('\n') + "\n\nIntenta eliminando estos archivos de la lista.");
                     return false;
-                }
-                
-                if (totalTamaño > 50 * 1024 * 1024) {
-                    alert("⚠️ ADVERTENCIA: Los archivos pesan " + totalMB + " MB.\nEsto tardará más tiempo en Heroku (max 30s).\nSi falla, intenta con archivos más pequeños o uno a uno.");
                 }
                 
                 var urlAccion = $(this).attr('action');
@@ -885,7 +880,7 @@
                 console.log("📦 Content-Type: multipart/form-data (automático con FormData)");
                 console.log("⏱️ Timeout: 120000ms");
 
-                console.log("🚀 INICIANDO ENVÍO...");
+                console.log("🚀 INICIANDO ENVÍO DE FORMULARIO + ARCHIVOS...");
                 
                 $.ajax({
                     type: 'POST',
@@ -910,20 +905,21 @@
                         return xhr;
                     },
                     success: function(response) {
-                        console.log("✅ Respuesta del backend:", response);
+                        console.log("✅ Respuesta del servidor:", response);
                         archivosPendientes = [];
-
-                        if (response && response.redirectUrl) {
-                            $.get(response.redirectUrl, function(html) {
-                                var nuevoContenido = $(html).find('#pedidoContent').html();
-                                $('#pedidoContent').html(nuevoContenido);
-                                history.pushState(null, "", response.redirectUrl);
-                                $("#spinnerGuardado").hide();
-                                alert(response.info || "Pedido guardado correctamente");
-                            });
+                        
+                        $("#spinnerGuardado").hide();
+                        
+                        alert(response.info || "Pedido guardado correctamente");
+                        
+                        // Si es actualización, recargamos la página actual
+                        // Si es nuevo, vamos a la página del cliente
+                        if (response.isNew) {
+                            console.log("📝 Nuevo pedido creado. Redirigiendo a cliente " + response.clienteId);
+                            location.href = "/pedidos/form/" + response.clienteId;
                         } else {
-                            $("#spinnerGuardado").hide();
-                            alert("Pedido guardado, pero no se recibió URL de redirección.");
+                            console.log("🔄 Pedido actualizado. Recargando página...");
+                            location.reload();
                         }
                     },
                     error: function(xhr, status, error) {

@@ -428,9 +428,13 @@ public class PedidoController {
                     }
 
                     status.setComplete();
-                    String redirectUrl = "/pedidos/form/" + pedidoExistente.getCliente().getId();
                     log.info("✅ Pedido actualizado correctamente");
-                    return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl, "info", "Pedido actualizado con éxito"));
+                    return ResponseEntity.ok(Map.of(
+                        "success", true, 
+                        "info", "Pedido actualizado con éxito",
+                        "npedido", pedidoExistente.getNpedido(),
+                        "clienteId", pedidoExistente.getCliente().getId()
+                    ));
                 } else {
                     log.warn("⚠️ Pedido con npedido={} no encontrado. Se creará uno nuevo.", npedido);
                 }
@@ -445,10 +449,15 @@ public class PedidoController {
             }
 
             status.setComplete();
-            String redirectUrl = "/pedidos/form/" + pedido.getCliente().getId();
             log.info("✅ Pedido {} creado correctamente", pedido.getNpedido());
 
-            return ResponseEntity.ok(Map.of("redirectUrl", redirectUrl, "info", "Pedido y archivos guardados con éxito"));
+            return ResponseEntity.ok(Map.of(
+                "success", true, 
+                "info", "Pedido creado con éxito",
+                "npedido", pedido.getNpedido(),
+                "clienteId", pedido.getCliente().getId(),
+                "isNew", true
+            ));
         } catch (Exception e) {
             log.error("❌ ERROR CRÍTICO en guardar pedido: {}", e.getMessage());
             log.error("   Tipo de excepción: {}", e.getClass().getName());
@@ -474,9 +483,6 @@ public class PedidoController {
             return ResponseEntity.status(500).body(errorResponse);
         }
     }
-
-
-
 
 // -------------------------------------------------------------------------
 // 4. Métodos auxiliares para sanitización de datos
@@ -540,20 +546,29 @@ private void subirYGuardarArchivos(MultipartFile[] fotos, Long npedido, Long cli
     StringBuilder errores = new StringBuilder();
 
     for (MultipartFile foto : fotos) {
+        String nombreOriginal = foto.getOriginalFilename();
+        long tamaño = foto.getSize();
+        String contentType = foto.getContentType();
+        
+        log.info("🔍 Validando archivo:");
+        log.info("   Nombre: {}", nombreOriginal);
+        log.info("   Tamaño: {} bytes", tamaño);
+        log.info("   MIME Type: {}", contentType);
+        
         if (foto.isEmpty()) {
-            log.warn("⚠️ Archivo vacío detectado: {}", foto.getOriginalFilename());
+            log.warn("❌ Archivo vacío: {}", nombreOriginal);
+            errores.append("• Archivo vacío (0 bytes): ").append(nombreOriginal).append(" - ¿De Google Drive? Descárgalo primero.\n");
             continue;
         }
 
-        String nombreOriginal = foto.getOriginalFilename();
-        log.info("📄 Procesando archivo: {}, tamaño: {} bytes, tipo: {}", nombreOriginal, foto.getSize(), foto.getContentType());
-
-        if (!validarTipoMime(foto.getContentType(), nombreOriginal)) {
-            String error = "Archivo no es una imagen válida: " + nombreOriginal;
-            log.warn(error);
+        if (!validarTipoMime(contentType, nombreOriginal)) {
+            String error = "Archivo no es una imagen válida (MIME: " + contentType + "): " + nombreOriginal;
+            log.warn("❌ {}", error);
             errores.append("• ").append(error).append("\n");
             continue;
         }
+        
+        log.info("✅ Archivo validado correctamente: {}", nombreOriginal);
 
         try {
             byte[] imageBytes = foto.getBytes();
@@ -590,18 +605,22 @@ private void subirYGuardarArchivos(MultipartFile[] fotos, Long npedido, Long cli
     }
 
     if (archivosProcesados > 0) {
+        log.info("✅ {} archivo(s) subido(s) correctamente", archivosProcesados);
         flash.addFlashAttribute("info", "✓ " + archivosProcesados + " archivo(s) subido(s) con éxito.");
     }
 
     if (errores.length() > 0) {
-        flash.addFlashAttribute("warning", "Errores al procesar algunos archivos:\n" + errores.toString());
+        log.warn("⚠️ Errores al procesar archivos:\n{}", errores.toString());
+        flash.addFlashAttribute("warning", "Algunos archivos no se pudieron procesar:\n" + errores.toString());
     }
 
-    if (archivosProcesados == 0 && errores.length() == 0) {
-        log.warn("⚠️ Ningún archivo válido encontrado para procesar");
+    if (archivosProcesados == 0 && errores.length() > 0) {
+        log.error("❌ Ningún archivo válido procesado. Detalles: {}", errores.toString());
+    } else if (archivosProcesados == 0 && errores.length() == 0) {
+        log.warn("⚠️ No se enviaron archivos");
     }
     
-    log.info("🎬 FIN subirYGuardarArchivos - Procesados: {}, Errores: {}", archivosProcesados, errores.length() > 0 ? "Sí" : "No");
+    log.info("🎬 FIN subirYGuardarArchivos - Procesados: {}/{}, Errores: {}", archivosProcesados, fotos.length, errores.length() > 0 ? "Sí" : "No");
 }
 
 private boolean validarTipoMime(String contentType, String fileName) {
@@ -609,6 +628,7 @@ private boolean validarTipoMime(String contentType, String fileName) {
         contentType = "";
     }
 
+    // Tipos MIME válidos
     String[] tiposValidos = {"image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp"};
     boolean esValidoPorMime = false;
 
@@ -619,8 +639,15 @@ private boolean validarTipoMime(String contentType, String fileName) {
         }
     }
 
-    String extension = fileName.toLowerCase();
+    // Validar también por extensión del archivo (importante para Google Drive)
+    String extension = fileName != null ? fileName.toLowerCase() : "";
     boolean esValidoPorExtension = extension.matches(".*\\.(jpg|jpeg|png|gif|webp|bmp)$");
+
+    // Si Google Drive no envía MIME type, validar por extensión
+    if (contentType.isEmpty() || contentType.equals("application/octet-stream")) {
+        log.info("📌 Archivo sin MIME type o tipo genérico. Validando por extensión: {}", extension);
+        return esValidoPorExtension;
+    }
 
     return esValidoPorMime || esValidoPorExtension;
 }
