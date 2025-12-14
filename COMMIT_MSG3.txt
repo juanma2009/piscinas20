@@ -1,0 +1,9 @@
+Fix: Use archivosPendientes directly for PASO 2 decision
+
+The server always returns tieneArchivos=false because PASO 1 intentionally 
+doesn't send files. This caused PASO 2 to never execute even when files 
+were selected.
+
+Now check archivosPendientes.length directly instead of waiting for 
+server response. This fixes the issue where files are in memory but 
+not uploaded to Cloudinary.

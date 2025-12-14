@@ -908,11 +908,10 @@
                         console.log("✅ PASO 1 completado: Pedido guardado", response);
                         var npedido = response.npedido;
                         var clienteId = response.clienteId;
-                        var tieneArchivos = response.tieneArchivos;
                         
-                        alert("✅ PASO 1 COMPLETADO\n\nPedido #" + npedido + " guardado correctamente\n\nTieneArchivos: " + tieneArchivos + "\narchivosPendientes.length: " + archivosPendientes.length);
+                        alert("✅ PASO 1 COMPLETADO\n\nPedido #" + npedido + " guardado correctamente\n\narchivosPendientes.length: " + archivosPendientes.length);
                         
-                        if (tieneArchivos && archivosPendientes.length > 0) {
+                        if (archivosPendientes.length > 0) {
                             alert("🚀 Iniciando PASO 2: Subiendo " + archivosPendientes.length + " archivo(s) a /pedidos/subir-archivos/" + npedido);
                             console.log("📁 PASO 2: Subiendo " + archivosPendientes.length + " archivo(s)...");
                             
