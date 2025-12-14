@@ -880,46 +880,114 @@
                 console.log("📦 Content-Type: multipart/form-data (automático con FormData)");
                 console.log("⏱️ Timeout: 120000ms");
 
-                console.log("🚀 INICIANDO ENVÍO DE FORMULARIO + ARCHIVOS...");
+                console.log("🚀 PASO 1: Guardando SOLO datos del formulario (sin archivos)...");
+                
+                var formDataSinArchivos = new FormData();
+                for (let key of formData.keys()) {
+                    if (key !== 'files') {
+                        let values = formData.getAll(key);
+                        for (let value of values) {
+                            formDataSinArchivos.append(key, value);
+                        }
+                    }
+                }
                 
                 $.ajax({
                     type: 'POST',
                     url: $(this).attr('action'),
-                    data: formData,
+                    data: formDataSinArchivos,
                     cache: false,
                     contentType: false,
                     processData: false,
-                    timeout: 120000,
+                    timeout: 30000,
                     dataType: 'json',
-                    xhr: function() {
-                        var xhr = new window.XMLHttpRequest();
-                        xhr.upload.addEventListener("progress", function(evt) {
-                            if (evt.lengthComputable) {
-                                var percentComplete = (evt.loaded / evt.total) * 100;
-                                var mb_enviados = (evt.loaded / 1024 / 1024).toFixed(2);
-                                var mb_total = (evt.total / 1024 / 1024).toFixed(2);
-                                console.log("📤 Cargando... " + percentComplete.toFixed(1) + "% (" + mb_enviados + "MB / " + mb_total + "MB)");
-                                $("#spinnerGuardado").text("Cargando archivo: " + percentComplete.toFixed(0) + "%");
-                            }
-                        }, false);
-                        return xhr;
-                    },
                     success: function(response) {
-                        console.log("✅ Respuesta del servidor:", response);
-                        archivosPendientes = [];
+                        console.log("✅ PASO 1 completado: Pedido guardado", response);
+                        var npedido = response.npedido;
+                        var clienteId = response.clienteId;
+                        var tieneArchivos = response.tieneArchivos;
                         
-                        $("#spinnerGuardado").hide();
-                        
-                        alert(response.info || "Pedido guardado correctamente");
-                        
-                        // Si es actualización, recargamos la página actual
-                        // Si es nuevo, vamos a la página del cliente
-                        if (response.isNew) {
-                            console.log("📝 Nuevo pedido creado. Redirigiendo a cliente " + response.clienteId);
-                            location.href = "/pedidos/form/" + response.clienteId;
+                        if (tieneArchivos && archivosPendientes.length > 0) {
+                            console.log("📁 PASO 2: Subiendo " + archivosPendientes.length + " archivo(s)...");
+                            
+                            var formDataArchivos = new FormData();
+                            for (let i = 0; i < archivosPendientes.length; i++) {
+                                formDataArchivos.append('files', archivosPendientes[i]);
+                            }
+                            
+                            $.ajax({
+                                type: 'POST',
+                                url: '/pedidos/subir-archivos/' + npedido,
+                                data: formDataArchivos,
+                                cache: false,
+                                contentType: false,
+                                processData: false,
+                                timeout: 120000,
+                                dataType: 'json',
+                                xhr: function() {
+                                    var xhr = new window.XMLHttpRequest();
+                                    xhr.upload.addEventListener("progress", function(evt) {
+                                        if (evt.lengthComputable) {
+                                            var percentComplete = (evt.loaded / evt.total) * 100;
+                                            var mb_enviados = (evt.loaded / 1024 / 1024).toFixed(2);
+                                            var mb_total = (evt.total / 1024 / 1024).toFixed(2);
+                                            console.log("📤 Cargando archivos... " + percentComplete.toFixed(1) + "% (" + mb_enviados + "MB / " + mb_total + "MB)");
+                                            $("#spinnerGuardado").text("Cargando archivo: " + percentComplete.toFixed(0) + "%");
+                                        }
+                                    }, false);
+                                    return xhr;
+                                },
+                                success: function(respArchivos) {
+                                    console.log("✅ PASO 2 completado: Archivos subidos", respArchivos);
+                                    archivosPendientes = [];
+                                    $("#spinnerGuardado").hide();
+                                    
+                                    var mensajeFinal = response.info;
+                                    if (respArchivos.archivosSubidos > 0) {
+                                        mensajeFinal += "\n✓ " + respArchivos.archivosSubidos + " archivo(s) subido(s)";
+                                    }
+                                    if (respArchivos.warnings) {
+                                        mensajeFinal += "\n⚠️ Advertencias:\n" + respArchivos.warnings;
+                                    }
+                                    
+                                    alert(mensajeFinal);
+                                    
+                                    if (response.isNew) {
+                                        console.log("📝 Nuevo pedido creado. Redirigiendo a cliente " + clienteId);
+                                        location.href = "/pedidos/form/" + clienteId;
+                                    } else {
+                                        console.log("🔄 Pedido actualizado. Recargando página...");
+                                        location.reload();
+                                    }
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error("❌ Error al subir archivos en PASO 2", error);
+                                    $("#spinnerGuardado").hide();
+                                    alert("❌ Error al subir archivos:\n" + (xhr.responseJSON?.message || error));
+                                    
+                                    console.log("⚠️ El pedido FUE guardado correctamente, pero hubo problemas subiendo los archivos");
+                                    alert("El pedido se guardó, pero algunos archivos tuvieron error.\n\nPuedes intentar subirlos nuevamente después.");
+                                    
+                                    if (response.isNew) {
+                                        location.href = "/pedidos/form/" + clienteId;
+                                    } else {
+                                        location.reload();
+                                    }
+                                }
+                            });
                         } else {
-                            console.log("🔄 Pedido actualizado. Recargando página...");
-                            location.reload();
+                            console.log("ℹ️ Sin archivos para subir");
+                            archivosPendientes = [];
+                            $("#spinnerGuardado").hide();
+                            alert(response.info || "Pedido guardado correctamente");
+                            
+                            if (response.isNew) {
+                                console.log("📝 Nuevo pedido creado. Redirigiendo a cliente " + clienteId);
+                                location.href = "/pedidos/form/" + clienteId;
+                            } else {
+                                console.log("🔄 Pedido actualizado. Recargando página...");
+                                location.reload();
+                            }
                         }
                     },
                     error: function(xhr, status, error) {
