@@ -1,0 +1,11 @@
+Improve PASO 2 error messages with HTTP status codes
+
+Show exact HTTP error codes instead of "Error: Desconocido"
+- HTTP 0: Sin conexión
+- HTTP 404: Endpoint no encontrado  
+- HTTP 400: Solicitud inválida
+- HTTP 413: Archivo muy grande
+- HTTP 500: Error del servidor
+- HTTP 503: Servidor no disponible
+
+Helps diagnose PASO 2 failures on Android
