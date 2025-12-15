@@ -1059,6 +1059,8 @@ private boolean validarTipoMime(String contentType, String fileName) {
             int archivosProcesados = 0;
             StringBuilder errores = new StringBuilder();
 
+            log.info("⚡ MODO ASINCRÓNICO: Validando + encolando archivos sin esperar Cloudinary...");
+
             for (MultipartFile foto : files) {
                 String nombreOriginal = foto.getOriginalFilename();
                 long tamaño = foto.getSize();
@@ -1091,25 +1093,26 @@ private boolean validarTipoMime(String contentType, String fileName) {
                     }
 
                     String fileName = "pedido_" + npedido + "_" + System.currentTimeMillis();
-
-                    log.info("Subiendo archivo {} ({} KB) a Cloudinary...", nombreOriginal, imageBytes.length / 1024);
-                    String imageUrl = cloudinaryService.uploadImage(imageBytes, npedido, fileName);
-
-                    log.info("Archivo subido con éxito: {} -> {}", nombreOriginal, imageUrl);
-
+                    
+                    log.info("💾 Guardando {} ({} KB) en Redis para procesamiento asincrónico...", nombreOriginal, imageBytes.length / 1024);
+                    
+                    String redisKey = "file_pending_" + npedido + "_" + fileName;
+                    String imageBase64 = java.util.Base64.getEncoder().encodeToString(imageBytes);
+                    redisTemplate.opsForValue().set(redisKey, imageBase64);
+                    redisTemplate.expire(redisKey, java.time.Duration.ofHours(24));
+                    
                     String mensaje = npedido + ";" + nombreOriginal + ";" + fileName;
-                    redisTemplate.opsForValue().set("archivo_" + npedido + "_" + System.currentTimeMillis(), mensaje);
                     redisQueueProducer.sendMessage(mensaje);
 
                     archivosProcesados++;
-                    log.info("Mensaje enviado a Redis: {}", mensaje);
+                    log.info("✅ Archivo encolado para procesamiento: {} (key: {})", mensaje, redisKey);
 
                 } catch (IOException e) {
                     String error = "Error al leer archivo " + nombreOriginal + ": " + e.getMessage();
                     log.error(error, e);
                     errores.append("• ").append(error).append("\n");
                 } catch (Exception e) {
-                    String error = "Error al subir " + nombreOriginal + " a Cloudinary: " + e.getMessage();
+                    String error = "Error al encolar " + nombreOriginal + ": " + e.getMessage();
                     log.error(error, e);
                     errores.append("• ").append(error).append("\n");
                 }

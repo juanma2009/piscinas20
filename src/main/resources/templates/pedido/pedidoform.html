@@ -978,11 +978,11 @@
                                     return xhr;
                                 },
                                 success: function(respArchivos) {
-                                    console.log("✅ PASO 2 completado: Archivos subidos", respArchivos);
+                                    console.log("✅ PASO 2 completado: Archivos encolados", respArchivos);
                                     archivosPendientes = [];
                                     $("#spinnerGuardado").hide();
                                     
-                                    var mensajeFinal = "✅ PASO 2 COMPLETADO\n\n" + response.info + "\n\n✓ " + respArchivos.archivosSubidos + " archivo(s) subido(s) correctamente";
+                                    var mensajeFinal = "✅ PASO 2 COMPLETADO\n\n" + response.info + "\n\n" + respArchivos.archivosSubidos + " archivo(s) encolado(s) para procesamiento.\n\nLos archivos se procesarán en background. Puedes cerrar esta ventana.";
                                     if (respArchivos.warnings) {
                                         mensajeFinal += "\n\n⚠️ Advertencias:\n" + respArchivos.warnings;
                                     }
