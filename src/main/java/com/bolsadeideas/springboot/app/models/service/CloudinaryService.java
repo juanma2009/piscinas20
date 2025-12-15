@@ -25,12 +25,14 @@ public class CloudinaryService {
     private final String cloudName;
     private final String apiKey;
     private final String apiSecret;
+    private final String uploadPreset;
     private final StringRedisTemplate redisTemplate;
 
     public CloudinaryService(
             @Value("${CLOUDINARY_CLOUD_NAME}") String cloudName,
             @Value("${CLOUDINARY_API_KEY}") String apiKey,
             @Value("${CLOUDINARY_API_SECRET}") String apiSecret,
+            @Value("${CLOUDINARY_UPLOAD_PRESET}") String uploadPreset,
             StringRedisTemplate redisTemplate) {
         this.cloudinary = new Cloudinary(ObjectUtils.asMap(
                 "cloud_name", cloudName,
@@ -39,6 +41,7 @@ public class CloudinaryService {
         this.cloudName = cloudName;
         this.apiKey = apiKey;
         this.apiSecret = apiSecret;
+        this.uploadPreset = uploadPreset;
         this.redisTemplate = redisTemplate;
     }
 
@@ -102,29 +105,18 @@ public class CloudinaryService {
      */
     public String getImageUrlFromCloudinary(String publicId) throws IOException {
         try {
-            // Hacer una solicitud a la API de Cloudinary para obtener los detalles del recurso
-            ApiResponse result = cloudinary.api().resource(publicId, ObjectUtils.emptyMap());
-            log.info("Resultado de Cloudinary: " + result.toString());
-
-            // Verificar si la respuesta contiene la URL segura
-            if (result == null || !result.containsKey("secure_url")) {
-                log.error("No se pudo obtener la URL segura para el archivo con ID: " + publicId);
-                return "/img/default.jpg";  // Si no se encuentra, devolvemos una URL por defecto
+            if (publicId == null || publicId.isEmpty()) {
+                log.error("publicId es nulo o vacío");
+                return "/img/default.jpg";
             }
 
-            // Obtener la URL segura del resultado
-            String secureUrl = (String) result.get("secure_url");
-            log.info("URL segura obtenida de Cloudinary: " + secureUrl);
+            redisTemplate.opsForValue().set(publicId, publicId);
+            log.info("URL retornada directamente: " + publicId);
 
-            // Guardar la URL en el caché de Redis para futuras consultas
-            redisTemplate.opsForValue().set(publicId, secureUrl);
-            log.info("URL guardada en caché para el publicId: " + publicId);
-
-            return secureUrl;
+            return publicId;
         } catch (Exception e) {
-            // Captura cualquier excepción que pueda ocurrir (API de Cloudinary, red, etc.)
-            log.error("Error al obtener la URL de la imagen desde Cloudinary: " + e.getMessage(), e);
-            return "/img/default.jpg";  // Si hay un error, devolvemos una URL por defecto
+            log.error("Error al procesar la URL: " + e.getMessage(), e);
+            return "/img/default.jpg";
         }
     }
 
@@ -185,34 +177,18 @@ public class CloudinaryService {
 
     public Map<String, Object> generateUploadSignature(Long npedido) {
         try {
-            long timestamp = System.currentTimeMillis() / 1000;
             String folder = "pedidos/" + npedido;
             
-            TreeMap<String, Object> params = new TreeMap<>();
-            params.put("timestamp", String.valueOf(timestamp));
-            params.put("folder", folder);
-            params.put("resource_type", "auto");
-            
-            StringBuilder toSign = new StringBuilder();
-            for (Map.Entry<String, Object> entry : params.entrySet()) {
-                if (toSign.length() > 0) toSign.append("&");
-                toSign.append(entry.getKey()).append("=").append(entry.getValue());
-            }
-            
-            String signature = generateSHA1(toSign.toString() + apiSecret);
-            
             Map<String, Object> result = new HashMap<>();
-            result.put("signature", signature);
-            result.put("timestamp", timestamp);
-            result.put("api_key", apiKey);
             result.put("cloud_name", cloudName);
+            result.put("upload_preset", uploadPreset);
             result.put("folder", folder);
             
-            log.info("Firma de Cloudinary generada para pedido {}", npedido);
+            log.info("Credenciales de Cloudinary generadas para pedido {}", npedido);
             return result;
             
         } catch (Exception e) {
-            log.error("Error al generar firma de Cloudinary: {}", e.getMessage(), e);
+            log.error("Error al generar credenciales de Cloudinary: {}", e.getMessage(), e);
             return new HashMap<>();
         }
     }

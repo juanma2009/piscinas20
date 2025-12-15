@@ -617,8 +617,61 @@
 
         <script src="https://cdn.ckeditor.com/ckeditor5/35.0.1/classic/ckeditor.js"></script>
         <script>
-            // Variable global para almacenar los archivos seleccionados desde el modal
+            // Variables globales para el manejo del pedido
             var archivosPendientes = [];
+            var isNew = false;
+            var clienteId = null;
+
+            // Función para limpiar el formulario para crear un nuevo pedido del mismo cliente
+            function clearFormForNewOrder() {
+                const form = document.getElementById('pedidoForm');
+                const elements = form.elements;
+                
+                for (let i = 0; i < elements.length; i++) {
+                    const el = elements[i];
+                    
+                    // Mantener cliente pero limpiar npedido
+                    if (el.name === 'cliente') {
+                        continue;
+                    }
+                    
+                    if (el.type === 'hidden') {
+                        if (el.name === 'npedido') {
+                            el.value = '';
+                        }
+                        continue;
+                    }
+                    
+                    if (el.type === 'text' || el.type === 'date' || el.type === 'number' || el.type === 'textarea') {
+                        el.value = '';
+                    } else if (el.tagName === 'SELECT') {
+                        el.selectedIndex = 0;
+                    } else if (el.type === 'checkbox' || el.type === 'radio') {
+                        el.checked = false;
+                    }
+                }
+                
+                // Limpiar campos de texto (sin hidden ni cliente)
+                document.querySelectorAll('input[type="text"]:not([name="cliente"])').forEach(input => {
+                    input.value = '';
+                });
+                
+                document.querySelectorAll('input[type="date"]').forEach(input => {
+                    input.value = '';
+                });
+                
+                document.querySelectorAll('input[type="number"]').forEach(input => {
+                    input.value = '';
+                });
+                
+                // Limpiar selects
+                document.querySelectorAll('select').forEach(select => {
+                    select.selectedIndex = 0;
+                });
+                
+                // Scroll al top del formulario
+                window.scrollTo(0, 0);
+            }
 
             // Controla que salga la fecha si el estado a cambiado FINALIZADO
             document.addEventListener("DOMContentLoaded", function() {
@@ -908,7 +961,8 @@
                     success: function(response) {
                         console.log("✅ PASO 1 completado: Pedido guardado", response);
                         var npedido = response.npedido;
-                        var clienteId = response.clienteId;
+                        clienteId = response.clienteId;
+                        isNew = response.isNew;
                         
                         alert("✅ PASO 1 COMPLETADO\n\nPedido #" + npedido + " guardado correctamente\n\narchivosPendientes.length: " + archivosPendientes.length);
                         
@@ -941,10 +995,7 @@
 
                                             var formData = new FormData();
                                             formData.append('file', file);
-                                            formData.append('upload_preset', signatureData.cloud_name + '_unsigned');
-                                            formData.append('timestamp', signatureData.timestamp);
-                                            formData.append('signature', signatureData.signature);
-                                            formData.append('api_key', signatureData.api_key);
+                                            formData.append('upload_preset', signatureData.upload_preset);
                                             formData.append('folder', signatureData.folder);
 
                                             fetch('https://api.cloudinary.com/v1_1/' + signatureData.cloud_name + '/auto/upload', {
@@ -960,6 +1011,10 @@
                                                     uploadNextFile(index + 1);
                                                 } else {
                                                     console.error("❌ Error en respuesta de Cloudinary:", data);
+                                                    if (data.error) {
+                                                        console.error("   Código de error:", data.error.http_code);
+                                                        console.error("   Mensaje:", data.error.message);
+                                                    }
                                                     uploadNextFile(index + 1);
                                                 }
                                             })
@@ -988,20 +1043,19 @@
                                                     archivosPendientes = [];
                                                     $("#spinnerGuardado").hide();
 
-                                                    alert("✅ PASO 2 COMPLETADO\n\n" + resp.archivosGuardados + " archivo(s) subido(s) correctamente.");
-
-                                                    if (response.isNew) {
-                                                        console.log("📝 Nuevo pedido creado. Redirigiendo a cliente " + clienteId);
+                                                    alert("✅ PASO 2 COMPLETADO\n\n" + resp.archivosGuardados + " archivo(s) subido(s) correctamente.\n\nRecargando formulario...");
+                                                    
+                                                    console.log("✅ Recargando formulario desde el servidor...");
+                                                    archivosPendientes = [];
+                                                    googleDriveLinks = [];
+                                                    
+                                                    setTimeout(function() {
                                                         location.href = "/pedidos/form/" + clienteId;
-                                                    } else {
-                                                        console.log("🔄 Pedido actualizado. Recargando página...");
-                                                        location.reload();
-                                                    }
+                                                    }, 1000);
                                                 },
                                                 error: function(xhr, status, error) {
                                                     console.error("❌ Error al guardar URLs en servidor", error);
                                                     alert("⚠️ Los archivos se subieron a Cloudinary, pero hubo un error al guardarlos en la BD.");
-                                                    location.reload();
                                                 }
                                             });
                                         }
@@ -1022,15 +1076,14 @@
                             console.log("ℹ️ Sin archivos para subir");
                             archivosPendientes = [];
                             $("#spinnerGuardado").hide();
-                            alert("✅ PROCESO COMPLETADO\n\n" + response.info + "\n\n(Sin archivos para subir)");
+                            alert("✅ PROCESO COMPLETADO\n\n" + response.info + "\n\n(Sin archivos para subir)\n\nRecargando formulario...");
                             
-                            if (response.isNew) {
-                                console.log("📝 Nuevo pedido creado. Redirigiendo a cliente " + clienteId);
+                            console.log("✅ Recargando formulario desde el servidor...");
+                            googleDriveLinks = [];
+                            
+                            setTimeout(function() {
                                 location.href = "/pedidos/form/" + clienteId;
-                            } else {
-                                console.log("🔄 Pedido actualizado. Recargando página...");
-                                location.reload();
-                            }
+                            }, 1000);
                         }
                     },
                     error: function(xhr, status, error) {
@@ -1072,6 +1125,8 @@
                         alert(errorMessage + "\n\nDetalle:\n" + detalleError);
                     }
                 });
+                
+                return false;
             });
 
 
