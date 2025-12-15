@@ -944,11 +944,11 @@
                                 }
                                 
                                 console.log("🌐 Enviando AJAX a: /pedidos/subir-archivos/" + npedido);
-                                console.log("⏱️ Timeout: 120000ms (2 minutos)");
+                                console.log("⏱️ Timeout: 180000ms (3 minutos)");
                                 console.log("📊 Total archivos a enviar: " + archivosPendientes.length);
                                 console.log("📊 Tamaño total: " + (totalSize/1024/1024).toFixed(2) + " MB");
                                 
-                                alert("📤 ENVIANDO PASO 2...\n\n" + archivosPendientes.length + " archivo(s)\n" + (totalSize/1024/1024).toFixed(2) + " MB\n\nEspera a que se complete...");
+                                alert("📤 ENVIANDO PASO 2...\n\n" + archivosPendientes.length + " archivo(s)\n" + (totalSize/1024/1024).toFixed(2) + " MB\n\nEspera a que se complete (hasta 3 minutos)...");
                                 
                                 $.ajax({
                                 type: 'POST',
@@ -957,7 +957,7 @@
                                 cache: false,
                                 contentType: false,
                                 processData: false,
-                                timeout: 120000,
+                                timeout: 180000,
                                 dataType: 'json',
                                 beforeSend: function(xhr) {
                                     xhr.setRequestHeader(header, token);
