@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -1016,10 +1017,26 @@ private boolean validarTipoMime(String contentType, String fileName) {
     public ResponseEntity<?> subirArchivos(
             @PathVariable Long npedido,
             @RequestParam(name = "files", required = false) MultipartFile[] files,
-            RedirectAttributes flash
+            RedirectAttributes flash,
+            HttpServletRequest request
     ) {
         try {
-            log.info("📸 INICIO subirArchivos - npedido: {}, archivos: {}", npedido, files != null ? files.length : 0);
+            log.info("🔵 ========== INICIO subirArchivos ==========");
+            log.info("📍 Endpoint: /pedidos/subir-archivos/{}", npedido);
+            log.info("📊 Content-Type header: {}", request.getContentType());
+            log.info("📊 Method: {}", request.getMethod());
+            log.info("📊 Files array: {}", files != null ? "NOT NULL" : "NULL");
+            log.info("📸 Total archivos recibidos: {}", files != null ? files.length : 0);
+            
+            if (files != null && files.length > 0) {
+                for (int i = 0; i < files.length; i++) {
+                    MultipartFile f = files[i];
+                    log.info("   Archivo[{}]: name={}, size={} bytes, contentType={}, empty={}", 
+                        i, f.getOriginalFilename(), f.getSize(), f.getContentType(), f.isEmpty());
+                }
+            } else {
+                log.warn("⚠️ NO HAY ARCHIVOS - files es null o vacío");
+            }
             
             Pedido pedido = pedidoService.findOne(npedido);
             if (pedido == null) {

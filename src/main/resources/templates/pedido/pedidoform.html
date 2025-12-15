@@ -916,10 +916,30 @@
                             console.log("📁 PASO 2: Subiendo " + archivosPendientes.length + " archivo(s)...");
                             
                             var formDataArchivos = new FormData();
+                            
+                            var token = $("meta[name='_csrf']").attr("content");
+                            var header = $("meta[name='_csrf_header']").attr("content");
+                            
+                            console.log("🔐 Token CSRF: " + token);
+                            console.log("🔐 Header CSRF: " + header);
+                            
+                            formDataArchivos.append(header, token);
+                            
                             for (let i = 0; i < archivosPendientes.length; i++) {
                                 formDataArchivos.append('files', archivosPendientes[i]);
                                 console.log("   Archivo " + (i+1) + ": " + archivosPendientes[i].name + " (" + (archivosPendientes[i].size/1024).toFixed(2) + " KB)");
                             }
+                            
+                            console.log("🔍 DEBUG FormData - Verificando contenido antes de enviar:");
+                            for (let [key, value] of formDataArchivos.entries()) {
+                                if (value instanceof File) {
+                                    console.log("   Key: " + key + " -> File: " + value.name + " (Size: " + value.size + " bytes, Type: " + value.type + ")");
+                                } else {
+                                    console.log("   Key: " + key + " -> Value: " + value);
+                                }
+                            }
+                            
+                            console.log("🌐 Enviando AJAX a: /pedidos/subir-archivos/" + npedido);
                             
                             $.ajax({
                                 type: 'POST',
