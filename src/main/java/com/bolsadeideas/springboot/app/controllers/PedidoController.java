@@ -1013,6 +1013,54 @@ private boolean validarTipoMime(String contentType, String fileName) {
         return "redirect:/pedidos/formEditar/{}" + pedidoId;
     }
 
+    @GetMapping("/cloudinary-signature/{npedido}")
+    public ResponseEntity<?> getCloudinarySignature(@PathVariable Long npedido) {
+        try {
+            log.info("📋 Solicitando firma de Cloudinary para pedido: {}", npedido);
+            Map<String, Object> signature = cloudinaryService.generateUploadSignature(npedido);
+            return ResponseEntity.ok(signature);
+        } catch (Exception e) {
+            log.error("❌ Error al generar firma: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/guardar-archivos/{npedido}")
+    public ResponseEntity<?> guardarArchivos(
+            @PathVariable Long npedido,
+            @RequestBody Map<String, Object> request
+    ) {
+        try {
+            log.info("💾 Guardando URLs de archivos desde Cloudinary para pedido: {}", npedido);
+            
+            Object urlsObj = request.get("urls");
+            if (urlsObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No URLs provided"));
+            }
+            
+            java.util.List<String> urls = (java.util.List<String>) urlsObj;
+            int guardados = 0;
+            
+            for (String url : urls) {
+                if (url != null && !url.isEmpty()) {
+                    String fileName = "cloudinary_" + npedido + "_" + System.currentTimeMillis();
+                    ArchivoAdjunto archivo = new ArchivoAdjunto(npedido, fileName, url);
+                    archivoAdjuntoService.guardar(archivo);
+                    guardados++;
+                    log.info("✅ URL guardada: {}", url);
+                }
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "archivosGuardados", guardados
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error al guardar archivos: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/subir-archivos/{npedido}")
     public ResponseEntity<?> subirArchivos(
             @PathVariable Long npedido,

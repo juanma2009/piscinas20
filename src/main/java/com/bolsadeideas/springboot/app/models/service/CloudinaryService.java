@@ -13,6 +13,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 @Slf4j
 @Service
@@ -20,6 +23,8 @@ public class CloudinaryService {
 
     private final Cloudinary cloudinary;
     private final String cloudName;
+    private final String apiKey;
+    private final String apiSecret;
     private final StringRedisTemplate redisTemplate;
 
     public CloudinaryService(
@@ -32,6 +37,8 @@ public class CloudinaryService {
                 "api_key", apiKey,
                 "api_secret", apiSecret));
         this.cloudName = cloudName;
+        this.apiKey = apiKey;
+        this.apiSecret = apiSecret;
         this.redisTemplate = redisTemplate;
     }
 
@@ -174,6 +181,52 @@ public class CloudinaryService {
         // Si no está en Redis, la obtenemos de Cloudinary
         log.info("URL no encontrada en Redis, obteniendo de Cloudinary.");
         return getImageUrlFromCloudinary(publicId);  // Este método obtiene la URL de Cloudinary y la guarda en el caché.
+    }
+
+    public Map<String, Object> generateUploadSignature(Long npedido) {
+        try {
+            long timestamp = System.currentTimeMillis() / 1000;
+            String folder = "pedidos/" + npedido;
+            
+            TreeMap<String, Object> params = new TreeMap<>();
+            params.put("timestamp", String.valueOf(timestamp));
+            params.put("folder", folder);
+            params.put("resource_type", "auto");
+            
+            StringBuilder toSign = new StringBuilder();
+            for (Map.Entry<String, Object> entry : params.entrySet()) {
+                if (toSign.length() > 0) toSign.append("&");
+                toSign.append(entry.getKey()).append("=").append(entry.getValue());
+            }
+            
+            String signature = generateSHA1(toSign.toString() + apiSecret);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("signature", signature);
+            result.put("timestamp", timestamp);
+            result.put("api_key", apiKey);
+            result.put("cloud_name", cloudName);
+            result.put("folder", folder);
+            
+            log.info("Firma de Cloudinary generada para pedido {}", npedido);
+            return result;
+            
+        } catch (Exception e) {
+            log.error("Error al generar firma de Cloudinary: {}", e.getMessage(), e);
+            return new HashMap<>();
+        }
+    }
+
+    private String generateSHA1(String input) throws Exception {
+        Mac mac = Mac.getInstance("HmacSHA1");
+        SecretKeySpec key = new SecretKeySpec(apiSecret.getBytes(), "HmacSHA1");
+        mac.init(key);
+        byte[] bytes = mac.doFinal(input.getBytes());
+        StringBuilder hex = new StringBuilder();
+        for (byte b : bytes) {
+            hex.append(String.format("%02x", b));
+        }
+        return hex.toString();
     }
 
 }

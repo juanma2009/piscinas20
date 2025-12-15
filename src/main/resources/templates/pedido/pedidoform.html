@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://upload-widget.cloudinary.com/latest/global/cloudinary.js"></script>
 
     <script th:inline="javascript">
         /*<![CDATA[*/
@@ -913,131 +914,105 @@
                         
                         if (archivosPendientes.length > 0) {
                             try {
-                                alert("🚀 Iniciando PASO 2: Subiendo " + archivosPendientes.length + " archivo(s) a /pedidos/subir-archivos/" + npedido);
-                                console.log("📁 PASO 2: Subiendo " + archivosPendientes.length + " archivo(s)...");
-                                
-                                var formDataArchivos = new FormData();
-                                
-                                var token = $("meta[name='_csrf']").attr("content");
-                                var header = $("meta[name='_csrf_header']").attr("content");
-                                
-                                console.log("🔐 Token CSRF: " + token);
-                                console.log("🔐 Header CSRF: " + header);
-                                
-                                var totalSize = 0;
-                                for (let i = 0; i < archivosPendientes.length; i++) {
-                                    var file = archivosPendientes[i];
-                                    console.log("   Archivo " + (i+1) + ": " + file.name + " (" + (file.size/1024).toFixed(2) + " KB, type: " + file.type + ")");
-                                    totalSize += file.size;
-                                    formDataArchivos.append('files', file);
-                                }
-                                
-                                console.log("📦 Tamaño total FormData: " + (totalSize/1024).toFixed(2) + " KB");
-                                
-                                console.log("🔍 DEBUG FormData - Verificando contenido antes de enviar:");
-                                for (let [key, value] of formDataArchivos.entries()) {
-                                    if (value instanceof File) {
-                                        console.log("   Key: " + key + " -> File: " + value.name + " (Size: " + value.size + " bytes, Type: " + value.type + ")");
-                                    } else {
-                                        console.log("   Key: " + key + " -> Value: " + value);
-                                    }
-                                }
-                                
-                                console.log("🌐 Enviando AJAX a: /pedidos/subir-archivos/" + npedido);
-                                console.log("⏱️ Timeout: 180000ms (3 minutos)");
-                                console.log("📊 Total archivos a enviar: " + archivosPendientes.length);
-                                console.log("📊 Tamaño total: " + (totalSize/1024/1024).toFixed(2) + " MB");
-                                
-                                alert("📤 ENVIANDO PASO 2...\n\n" + archivosPendientes.length + " archivo(s)\n" + (totalSize/1024/1024).toFixed(2) + " MB\n\nEspera a que se complete (hasta 3 minutos)...");
+                                alert("🚀 Iniciando PASO 2: Subiendo " + archivosPendientes.length + " archivo(s) a Cloudinary...");
+                                console.log("📁 PASO 2: Subiendo " + archivosPendientes.length + " archivo(s) directamente a Cloudinary...");
                                 
                                 $.ajax({
-                                type: 'POST',
-                                url: '/pedidos/subir-archivos/' + npedido,
-                                data: formDataArchivos,
-                                cache: false,
-                                contentType: false,
-                                processData: false,
-                                timeout: 180000,
-                                dataType: 'json',
-                                beforeSend: function(xhr) {
-                                    xhr.setRequestHeader(header, token);
-                                    console.log("🔐 Añadido header CSRF: " + header + " = " + token);
-                                    console.log("✅ AJAX iniciado - solicitud enviada al servidor");
-                                },
-                                xhr: function() {
-                                    var xhr = new window.XMLHttpRequest();
-                                    xhr.upload.addEventListener("progress", function(evt) {
-                                        if (evt.lengthComputable) {
-                                            var percentComplete = (evt.loaded / evt.total) * 100;
-                                            var mb_enviados = (evt.loaded / 1024 / 1024).toFixed(2);
-                                            var mb_total = (evt.total / 1024 / 1024).toFixed(2);
-                                            console.log("📤 Cargando archivos... " + percentComplete.toFixed(1) + "% (" + mb_enviados + "MB / " + mb_total + "MB)");
-                                            $("#spinnerGuardado").text("Cargando archivo: " + percentComplete.toFixed(0) + "%");
+                                    type: 'GET',
+                                    url: '/pedidos/cloudinary-signature/' + npedido,
+                                    dataType: 'json',
+                                    timeout: 10000,
+                                    success: function(signatureData) {
+                                        console.log("✅ Firma de Cloudinary obtenida", signatureData);
+                                        
+                                        var uploadedUrls = [];
+                                        var archivosSubidos = 0;
+                                        var totalArchivos = archivosPendientes.length;
+                                        
+                                        function uploadNextFile(index) {
+                                            if (index >= totalArchivos) {
+                                                console.log("✅ Todos los archivos subidos a Cloudinary. URLs obtenidas:", uploadedUrls);
+                                                guardarURLsEnServidor(uploadedUrls);
+                                                return;
+                                            }
+                                            
+                                            var file = archivosPendientes[index];
+                                            console.log("📤 Subiendo archivo " + (index+1) + "/" + totalArchivos + ": " + file.name);
+                                            
+                                            var formData = new FormData();
+                                            formData.append('file', file);
+                                            formData.append('upload_preset', signatureData.cloud_name + '_unsigned');
+                                            formData.append('timestamp', signatureData.timestamp);
+                                            formData.append('signature', signatureData.signature);
+                                            formData.append('api_key', signatureData.api_key);
+                                            formData.append('folder', signatureData.folder);
+                                            
+                                            fetch('https://api.cloudinary.com/v1_1/' + signatureData.cloud_name + '/auto/upload', {
+                                                method: 'POST',
+                                                body: formData
+                                            })
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                if (data.secure_url) {
+                                                    uploadedUrls.push(data.secure_url);
+                                                    archivosSubidos++;
+                                                    console.log("✅ " + file.name + " -> " + data.secure_url);
+                                                    uploadNextFile(index + 1);
+                                                } else {
+                                                    console.error("❌ Error en respuesta de Cloudinary:", data);
+                                                    uploadNextFile(index + 1);
+                                                }
+                                            })
+                                            .catch(error => {
+                                                console.error("❌ Error al subir a Cloudinary:", error);
+                                                uploadNextFile(index + 1);
+                                            });
                                         }
-                                    }, false);
-                                    return xhr;
-                                },
-                                success: function(respArchivos) {
-                                    console.log("✅ PASO 2 completado: Archivos encolados", respArchivos);
-                                    archivosPendientes = [];
-                                    $("#spinnerGuardado").hide();
-                                    
-                                    var mensajeFinal = "✅ PASO 2 COMPLETADO\n\n" + response.info + "\n\n" + respArchivos.archivosSubidos + " archivo(s) encolado(s) para procesamiento.\n\nLos archivos se procesarán en background. Puedes cerrar esta ventana.";
-                                    if (respArchivos.warnings) {
-                                        mensajeFinal += "\n\n⚠️ Advertencias:\n" + respArchivos.warnings;
-                                    }
-                                    
-                                    alert(mensajeFinal);
-                                    
-                                    if (response.isNew) {
-                                        console.log("📝 Nuevo pedido creado. Redirigiendo a cliente " + clienteId);
-                                        location.href = "/pedidos/form/" + clienteId;
-                                    } else {
-                                        console.log("🔄 Pedido actualizado. Recargando página...");
-                                        location.reload();
-                                    }
-                                },
-                                error: function(xhr, status, error) {
-                                    console.error("❌ Error al subir archivos en PASO 2", error);
-                                    console.error("   Status:", xhr.status);
-                                    console.error("   Response:", xhr.responseText);
-                                    $("#spinnerGuardado").hide();
-                                    
-                                    var errorMsg = "❌ ERROR EN PASO 2 (HTTP " + xhr.status + ")\n\n";
-                                    
-                                    if (xhr.status === 0) {
-                                        errorMsg += "SIN CONEXIÓN con el servidor\n\nVerifica tu conexión a internet.";
-                                    } else if (xhr.status === 404) {
-                                        errorMsg += "ENDPOINT NO ENCONTRADO\n\nNo existe: /pedidos/subir-archivos/" + npedido;
-                                    } else if (xhr.status === 400) {
-                                        errorMsg += "SOLICITUD INVÁLIDA\n\nLos datos enviados no son válidos.";
-                                    } else if (xhr.status === 413) {
-                                        errorMsg += "ARCHIVO MUY GRANDE\n\nEl archivo excede el límite permitido.";
-                                    } else if (xhr.status === 500) {
-                                        errorMsg += "ERROR DEL SERVIDOR\n\nContacta al administrador.";
-                                    } else if (xhr.status === 503) {
-                                        errorMsg += "SERVIDOR NO DISPONIBLE\n\nIntenta nuevamente en unos momentos.";
-                                    } else {
-                                        errorMsg += "Error HTTP " + xhr.status + "\n\n";
-                                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                                            errorMsg += xhr.responseJSON.message;
-                                        } else {
-                                            errorMsg += status || error || "Desconocido";
+                                        
+                                        function guardarURLsEnServidor(urls) {
+                                            console.log("💾 Guardando " + urls.length + " URLs en el servidor...");
+                                            
+                                            $.ajax({
+                                                type: 'POST',
+                                                url: '/pedidos/guardar-archivos/' + npedido,
+                                                contentType: 'application/json',
+                                                data: JSON.stringify({urls: urls}),
+                                                timeout: 30000,
+                                                beforeSend: function(xhr) {
+                                                    var token = $("meta[name='_csrf']").attr("content");
+                                                    var header = $("meta[name='_csrf_header']").attr("content");
+                                                    xhr.setRequestHeader(header, token);
+                                                },
+                                                success: function(resp) {
+                                                    console.log("✅ PASO 2 completado: " + resp.archivosGuardados + " archivo(s) guardado(s)", resp);
+                                                    archivosPendientes = [];
+                                                    $("#spinnerGuardado").hide();
+                                                    
+                                                    alert("✅ PASO 2 COMPLETADO\n\n" + resp.archivosGuardados + " archivo(s) subido(s) correctamente.");
+                                                    
+                                                    if (response.isNew) {
+                                                        console.log("📝 Nuevo pedido creado. Redirigiendo a cliente " + clienteId);
+                                                        location.href = "/pedidos/form/" + clienteId;
+                                                    } else {
+                                                        console.log("🔄 Pedido actualizado. Recargando página...");
+                                                        location.reload();
+                                                    }
+                                                },
+                                                error: function(xhr, status, error) {
+                                                    console.error("❌ Error al guardar URLs en servidor", error);
+                                                    alert("⚠️ Los archivos se subieron a Cloudinary, pero hubo un error al guardarlos en la BD.");
+                                                    location.reload();
+                                                }
+                                            });
                                         }
+                                        
+                                        uploadNextFile(0);
+                                    },
+                                    error: function(xhr, status, error) {
+                                        console.error("❌ Error al obtener firma de Cloudinary", error);
+                                        alert("❌ Error al obtener credenciales de Cloudinary.\n\n" + error);
                                     }
-                                    
-                                    alert(errorMsg);
-                                    
-                                    console.log("⚠️ El pedido FUE guardado correctamente, pero hubo problemas subiendo los archivos");
-                                    alert("⚠️ IMPORTANTE:\n\nEl pedido #" + npedido + " se guardó correctamente.\n\nPero los archivos NO se subieron.\n\nPuedes intentar subirlos nuevamente después desde la sección 'Añadir Fotos'.");
-                                    
-                                    if (response.isNew) {
-                                        location.href = "/pedidos/form/" + clienteId;
-                                    } else {
-                                        location.reload();
-                                    }
-                                }
-                            });
+                                });
                             } catch (e) {
                                 console.error("❌ ERROR CRÍTICO en PASO 2 - Exception:", e);
                                 console.error("   Stack:", e.stack);
