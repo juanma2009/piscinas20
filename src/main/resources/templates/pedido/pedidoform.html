@@ -923,8 +923,6 @@
                             console.log("🔐 Token CSRF: " + token);
                             console.log("🔐 Header CSRF: " + header);
                             
-                            formDataArchivos.append(header, token);
-                            
                             for (let i = 0; i < archivosPendientes.length; i++) {
                                 formDataArchivos.append('files', archivosPendientes[i]);
                                 console.log("   Archivo " + (i+1) + ": " + archivosPendientes[i].name + " (" + (archivosPendientes[i].size/1024).toFixed(2) + " KB)");
@@ -950,6 +948,10 @@
                                 processData: false,
                                 timeout: 120000,
                                 dataType: 'json',
+                                beforeSend: function(xhr) {
+                                    xhr.setRequestHeader(header, token);
+                                    console.log("🔐 Añadido header CSRF: " + header + " = " + token);
+                                },
                                 xhr: function() {
                                     var xhr = new window.XMLHttpRequest();
                                     xhr.upload.addEventListener("progress", function(evt) {
