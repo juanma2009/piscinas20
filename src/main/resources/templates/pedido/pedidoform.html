@@ -619,6 +619,7 @@
         <script>
             // Variables globales para el manejo del pedido
             var archivosPendientes = [];
+            var googleDriveLinks = [];
             var isNew = false;
             var clienteId = null;
 
@@ -764,7 +765,13 @@
                 document.getElementById('files').addEventListener('change', function(event) {
                     const nuevosArchivos = Array.from(event.target.files);
 
-                    console.log("Archivos seleccionados:", nuevosArchivos);
+                    console.log("📸 Archivos seleccionados:", nuevosArchivos.length, "archivos");
+                    console.log("📸 Detalles:", nuevosArchivos.map(f => ({ name: f.name, size: f.size, type: f.type })));
+
+                    if (nuevosArchivos.length === 0) {
+                        console.warn("⚠️ No se seleccionaron archivos");
+                        return;
+                    }
 
                     nuevosArchivos.forEach(function (file) {
                         if (!file) {
@@ -772,18 +779,20 @@
                             return;
                         }
 
+                        console.log("🔍 Verificando archivo:", file.name, "- Tamaño:", file.size, "- Tipo:", file.type);
+
                         const isImage = file.type.startsWith('image/') || 
                                        /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file.name);
 
                         if (!isImage) {
-                            console.warn("Archivo no es imagen válida:", file.name, "tipo:", file.type);
+                            console.warn("❌ Archivo no es imagen válida:", file.name, "tipo:", file.type);
                             alert("El archivo " + file.name + " no es una imagen válida");
                             return;
                         }
 
                         if (file.size === 0) {
-                            console.error("Archivo vacío (size=0). En Android/Drive, intenta descargar la imagen completamente antes de enviarla.");
-                            alert("ADVERTENCIA: " + file.name + " parece vacío.\nEn Android: Abre en Google Fotos en lugar de Drive.\nEn Drive: Descarga primero y luego carga.");
+                            console.error("❌ Archivo vacío (size=0). En Android/Drive, intenta descargar la imagen completamente antes de enviarla.");
+                            alert("⚠️ " + file.name + " parece vacío o no se descargó completamente.\n\nIntenta:\n- Descargar primero a tu dispositivo\n- Luego cargarlo desde el gestor de archivos");
                             return;
                         }
 
@@ -792,11 +801,14 @@
                         });
 
                         if (!yaIncluido) {
-                            console.log("Archivo añadido:", file.name, "Tamaño:", file.size);
+                            console.log("✅ Archivo añadido a archivosPendientes:", file.name, "Tamaño:", (file.size / 1024).toFixed(2), "KB");
                             archivosPendientes.push(file);
+                        } else {
+                            console.log("⚠️ Archivo ya está incluido:", file.name);
                         }
                     });
 
+                    console.log("📊 Total archivosPendientes:", archivosPendientes.length);
                     actualizarTabla();
                     event.target.value = '';
                 });
