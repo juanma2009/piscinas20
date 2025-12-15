@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: joyeria-app
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: joyeria-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: joyeria-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: joyeria-db
+          property: password
+
+databases:
+  - name: joyeria-db
+    databaseName: joyeria_db
+    user: joyeria_user
+    plan: free
