@@ -1017,6 +1017,7 @@ private boolean validarTipoMime(String contentType, String fileName) {
     public ResponseEntity<?> subirArchivos(
             @PathVariable Long npedido,
             @RequestParam(name = "files", required = false) MultipartFile[] files,
+            @RequestParam(name = "googleDriveLinks", required = false) String[] googleDriveLinks,
             RedirectAttributes flash,
             HttpServletRequest request
     ) {
@@ -1060,7 +1061,11 @@ private boolean validarTipoMime(String contentType, String fileName) {
             StringBuilder errores = new StringBuilder();
 
             log.info("⚡ MODO ASINCRÓNICO: Validando + encolando archivos sin esperar Cloudinary...");
+            log.info("📊 Archivos locales: {}, Links de Google Drive: {}", 
+                files != null ? files.length : 0, 
+                googleDriveLinks != null ? googleDriveLinks.length : 0);
 
+            if (files != null) {
             for (MultipartFile foto : files) {
                 String nombreOriginal = foto.getOriginalFilename();
                 long tamaño = foto.getSize();
@@ -1115,6 +1120,42 @@ private boolean validarTipoMime(String contentType, String fileName) {
                     String error = "Error al encolar " + nombreOriginal + ": " + e.getMessage();
                     log.error(error, e);
                     errores.append("• ").append(error).append("\n");
+                }
+            }
+            }
+            
+            if (googleDriveLinks != null && googleDriveLinks.length > 0) {
+                log.info("🔗 Procesando {} links de Google Drive...", googleDriveLinks.length);
+                
+                for (String googleDriveLink : googleDriveLinks) {
+                    if (googleDriveLink == null || googleDriveLink.trim().isEmpty()) {
+                        continue;
+                    }
+                    
+                    googleDriveLink = googleDriveLink.trim();
+                    log.info("🔍 Procesando link de Google Drive: {}", googleDriveLink);
+                    
+                    try {
+                        String fileName = "gdrive_" + npedido + "_" + System.currentTimeMillis() + ".jpg";
+                        String nombreOriginal = "Google Drive - " + googleDriveLink.substring(Math.min(50, googleDriveLink.length()));
+                        
+                        log.info("💾 Guardando link de Google Drive en Redis para descarga en background...");
+                        
+                        String redisKey = "gdrive_pending_" + npedido + "_" + fileName;
+                        redisTemplate.opsForValue().set(redisKey, googleDriveLink);
+                        redisTemplate.expire(redisKey, java.time.Duration.ofHours(24));
+                        
+                        String mensaje = npedido + ";" + nombreOriginal + ";" + fileName + ";GDRIVE";
+                        redisQueueProducer.sendMessage(mensaje);
+                        
+                        archivosProcesados++;
+                        log.info("✅ Link de Google Drive encolado para descarga: {} (key: {})", mensaje, redisKey);
+                        
+                    } catch (Exception e) {
+                        String error = "Error al procesar link de Google Drive: " + e.getMessage();
+                        log.error(error, e);
+                        errores.append("• ").append(error).append("\n");
+                    }
                 }
             }
 

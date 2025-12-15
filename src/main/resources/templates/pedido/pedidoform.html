@@ -600,7 +600,19 @@
                     </div>
                     <div class="modal-body">
                         <form id="uploadForm" enctype="multipart/form-data">
-                            <input type="file" name="files" id="files" multiple accept="image/*">
+                            <div class="form-group mb-3">
+                                <label><strong>📁 Archivos locales:</strong></label>
+                                <input type="file" name="files" id="files" multiple accept="image/*">
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="form-group mb-3">
+                                <label><strong>🔗 Links de Google Drive:</strong></label>
+                                <textarea id="googleDriveLinks" name="googleDriveLinks" class="form-control" rows="4" placeholder="Pega aquí links de Google Drive (uno por línea)&#10;Ejemplo: https://drive.google.com/file/d/1ABC123/view?usp=sharing"></textarea>
+                                <small class="text-muted">Copia el link compartido de Google Drive (botón Compartir) y pégalo aquí.</small>
+                            </div>
+                            
                             <input type="hidden" name="npedido" id="npedidoModal" th:value="${pedido.npedido}" />
                             <input type="hidden" name="clienteId" id="clienteId" th:value="${pedido.getCliente().id}" />
                             <button type="button" class="btn btn-primary" onclick="confirmarFotos()">Confirmar Selección</button>
@@ -749,12 +761,17 @@
             });
             
             function confirmarFotos() {
-                if (archivosPendientes.length === 0) {
-                    alert("Por favor, selecciona al menos una foto");
+                var googleDriveLinks = $('#googleDriveLinks').val().trim();
+                var linksArray = googleDriveLinks ? googleDriveLinks.split('\n').map(l => l.trim()).filter(l => l.length > 0) : [];
+                
+                if (archivosPendientes.length === 0 && linksArray.length === 0) {
+                    alert("Por favor, selecciona al menos una foto o pega un link de Google Drive");
                     return;
                 }
+                
+                console.log("Fotos confirmadas:", archivosPendientes.length, "Links de Google Drive:", linksArray.length);
+                archivosPendientes.googleDriveLinks = linksArray;
                 $('#addPhotoModal').modal('hide');
-                console.log("Fotos confirmadas:", archivosPendientes.length);
             }
 
 
@@ -908,13 +925,15 @@
                         console.log("✅ PASO 1 completado: Pedido guardado", response);
                         var npedido = response.npedido;
                         var clienteId = response.clienteId;
+                        var googleDriveLinks = archivosPendientes.googleDriveLinks || [];
                         
                         alert("✅ PASO 1 COMPLETADO\n\nPedido #" + npedido + " guardado correctamente\n\narchivosPendientes.length: " + archivosPendientes.length);
                         
-                        if (archivosPendientes.length > 0) {
+                        if (archivosPendientes.length > 0 || googleDriveLinks.length > 0) {
                             try {
-                                alert("🚀 Iniciando PASO 2: Subiendo " + archivosPendientes.length + " archivo(s) a /pedidos/subir-archivos/" + npedido);
-                                console.log("📁 PASO 2: Subiendo " + archivosPendientes.length + " archivo(s)...");
+                                var totalItems = archivosPendientes.length + googleDriveLinks.length;
+                                alert("🚀 Iniciando PASO 2: Subiendo " + totalItems + " recurso(s) a /pedidos/subir-archivos/" + npedido);
+                                console.log("📁 PASO 2: Subiendo " + archivosPendientes.length + " archivo(s) + " + googleDriveLinks.length + " link(s) de Google Drive...");
                                 
                                 var formDataArchivos = new FormData();
                                 
@@ -930,6 +949,14 @@
                                     console.log("   Archivo " + (i+1) + ": " + file.name + " (" + (file.size/1024).toFixed(2) + " KB, type: " + file.type + ")");
                                     totalSize += file.size;
                                     formDataArchivos.append('files', file);
+                                }
+                                
+                                if (googleDriveLinks.length > 0) {
+                                    console.log("🔗 Añadiendo " + googleDriveLinks.length + " link(s) de Google Drive...");
+                                    for (let i = 0; i < googleDriveLinks.length; i++) {
+                                        console.log("   Link " + (i+1) + ": " + googleDriveLinks[i]);
+                                        formDataArchivos.append('googleDriveLinks', googleDriveLinks[i]);
+                                    }
                                 }
                                 
                                 console.log("📦 Tamaño total FormData: " + (totalSize/1024).toFixed(2) + " KB");
