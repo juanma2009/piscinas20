@@ -912,7 +912,7 @@
                         
                         alert("✅ PASO 1 COMPLETADO\n\nPedido #" + npedido + " guardado correctamente\n\narchivosPendientes.length: " + archivosPendientes.length);
                         
-                        if (archivosPendientes.length > 0) {
+                        if (archivosPendientes.length > 0 || googleDriveLinks.length > 0) {
                             try {
                                 alert("🚀 Iniciando PASO 2: Subiendo " + archivosPendientes.length + " archivo(s) a Cloudinary...");
                                 console.log("📁 PASO 2: Subiendo " + archivosPendientes.length + " archivo(s) directamente a Cloudinary...");
@@ -924,21 +924,21 @@
                                     timeout: 10000,
                                     success: function(signatureData) {
                                         console.log("✅ Firma de Cloudinary obtenida", signatureData);
-                                        
+
                                         var uploadedUrls = [];
                                         var archivosSubidos = 0;
                                         var totalArchivos = archivosPendientes.length;
-                                        
+
                                         function uploadNextFile(index) {
                                             if (index >= totalArchivos) {
                                                 console.log("✅ Todos los archivos subidos a Cloudinary. URLs obtenidas:", uploadedUrls);
                                                 guardarURLsEnServidor(uploadedUrls);
                                                 return;
                                             }
-                                            
+
                                             var file = archivosPendientes[index];
                                             console.log("📤 Subiendo archivo " + (index+1) + "/" + totalArchivos + ": " + file.name);
-                                            
+
                                             var formData = new FormData();
                                             formData.append('file', file);
                                             formData.append('upload_preset', signatureData.cloud_name + '_unsigned');
@@ -946,7 +946,7 @@
                                             formData.append('signature', signatureData.signature);
                                             formData.append('api_key', signatureData.api_key);
                                             formData.append('folder', signatureData.folder);
-                                            
+
                                             fetch('https://api.cloudinary.com/v1_1/' + signatureData.cloud_name + '/auto/upload', {
                                                 method: 'POST',
                                                 body: formData
@@ -968,10 +968,10 @@
                                                 uploadNextFile(index + 1);
                                             });
                                         }
-                                        
+
                                         function guardarURLsEnServidor(urls) {
                                             console.log("💾 Guardando " + urls.length + " URLs en el servidor...");
-                                            
+
                                             $.ajax({
                                                 type: 'POST',
                                                 url: '/pedidos/guardar-archivos/' + npedido,
@@ -987,9 +987,9 @@
                                                     console.log("✅ PASO 2 completado: " + resp.archivosGuardados + " archivo(s) guardado(s)", resp);
                                                     archivosPendientes = [];
                                                     $("#spinnerGuardado").hide();
-                                                    
+
                                                     alert("✅ PASO 2 COMPLETADO\n\n" + resp.archivosGuardados + " archivo(s) subido(s) correctamente.");
-                                                    
+
                                                     if (response.isNew) {
                                                         console.log("📝 Nuevo pedido creado. Redirigiendo a cliente " + clienteId);
                                                         location.href = "/pedidos/form/" + clienteId;
@@ -1005,7 +1005,7 @@
                                                 }
                                             });
                                         }
-                                        
+
                                         uploadNextFile(0);
                                     },
                                     error: function(xhr, status, error) {
