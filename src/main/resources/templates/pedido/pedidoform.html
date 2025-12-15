@@ -925,14 +925,14 @@
                                     success: function(signatureData) {
                                         console.log("✅ Firma de Cloudinary obtenida", signatureData);
                                         
-                                        var uploadedUrls = [];
+                                        var uploadedFiles = [];
                                         var archivosSubidos = 0;
                                         var totalArchivos = archivosPendientes.length;
                                         
                                         function uploadNextFile(index) {
                                             if (index >= totalArchivos) {
-                                                console.log("✅ Todos los archivos subidos a Cloudinary. URLs obtenidas:", uploadedUrls);
-                                                guardarURLsEnServidor(uploadedUrls);
+                                                console.log("✅ Todos los archivos subidos a Cloudinary. Datos obtenidos:", uploadedFiles);
+                                                guardarURLsEnServidor(uploadedFiles);
                                                 return;
                                             }
                                             
@@ -954,7 +954,10 @@
                                             .then(response => response.json())
                                             .then(data => {
                                                 if (data.secure_url) {
-                                                    uploadedUrls.push(data.secure_url);
+                                                    uploadedFiles.push({
+                                                        fileName: file.name,
+                                                        url: data.secure_url
+                                                    });
                                                     archivosSubidos++;
                                                     console.log("✅ " + file.name + " -> " + data.secure_url);
                                                     uploadNextFile(index + 1);
@@ -969,14 +972,14 @@
                                             });
                                         }
                                         
-                                        function guardarURLsEnServidor(urls) {
-                                            console.log("💾 Guardando " + urls.length + " URLs en el servidor...");
+                                        function guardarURLsEnServidor(files) {
+                                            console.log("💾 Guardando " + files.length + " archivos en el servidor...");
                                             
                                             $.ajax({
                                                 type: 'POST',
                                                 url: '/pedidos/guardar-archivos/' + npedido,
                                                 contentType: 'application/json',
-                                                data: JSON.stringify({urls: urls}),
+                                                data: JSON.stringify({files: files}),
                                                 timeout: 30000,
                                                 beforeSend: function(xhr) {
                                                     var token = $("meta[name='_csrf']").attr("content");

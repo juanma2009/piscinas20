@@ -1033,21 +1033,23 @@ private boolean validarTipoMime(String contentType, String fileName) {
         try {
             log.info("💾 Guardando URLs de archivos desde Cloudinary para pedido: {}", npedido);
             
-            Object urlsObj = request.get("urls");
-            if (urlsObj == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "No URLs provided"));
+            Object filesObj = request.get("files");
+            if (filesObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No files provided"));
             }
             
-            java.util.List<String> urls = (java.util.List<String>) urlsObj;
+            java.util.List<Map<String, String>> files = (java.util.List<Map<String, String>>) filesObj;
             int guardados = 0;
             
-            for (String url : urls) {
+            for (Map<String, String> fileData : files) {
+                String fileName = fileData.get("fileName");
+                String url = fileData.get("url");
+                
                 if (url != null && !url.isEmpty()) {
-                    String fileName = "cloudinary_" + npedido + "_" + System.currentTimeMillis();
                     ArchivoAdjunto archivo = new ArchivoAdjunto(npedido, fileName, url);
                     archivoAdjuntoService.guardar(archivo);
                     guardados++;
-                    log.info("✅ URL guardada: {}", url);
+                    log.info("✅ Archivo guardado: {} -> {}", fileName, url);
                 }
             }
             
