@@ -912,34 +912,45 @@
                         alert("✅ PASO 1 COMPLETADO\n\nPedido #" + npedido + " guardado correctamente\n\narchivosPendientes.length: " + archivosPendientes.length);
                         
                         if (archivosPendientes.length > 0) {
-                            alert("🚀 Iniciando PASO 2: Subiendo " + archivosPendientes.length + " archivo(s) a /pedidos/subir-archivos/" + npedido);
-                            console.log("📁 PASO 2: Subiendo " + archivosPendientes.length + " archivo(s)...");
-                            
-                            var formDataArchivos = new FormData();
-                            
-                            var token = $("meta[name='_csrf']").attr("content");
-                            var header = $("meta[name='_csrf_header']").attr("content");
-                            
-                            console.log("🔐 Token CSRF: " + token);
-                            console.log("🔐 Header CSRF: " + header);
-                            
-                            for (let i = 0; i < archivosPendientes.length; i++) {
-                                formDataArchivos.append('files', archivosPendientes[i]);
-                                console.log("   Archivo " + (i+1) + ": " + archivosPendientes[i].name + " (" + (archivosPendientes[i].size/1024).toFixed(2) + " KB)");
-                            }
-                            
-                            console.log("🔍 DEBUG FormData - Verificando contenido antes de enviar:");
-                            for (let [key, value] of formDataArchivos.entries()) {
-                                if (value instanceof File) {
-                                    console.log("   Key: " + key + " -> File: " + value.name + " (Size: " + value.size + " bytes, Type: " + value.type + ")");
-                                } else {
-                                    console.log("   Key: " + key + " -> Value: " + value);
+                            try {
+                                alert("🚀 Iniciando PASO 2: Subiendo " + archivosPendientes.length + " archivo(s) a /pedidos/subir-archivos/" + npedido);
+                                console.log("📁 PASO 2: Subiendo " + archivosPendientes.length + " archivo(s)...");
+                                
+                                var formDataArchivos = new FormData();
+                                
+                                var token = $("meta[name='_csrf']").attr("content");
+                                var header = $("meta[name='_csrf_header']").attr("content");
+                                
+                                console.log("🔐 Token CSRF: " + token);
+                                console.log("🔐 Header CSRF: " + header);
+                                
+                                var totalSize = 0;
+                                for (let i = 0; i < archivosPendientes.length; i++) {
+                                    var file = archivosPendientes[i];
+                                    console.log("   Archivo " + (i+1) + ": " + file.name + " (" + (file.size/1024).toFixed(2) + " KB, type: " + file.type + ")");
+                                    totalSize += file.size;
+                                    formDataArchivos.append('files', file);
                                 }
-                            }
-                            
-                            console.log("🌐 Enviando AJAX a: /pedidos/subir-archivos/" + npedido);
-                            
-                            $.ajax({
+                                
+                                console.log("📦 Tamaño total FormData: " + (totalSize/1024).toFixed(2) + " KB");
+                                
+                                console.log("🔍 DEBUG FormData - Verificando contenido antes de enviar:");
+                                for (let [key, value] of formDataArchivos.entries()) {
+                                    if (value instanceof File) {
+                                        console.log("   Key: " + key + " -> File: " + value.name + " (Size: " + value.size + " bytes, Type: " + value.type + ")");
+                                    } else {
+                                        console.log("   Key: " + key + " -> Value: " + value);
+                                    }
+                                }
+                                
+                                console.log("🌐 Enviando AJAX a: /pedidos/subir-archivos/" + npedido);
+                                console.log("⏱️ Timeout: 120000ms (2 minutos)");
+                                console.log("📊 Total archivos a enviar: " + archivosPendientes.length);
+                                console.log("📊 Tamaño total: " + (totalSize/1024/1024).toFixed(2) + " MB");
+                                
+                                alert("📤 ENVIANDO PASO 2...\n\n" + archivosPendientes.length + " archivo(s)\n" + (totalSize/1024/1024).toFixed(2) + " MB\n\nEspera a que se complete...");
+                                
+                                $.ajax({
                                 type: 'POST',
                                 url: '/pedidos/subir-archivos/' + npedido,
                                 data: formDataArchivos,
@@ -951,6 +962,7 @@
                                 beforeSend: function(xhr) {
                                     xhr.setRequestHeader(header, token);
                                     console.log("🔐 Añadido header CSRF: " + header + " = " + token);
+                                    console.log("✅ AJAX iniciado - solicitud enviada al servidor");
                                 },
                                 xhr: function() {
                                     var xhr = new window.XMLHttpRequest();
@@ -1026,6 +1038,11 @@
                                     }
                                 }
                             });
+                            } catch (e) {
+                                console.error("❌ ERROR CRÍTICO en PASO 2 - Exception:", e);
+                                console.error("   Stack:", e.stack);
+                                alert("❌ ERROR CRÍTICO EN PASO 2\n\nExcepción en el código:\n" + e.message + "\n\nRevisa la consola del navegador (F12) para más detalles.");
+                            }
                         } else {
                             console.log("ℹ️ Sin archivos para subir");
                             archivosPendientes = [];
