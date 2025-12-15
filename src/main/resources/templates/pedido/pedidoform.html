@@ -965,15 +965,31 @@
                                 },
                                 error: function(xhr, status, error) {
                                     console.error("❌ Error al subir archivos en PASO 2", error);
+                                    console.error("   Status:", xhr.status);
+                                    console.error("   Response:", xhr.responseText);
                                     $("#spinnerGuardado").hide();
                                     
-                                    var errorMsg = "❌ ERROR EN PASO 2: No se pudieron subir los archivos\n\n";
-                                    if (xhr.status === 404) {
-                                        errorMsg += "Pedido #" + npedido + " no encontrado en el servidor";
-                                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                                        errorMsg += xhr.responseJSON.message;
+                                    var errorMsg = "❌ ERROR EN PASO 2 (HTTP " + xhr.status + ")\n\n";
+                                    
+                                    if (xhr.status === 0) {
+                                        errorMsg += "SIN CONEXIÓN con el servidor\n\nVerifica tu conexión a internet.";
+                                    } else if (xhr.status === 404) {
+                                        errorMsg += "ENDPOINT NO ENCONTRADO\n\nNo existe: /pedidos/subir-archivos/" + npedido;
+                                    } else if (xhr.status === 400) {
+                                        errorMsg += "SOLICITUD INVÁLIDA\n\nLos datos enviados no son válidos.";
+                                    } else if (xhr.status === 413) {
+                                        errorMsg += "ARCHIVO MUY GRANDE\n\nEl archivo excede el límite permitido.";
+                                    } else if (xhr.status === 500) {
+                                        errorMsg += "ERROR DEL SERVIDOR\n\nContacta al administrador.";
+                                    } else if (xhr.status === 503) {
+                                        errorMsg += "SERVIDOR NO DISPONIBLE\n\nIntenta nuevamente en unos momentos.";
                                     } else {
-                                        errorMsg += "Error: " + (error || "Desconocido");
+                                        errorMsg += "Error HTTP " + xhr.status + "\n\n";
+                                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                                            errorMsg += xhr.responseJSON.message;
+                                        } else {
+                                            errorMsg += status || error || "Desconocido";
+                                        }
                                     }
                                     
                                     alert(errorMsg);
