@@ -6,8 +6,13 @@ import com.bolsadeideas.springboot.app.models.entity.*;
 import com.bolsadeideas.springboot.app.models.service.*;
 import com.bolsadeideas.springboot.app.models.service.redis.RedisQueueProducer;
 import com.bolsadeideas.springboot.app.models.service.redis.RedisTestService;
+import com.bolsadeideas.springboot.app.util.paginator.PageRender;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.drive.Drive;
 import lombok.extern.log4j.Log4j2;
 import net.sf.jasperreports.engine.*;
 import org.apache.commons.io.IOUtils;
@@ -22,32 +27,25 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.List;
-import java.util.Map;
-
-import com.bolsadeideas.springboot.app.util.paginator.PageRender;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -1065,27 +1063,17 @@ private boolean validarTipoMime(String contentType, String fileName) {
     public ResponseEntity<?> subirArchivos(
             @PathVariable Long npedido,
             @RequestParam(name = "files", required = false) MultipartFile[] files,
-            @RequestParam(name = "googleDriveLinks", required = false) String[] googleDriveLinks,
+            @RequestParam(name = "googleDriveFileIds", required = false) String[] googleDriveFileIds,
+            @RequestParam(name = "googleDriveToken", required = false) String googleDriveToken,
             RedirectAttributes flash,
             HttpServletRequest request
     ) {
         try {
             log.info("🔵 ========== INICIO subirArchivos ==========");
             log.info("📍 Endpoint: /pedidos/subir-archivos/{}", npedido);
-            log.info("📊 Content-Type header: {}", request.getContentType());
-            log.info("📊 Method: {}", request.getMethod());
-            log.info("📊 Files array: {}", files != null ? "NOT NULL" : "NULL");
-            log.info("📸 Total archivos recibidos: {}", files != null ? files.length : 0);
-            
-            if (files != null && files.length > 0) {
-                for (int i = 0; i < files.length; i++) {
-                    MultipartFile f = files[i];
-                    log.info("   Archivo[{}]: name={}, size={} bytes, contentType={}, empty={}", 
-                        i, f.getOriginalFilename(), f.getSize(), f.getContentType(), f.isEmpty());
-                }
-            } else {
-                log.warn("⚠️ NO HAY ARCHIVOS - files es null o vacío");
-            }
+            log.info("📊 Archivos locales: {}, FileIds Google Drive: {}", 
+                files != null ? files.length : 0,
+                googleDriveFileIds != null ? googleDriveFileIds.length : 0);
             
             Pedido pedido = pedidoService.findOne(npedido);
             if (pedido == null) {
@@ -1096,11 +1084,11 @@ private boolean validarTipoMime(String contentType, String fileName) {
                 ));
             }
 
-            if (files == null || files.length == 0) {
-                log.info("✅ No hay archivos para subir");
+            if ((files == null || files.length == 0) && (googleDriveFileIds == null || googleDriveFileIds.length == 0)) {
+                log.info("✅ No hay archivos para procesar");
                 return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "info", "No hay archivos para subir",
+                    "info", "No hay archivos para procesar",
                     "archivosSubidos", 0
                 ));
             }
@@ -1108,101 +1096,95 @@ private boolean validarTipoMime(String contentType, String fileName) {
             int archivosProcesados = 0;
             StringBuilder errores = new StringBuilder();
 
-            log.info("⚡ MODO ASINCRÓNICO: Validando + encolando archivos sin esperar Cloudinary...");
-            log.info("📊 Archivos locales: {}, Links de Google Drive: {}", 
-                files != null ? files.length : 0, 
-                googleDriveLinks != null ? googleDriveLinks.length : 0);
+            log.info("⚡ Procesando archivos...");
 
-            if (files != null) {
-            for (MultipartFile foto : files) {
-                String nombreOriginal = foto.getOriginalFilename();
-                long tamaño = foto.getSize();
-                String contentType = foto.getContentType();
-                
-                log.info("🔍 Validando archivo: {} ({} bytes, MIME: {})", nombreOriginal, tamaño, contentType);
-                
-                if (foto.isEmpty()) {
-                    log.warn("❌ Archivo vacío: {}", nombreOriginal);
-                    errores.append("• Archivo vacío (0 bytes): ").append(nombreOriginal).append("\n");
-                    continue;
-                }
-
-                if (!validarTipoMime(contentType, nombreOriginal)) {
-                    String error = "Archivo no es una imagen válida (MIME: " + contentType + "): " + nombreOriginal;
-                    log.warn("❌ {}", error);
-                    errores.append("• ").append(error).append("\n");
-                    continue;
-                }
-                
-                log.info("✅ Archivo validado: {}", nombreOriginal);
-
-                try {
-                    byte[] imageBytes = foto.getBytes();
-
-                    if (imageBytes.length == 0) {
-                        log.warn("Archivo sin contenido: {}", nombreOriginal);
+            if (files != null && files.length > 0) {
+                for (MultipartFile foto : files) {
+                    String nombreOriginal = foto.getOriginalFilename();
+                    String contentType = foto.getContentType();
+                    
+                    log.info("🔍 Validando archivo local: {} ({} bytes, MIME: {})", nombreOriginal, foto.getSize(), contentType);
+                    
+                    if (foto.isEmpty()) {
+                        log.warn("❌ Archivo vacío: {}", nombreOriginal);
                         errores.append("• Archivo vacío: ").append(nombreOriginal).append("\n");
                         continue;
                     }
 
-                    String fileName = "pedido_" + npedido + "_" + System.currentTimeMillis();
-                    
-                    log.info("💾 Guardando {} ({} KB) en Redis para procesamiento asincrónico...", nombreOriginal, imageBytes.length / 1024);
-                    
-                    String redisKey = "file_pending_" + npedido + "_" + fileName;
-                    String imageBase64 = java.util.Base64.getEncoder().encodeToString(imageBytes);
-                    redisTemplate.opsForValue().set(redisKey, imageBase64);
-                    redisTemplate.expire(redisKey, java.time.Duration.ofHours(24));
-                    
-                    String mensaje = npedido + ";" + nombreOriginal + ";" + fileName;
-                    redisQueueProducer.sendMessage(mensaje);
-
-                    archivosProcesados++;
-                    log.info("✅ Archivo encolado para procesamiento: {} (key: {})", mensaje, redisKey);
-
-                } catch (IOException e) {
-                    String error = "Error al leer archivo " + nombreOriginal + ": " + e.getMessage();
-                    log.error(error, e);
-                    errores.append("• ").append(error).append("\n");
-                } catch (Exception e) {
-                    String error = "Error al encolar " + nombreOriginal + ": " + e.getMessage();
-                    log.error(error, e);
-                    errores.append("• ").append(error).append("\n");
-                }
-            }
-            }
-            
-            if (googleDriveLinks != null && googleDriveLinks.length > 0) {
-                log.info("🔗 Procesando {} links de Google Drive...", googleDriveLinks.length);
-                
-                for (String googleDriveLink : googleDriveLinks) {
-                    if (googleDriveLink == null || googleDriveLink.trim().isEmpty()) {
+                    if (!validarTipoMime(contentType, nombreOriginal)) {
+                        log.warn("❌ Tipo MIME inválido: {}", contentType);
+                        errores.append("• Tipo de archivo no soportado: ").append(nombreOriginal).append("\n");
                         continue;
                     }
-                    
-                    googleDriveLink = googleDriveLink.trim();
-                    log.info("🔍 Procesando link de Google Drive: {}", googleDriveLink);
-                    
+
                     try {
-                        String fileName = "gdrive_" + npedido + "_" + System.currentTimeMillis() + ".jpg";
-                        String nombreOriginal = "Google Drive - " + googleDriveLink.substring(Math.min(50, googleDriveLink.length()));
-                        
-                        log.info("💾 Guardando link de Google Drive en Redis para descarga en background...");
-                        
-                        String redisKey = "gdrive_pending_" + npedido + "_" + fileName;
-                        redisTemplate.opsForValue().set(redisKey, googleDriveLink);
+                        byte[] imageBytes = foto.getBytes();
+                        if (imageBytes.length == 0) {
+                            errores.append("• Archivo sin contenido: ").append(nombreOriginal).append("\n");
+                            continue;
+                        }
+
+                        String fileName = "pedido_" + npedido + "_" + System.currentTimeMillis();
+                        String redisKey = "file_pending_" + npedido + "_" + fileName;
+                        String imageBase64 = java.util.Base64.getEncoder().encodeToString(imageBytes);
+                        redisTemplate.opsForValue().set(redisKey, imageBase64);
                         redisTemplate.expire(redisKey, java.time.Duration.ofHours(24));
                         
-                        String mensaje = npedido + ";" + nombreOriginal + ";" + fileName + ";GDRIVE";
+                        String mensaje = npedido + ";" + nombreOriginal + ";" + fileName;
                         redisQueueProducer.sendMessage(mensaje);
-                        
+
                         archivosProcesados++;
-                        log.info("✅ Link de Google Drive encolado para descarga: {} (key: {})", mensaje, redisKey);
-                        
+                        log.info("✅ Archivo local encolado: {}", nombreOriginal);
+
                     } catch (Exception e) {
-                        String error = "Error al procesar link de Google Drive: " + e.getMessage();
-                        log.error(error, e);
-                        errores.append("• ").append(error).append("\n");
+                        log.error("❌ Error procesando archivo: {}", nombreOriginal, e);
+                        errores.append("• Error al procesar: ").append(nombreOriginal).append("\n");
+                    }
+                }
+            }
+            
+            if (googleDriveFileIds != null && googleDriveFileIds.length > 0 && googleDriveToken != null) {
+                log.info("🔗 Procesando {} archivos de Google Drive...", googleDriveFileIds.length);
+                
+                for (String fileId : googleDriveFileIds) {
+                    if (fileId == null || fileId.trim().isEmpty()) continue;
+                    
+                    try {
+                        log.info("📥 Descargando archivo de Drive: {}", fileId);
+                        byte[] imageBytes = descargarDesdeGoogleDriveAPI(fileId, googleDriveToken);
+
+                        if (imageBytes == null || imageBytes.length == 0) {
+                            log.warn("⚠️ Descarga vacía para fileId: {}", fileId);
+                            errores.append("• Archivo vacío desde Drive\n");
+                            continue;
+                        }
+
+                        String fileName = "gdrive_" + npedido + "_" + System.currentTimeMillis();
+                        String url = cloudinaryService.uploadImage(imageBytes, npedido, fileName);
+                        ArchivoAdjunto adjunto = new ArchivoAdjunto(npedido, "Google Drive - " + fileId, url);
+                        archivoAdjuntoService.guardar(adjunto);
+
+                        archivosProcesados++;
+                        log.info("✅ Archivo de Drive subido a Cloudinary: {} -> {}", fileId, url);
+
+                    } catch (RuntimeException e) {
+                        String errorMsg = e.getMessage();
+                        if (errorMsg.contains("401_TOKEN_EXPIRED")) {
+                            log.error("❌ Token expirado para fileId: {}", fileId);
+                            errores.append("• Token expirado - Debes re-autenticarte con Google\n");
+                        } else if (errorMsg.contains("403_ACCESS_DENIED")) {
+                            log.error("❌ Permiso denegado para fileId: {}", fileId);
+                            errores.append("• No tienes permiso para acceder a este archivo en Drive\n");
+                        } else if (errorMsg.contains("404_NOT_FOUND")) {
+                            log.error("❌ Archivo no encontrado para fileId: {}", fileId);
+                            errores.append("• El archivo no existe o fue eliminado de Drive\n");
+                        } else {
+                            log.error("❌ Error de Google Drive: {}", errorMsg);
+                            errores.append("• Error al descargar de Drive: ").append(errorMsg).append("\n");
+                        }
+                    } catch (Exception e) {
+                        log.error("❌ Error procesando archivo de Drive: {}", fileId, e);
+                        errores.append("• Error al procesar archivo: ").append(e.getMessage()).append("\n");
                     }
                 }
             }
@@ -1213,16 +1195,16 @@ private boolean validarTipoMime(String contentType, String fileName) {
             response.put("npedido", npedido);
 
             if (archivosProcesados > 0) {
-                log.info("✅ {} archivo(s) subido(s)", archivosProcesados);
-                response.put("info", "✓ " + archivosProcesados + " archivo(s) subido(s) con éxito.");
+                log.info("✅ {} elemento(s) procesado(s)", archivosProcesados);
+                response.put("info", "✓ " + archivosProcesados + " elemento(s) procesado(s)");
             }
 
             if (errores.length() > 0) {
-                log.warn("⚠️ Errores al procesar archivos:\n{}", errores.toString());
+                log.warn("⚠️ Errores encontrados:\n{}", errores.toString());
                 response.put("warnings", errores.toString());
             }
 
-            log.info("🎬 FIN subirArchivos - Procesados: {}/{}", archivosProcesados, files.length);
+            log.info("🎬 FIN subirArchivos");
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
@@ -1234,5 +1216,61 @@ private boolean validarTipoMime(String contentType, String fileName) {
         }
     }
 
+    private byte[] descargarDesdeGoogleDriveAPI(String fileId, String accessToken) {
+        java.net.HttpURLConnection connection = null;
+        try {
+            log.info("📥 Iniciando descarga de Google Drive - FileID: {}", fileId);
+            
+            if (accessToken == null || accessToken.trim().isEmpty()) {
+                log.error("❌ Token de acceso vacío o nulo");
+                return null;
+            }
+            
+            String apiUrl = "https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media";
+            URL url = new URL(apiUrl);
+            connection = (java.net.HttpURLConnection) url.openConnection();
+            
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Authorization", "Bearer " + accessToken);
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+            connection.setConnectTimeout(15000);
+            connection.setReadTimeout(15000);
+            
+            int responseCode = connection.getResponseCode();
+            log.debug("📊 HTTP Response: {}", responseCode);
+            
+            if (responseCode == 200) {
+                InputStream inputStream = connection.getInputStream();
+                byte[] bytes = IOUtils.toByteArray(inputStream);
+                inputStream.close();
+                
+                log.info("✅ Descargado desde Drive: {} ({} bytes)", fileId, bytes.length);
+                return bytes;
+            } else if (responseCode == 401) {
+                log.error("❌ Token inválido o expirado (401) - Usuario debe re-autenticarse");
+                throw new RuntimeException("GDRIVE_401_TOKEN_EXPIRED");
+            } else if (responseCode == 403) {
+                log.error("❌ Permiso denegado (403) - Usuario no tiene acceso al archivo");
+                throw new RuntimeException("GDRIVE_403_ACCESS_DENIED");
+            } else if (responseCode == 404) {
+                log.error("❌ Archivo no encontrado en Drive (404)");
+                throw new RuntimeException("GDRIVE_404_NOT_FOUND");
+            } else {
+                log.error("❌ Error HTTP {}: {}", responseCode, connection.getResponseMessage());
+                throw new RuntimeException("GDRIVE_HTTP_ERROR_" + responseCode);
+            }
+            
+        } catch (RuntimeException e) {
+            log.error("❌ Error de Google Drive: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("❌ Error descargando desde Google Drive: {}", e.getMessage(), e);
+            return null;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
 
 }

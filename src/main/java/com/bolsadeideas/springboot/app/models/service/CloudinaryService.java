@@ -53,23 +53,53 @@ public class CloudinaryService {
      * @param fileName El nombre del archivo para Cloudinary.
      * @return La URL de la imagen subida a Cloudinary.
      */
-    @Cacheable(value = "cloudinaryImages", key = "#fileName")
     public String uploadImage(byte[] imageBytes, Long npedido, String fileName) throws IOException {
         if (imageBytes == null || imageBytes.length == 0) {
             throw new IllegalArgumentException("Los bytes de la imagen no pueden ser nulos o vacíos");
         }
 
-        // Subir la imagen a Cloudinary con el publicId generado
-        Map<String, Object> uploadParams = new HashMap<>();
-        uploadParams.put("public_id", fileName);  // Usamos un publicId personalizado
-        Map uploadResult = cloudinary.uploader().upload(imageBytes, uploadParams);
-        String imageUrl = (String) uploadResult.get("secure_url");
+        try {
+            log.info("📤 Iniciando upload a Cloudinary: fileName={}, size={} bytes", fileName, imageBytes.length);
+            
+            // Subir la imagen a Cloudinary con el publicId generado
+            Map<String, Object> uploadParams = new HashMap<>();
+            uploadParams.put("public_id", fileName);
+            uploadParams.put("folder", "pedidos/" + npedido);
+            
+            log.debug("   Parámetros: {}", uploadParams);
+            
+            Map uploadResult = cloudinary.uploader().upload(imageBytes, uploadParams);
+            
+            log.debug("   Respuesta Cloudinary: {}", uploadResult);
+            
+            Object errorObj = uploadResult.get("error");
+            if (errorObj != null) {
+                String errorMsg = errorObj.toString();
+                log.error("❌ Error de Cloudinary: {}", errorMsg);
+                throw new IOException("Cloudinary error: " + errorMsg);
+            }
+            
+            String imageUrl = (String) uploadResult.get("secure_url");
+            
+            if (imageUrl == null || imageUrl.isEmpty()) {
+                log.error("❌ Cloudinary no retornó secure_url");
+                log.error("   Respuesta: {}", uploadResult);
+                throw new IOException("Cloudinary no retornó URL segura");
+            }
 
-        // Almacenar la URL en Redis con el publicId
-        redisTemplate.opsForValue().set(fileName, imageUrl);
+            // Almacenar la URL en Redis con el publicId
+            redisTemplate.opsForValue().set(fileName, imageUrl);
 
-        log.info("Imagen subida a Cloudinary con publicId: {} y URL almacenada en Redis: {}", fileName, imageUrl);
-        return imageUrl;
+            log.info("✅ Imagen subida a Cloudinary: {} -> {}", fileName, imageUrl);
+            return imageUrl;
+            
+        } catch (IOException e) {
+            log.error("❌ Error de IO al subir a Cloudinary: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("❌ Error inesperado al subir a Cloudinary: {} - {}", e.getClass().getSimpleName(), e.getMessage(), e);
+            throw new IOException("Error al subir a Cloudinary: " + e.getMessage(), e);
+        }
     }
 
     /**
