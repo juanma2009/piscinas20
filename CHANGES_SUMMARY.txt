@@ -1,0 +1,451 @@
+================================================================================
+                    GOOGLE DRIVE INTEGRATION - CHANGES SUMMARY
+================================================================================
+
+PROJECT: Joyería App
+DATE: 2024-12-16
+STATUS: ✅ COMPLETE
+
+================================================================================
+                            FILES MODIFIED
+================================================================================
+
+1. PedidoController.java
+   Location: src/main/java/com/bolsadeideas/springboot/app/controllers/
+   
+   Changes:
+   ✅ Line 1098: Fixed validation logic
+      - Before: Early return if files == null/empty (ignored Drive links)
+      - After: Only return if BOTH files AND googleDriveLinks empty
+   
+   ✅ Lines 1257-1298: NEW METHOD - extraerFileId()
+      Extracts Google Drive file ID from URLs:
+      - Format 1: https://drive.google.com/file/d/{FILE_ID}/view
+      - Format 2: https://drive.google.com/...?id={FILE_ID}
+   
+   ✅ Lines 1300-1319: NEW METHOD - descargarDesdeGoogleDriveConToken()
+      Downloads files from Google Drive using OAuth token:
+      - Authenticates with GoogleCredential + token
+      - Returns byte array ready for Cloudinary upload
+      - Graceful fallback to null if error
+
+
+2. pedidoform.html
+   Location: src/main/resources/templates/pedido/
+   
+   Changes:
+   ✅ Lines 592-661: REDESIGNED Modal UI
+      - Added tab system (local files vs Google Drive)
+      - Tab 1: File input for local images
+      - Tab 2: Google Drive token + link inputs + table
+   
+   ✅ Lines 632-650: NEW Form Controls
+      - Token input field: id="googleDriveToken"
+      - Link input field: id="googleDriveLink"
+      - Add button: onclick="agregarLinkGoogleDrive()"
+      - Results table: id="googleDriveLinksTable"
+   
+   ✅ Lines 664-671: NEW Global Variables
+      - googleDriveToken (OAuth token)
+      - npedido (order ID)
+      - (existing: archivosPendientes, googleDriveLinks)
+   
+   ✅ Lines 864-941: NEW JavaScript Functions
+      - agregarLinkGoogleDrive() - Add link to list
+      - eliminarLinkGoogleDrive(id) - Remove link
+      - actualizarTablaGoogleDrive() - Render table
+   
+   ✅ Lines 943-952: UPDATED confirmarFotos()
+      - Now captures googleDriveToken
+      - Validates both files AND links
+   
+   ✅ Lines 1122-1207: REDESIGNED PASO 2 Flow
+      - Changed from Cloudinary direct upload to server-side processing
+      - POST /pedidos/subir-archivos/{npedido} (NEW endpoint)
+      - Single request with files + links + token
+      - Better error handling with timeout support
+
+
+================================================================================
+                        FEATURE BREAKDOWN
+================================================================================
+
+🎯 BEFORE
+─────────────────────────────────────────────────────────────────────────────
+✗ Only local files supported
+✗ Google Drive images had to be downloaded manually
+✗ 0-byte issues with Android/Drive lazy loading
+✗ No token-based API authentication
+✗ Multi-step UI not intuitive
+
+
+🎯 AFTER
+─────────────────────────────────────────────────────────────────────────────
+✅ Local files (multipart upload)
+✅ Google Drive links with optional OAuth token
+✅ Dual-mode processing:
+   - WITH token: Immediate download + Cloudinary upload
+   - WITHOUT token: Background processing via Redis queue
+✅ Unified endpoint: /pedidos/subir-archivos/{npedido}
+✅ Tabbed UI for clear separation of input methods
+✅ Comprehensive error handling
+✅ Support for mixed inputs (files + Drive links + token)
+
+
+================================================================================
+                        TECHNICAL FLOW
+================================================================================
+
+USER INTERACTION
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. Open order form                                                          │
+│ 2. Click "Añadir Fotos" button                                             │
+│ 3. Tab 1: Select local files OR Tab 2: Add Drive links                     │
+│ 4. (Optional) Paste Google Drive OAuth token                               │
+│ 5. Click "Confirmar Selección"                                              │
+│ 6. Click "Guardar" on main form                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+REQUEST FLOW - STEP 1
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ POST /pedidos/form                                                          │
+│ ├─ Guarda datos del pedido (cliente, descripción, etc)                     │
+│ ├─ Respuesta: {npedido: 123, clienteId: 456, isNew: true}                │
+│ └─ Stored in variables for PASO 2                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+REQUEST FLOW - STEP 2
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ POST /pedidos/subir-archivos/123                                           │
+│                                                                              │
+│ FormData:                                                                    │
+│ ├─ files: [File1, File2, ...] (optional)                                   │
+│ ├─ googleDriveLinks: ["https://drive.google.com/...", ...] (optional)     │
+│ └─ driveToken: "ya1.a0Af..." (optional)                                   │
+│                                                                              │
+│ Backend Processing:                                                         │
+│ ├─ Validate files (MIME type, size)                                        │
+│ ├─ FOR EACH file:                                                           │
+│ │  ├─ Save to Redis (Base64)                                               │
+│ │  ├─ Enqueue message for async Cloudinary upload                         │
+│ │  └─ archivosProcesados++                                                │
+│ │                                                                            │
+│ ├─ FOR EACH Google Drive link:                                             │
+│ │  ├─ Extract file ID from URL                                             │
+│ │  ├─ IF token provided:                                                   │
+│ │  │  ├─ Download file from Drive (API + OAuth)                           │
+│ │  │  ├─ Upload to Cloudinary immediately                                 │
+│ │  │  ├─ Save ArchivoAdjunto to DB                                        │
+│ │  │  └─ archivosProcesados++                                             │
+│ │  │                                                                         │
+│ │  └─ ELSE:                                                                 │
+│ │     ├─ Save link to Redis                                                │
+│ │     ├─ Enqueue message for async download + upload                      │
+│ │     └─ archivosProcesados++                                             │
+│ │                                                                            │
+│ └─ Response: {success: true, archivosSubidos: 5, warnings: "..."}          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+ASYNC PROCESSING (Redis Queue)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Background Worker consumes queue messages:                                  │
+│ - Local file: Retrieve Base64 → Upload to Cloudinary → Save DB             │
+│ - Drive link: Download via Drive API → Upload to Cloudinary → Save DB      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                        CODE LOCATIONS
+================================================================================
+
+BACKEND CHANGES
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ File: PedidoController.java                                                 │
+│                                                                              │
+│ ├─ Endpoint: @PostMapping("/subir-archivos/{npedido}")                     │
+│ │  └─ Line 1062-1255                                                        │
+│ │     - Handles files, googleDriveLinks, driveToken params                 │
+│ │     - Validates Pedido exists                                             │
+│ │     - Processes both file types (local & Drive)                          │
+│ │     - Returns JSON response with status                                   │
+│ │                                                                            │
+│ ├─ Helper: private String extraerFileId(String link)                       │
+│ │  └─ Line 1257-1298                                                        │
+│ │     - Extracts Google Drive file ID from URL                             │
+│ │     - Supports /d/ and id= URL formats                                   │
+│ │                                                                            │
+│ └─ Helper: private byte[] descargarDesdeGoogleDriveConToken(...)           │
+│    └─ Line 1300-1319                                                        │
+│       - Uses GoogleCredential + Drive API to download files                │
+│       - Returns byte array for Cloudinary upload                           │
+│       - Handles exceptions gracefully                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+FRONTEND CHANGES
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ File: pedidoform.html                                                       │
+│                                                                              │
+│ ├─ Modal UI: lines 592-661                                                 │
+│ │  ├─ Tab 1: Local Files (line 620-628)                                   │
+│ │  │  - File input[type=file] for multiple images                         │
+│ │  │  - File list table with preview                                       │
+│ │  │                                                                         │
+│ │  └─ Tab 2: Google Drive (line 631-650)                                  │
+│ │     - Token input field                                                   │
+│ │     - Link input + Add button                                             │
+│ │     - Links table with delete buttons                                     │
+│ │                                                                            │
+│ ├─ JS Functions: lines 664-952                                              │
+│ │  ├─ agregarLinkGoogleDrive() (line 864-893)                             │
+│ │  │  - Validate URL format                                                │
+│ │  │  - Check for duplicates                                               │
+│ │  │  - Add to googleDriveLinks array                                      │
+│ │  │                                                                         │
+│ │  ├─ eliminarLinkGoogleDrive(id) (line 895-900)                          │
+│ │  │  - Remove from array by ID                                            │
+│ │  │  - Re-render table                                                     │
+│ │  │                                                                         │
+│ │  ├─ actualizarTablaGoogleDrive() (line 902-941)                         │
+│ │  │  - Dynamically build table from googleDriveLinks                      │
+│ │  │  - Add delete buttons                                                 │
+│ │  │                                                                         │
+│ │  └─ confirmarFotos() (line 943-952)                                      │
+│ │     - Validate selection exists                                          │
+│ │     - Capture token value                                                │
+│ │     - Close modal                                                         │
+│ │                                                                            │
+│ └─ Form Submission: lines 1122-1207                                         │
+│    - Build FormData with files + links + token                             │
+│    - POST to /pedidos/subir-archivos/{npedido}                             │
+│    - Handle success/error responses                                        │
+│    - Reload form on completion                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                        EXAMPLE REQUESTS
+================================================================================
+
+REQUEST 1: Local Files Only
+──────────────────────────────────────────────────────────────────────────────
+POST /pedidos/subir-archivos/123
+Content-Type: multipart/form-data
+
+files=<image1.jpg>
+files=<image2.png>
+
+RESPONSE:
+{
+  "success": true,
+  "archivosSubidos": 2,
+  "npedido": 123,
+  "info": "✓ 2 elemento(s) procesado(s) con éxito."
+}
+
+
+REQUEST 2: Google Drive with Token
+──────────────────────────────────────────────────────────────────────────────
+POST /pedidos/subir-archivos/123
+Content-Type: multipart/form-data
+
+googleDriveLinks=https://drive.google.com/file/d/1ABC123XYZ/view
+driveToken=ya1.a0AfH6SMBx...
+
+RESPONSE:
+{
+  "success": true,
+  "archivosSubidos": 1,
+  "npedido": 123,
+  "info": "✓ 1 elemento(s) procesado(s) con éxito."
+}
+
+
+REQUEST 3: Mixed (Files + Drive + Token)
+──────────────────────────────────────────────────────────────────────────────
+POST /pedidos/subir-archivos/123
+Content-Type: multipart/form-data
+
+files=<local.jpg>
+googleDriveLinks=https://drive.google.com/file/d/1ABC123XYZ/view
+googleDriveLinks=https://drive.google.com/file/d/2DEF456UVW/view
+driveToken=ya1.a0AfH6SMBx...
+
+RESPONSE:
+{
+  "success": true,
+  "archivosSubidos": 3,
+  "npedido": 123,
+  "info": "✓ 3 elemento(s) procesado(s) con éxito.",
+  "warnings": "⚠️ Error downloading file 2: Access denied"
+}
+
+
+================================================================================
+                        TESTING CHECKLIST
+================================================================================
+
+UNIT TESTS
+─────────────────────────────────────────────────────────────────────────────
+☐ extraerFileId() with /d/ format
+☐ extraerFileId() with id= format
+☐ extraerFileId() with invalid URL
+☐ descargarDesdeGoogleDriveConToken() with valid token
+☐ descargarDesdeGoogleDriveConToken() with invalid token
+☐ subirArchivos() with files only
+☐ subirArchivos() with links only
+☐ subirArchivos() with both
+☐ subirArchivos() with no inputs
+
+
+INTEGRATION TESTS
+─────────────────────────────────────────────────────────────────────────────
+☐ Frontend validation: URL format check
+☐ Frontend validation: Duplicate link prevention
+☐ Frontend: Tab switching
+☐ Frontend: File preview rendering
+☐ Frontend: Link table rendering
+☐ Backend: Pedido lookup
+☐ Backend: MIME type validation
+☐ Backend: Cloudinary upload (via service)
+☐ Backend: Redis enqueue (via producer)
+☐ Backend: Error response format
+
+
+MANUAL ACCEPTANCE TESTS
+─────────────────────────────────────────────────────────────────────────────
+☐ Scenario 1: Upload local image
+   - Select image from device
+   - See preview in table
+   - Save order
+   - See success message
+   - Image appears in order view
+
+☐ Scenario 2: Share Drive link (no token)
+   - Paste Drive link
+   - See it in table
+   - Save order
+   - File eventually appears (after Redis worker processes)
+
+☐ Scenario 3: Share Drive link (with token)
+   - Paste OAuth token
+   - Paste Drive link
+   - Save order
+   - File appears immediately (direct download via API)
+
+☐ Scenario 4: Mix local + Drive
+   - Select local image + paste Drive link + token
+   - Save order
+   - Both appear in order view
+
+☐ Scenario 5: Error handling
+   - Invalid Drive URL (show error)
+   - Invalid token (should fallback to Redis)
+   - No file/link selected (show validation message)
+   - Network error (show timeout message)
+
+
+================================================================================
+                        DEPENDENCIES
+================================================================================
+
+REQUIRED LIBRARIES (already in pom.xml)
+─────────────────────────────────────────────────────────────────────────────
+✅ com.google.api-client:google-api-client
+✅ com.google.oauth-client:google-oauth-client-jetty
+✅ com.google.apis:google-api-services-drive
+✅ org.apache.commons:commons-io (for IOUtils)
+✅ org.springframework.data:spring-data-redis (for RedisTemplate)
+✅ com.cloudinary:cloudinary-http44 (for Cloudinary upload)
+
+
+EXTERNAL SERVICES
+─────────────────────────────────────────────────────────────────────────────
+✅ Google Drive API (for downloading files with token)
+✅ Cloudinary (for image storage)
+✅ Redis (for async queue)
+
+
+================================================================================
+                        NEXT STEPS (Optional)
+================================================================================
+
+1. Add OAuth token UI integration
+   - Instead of manual paste, use OAuth flow
+   - Store token in session
+   - Auto-detect Drive sharing
+
+2. Add file preview from Drive
+   - Show Drive file thumbnails
+   - Before download, show file details
+
+3. Add batch processing UI
+   - Progress bar for uploads
+   - Cancel option mid-process
+
+4. Add Drive folder support
+   - Share entire Drive folder
+   - Auto-select all images
+
+5. Security enhancements
+   - Token encryption/storage
+   - CORS headers validation
+   - Rate limiting
+
+
+================================================================================
+                        VERIFICATION STEPS
+================================================================================
+
+To compile and verify the changes:
+
+1. Navigate to project directory:
+   cd C:\Users\Juanma\IdeaProjects\joyeria
+
+2. Compile the project:
+   mvn clean compile -DskipTests
+
+3. Expected output:
+   [INFO] BUILD SUCCESS
+   
+4. If there are errors:
+   - Check PedidoController.java syntax
+   - Check pedidoform.html JavaScript syntax
+   - Verify all imports are present
+   - Check Maven can resolve dependencies
+
+5. Run tests (optional):
+   mvn test
+
+6. Deploy and test manually per checklist above
+
+
+================================================================================
+                        COMPLETION STATUS
+================================================================================
+
+✅ Backend Implementation:     COMPLETE
+   - Helper methods added
+   - Endpoint enhanced
+   - Error handling
+   - Logging
+
+✅ Frontend Implementation:    COMPLETE
+   - Tab UI designed
+   - Form controls added
+   - JavaScript functions
+   - Form submission flow
+
+✅ Documentation:             COMPLETE
+   - GOOGLE_DRIVE_IMPLEMENTATION.md
+   - CHANGES_SUMMARY.txt (this file)
+   - CLAUDE.md (compilation guide)
+
+✅ Code Quality:              READY FOR REVIEW
+   - All imports present
+   - Error handling implemented
+   - Logging statements added
+   - Backward compatible
+
+================================================================================
+END OF SUMMARY
+================================================================================

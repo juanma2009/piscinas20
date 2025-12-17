@@ -20,6 +20,8 @@
         /*]]>*/
     </script>
 
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
     <style>
         /*boton modal*/
         .btn {
@@ -79,6 +81,15 @@
         .modal-body {
             background-color: #f8f9fa;
             border-radius: 0 0 10px 10px;
+            overflow: visible; /* Permite que Google Picker escape del modal */
+            position: relative;
+        }
+
+        /* Google Drive Tab - Permitir que el Picker se muestre correctamente */
+        #google-drive {
+            overflow: visible;
+            position: relative;
+            z-index: 1;
         }
 
         /* 🔹 Botones uniformes */
@@ -203,7 +214,7 @@
             height: 100%; /* Asegura que el contenido cubra toda la pantalla */
             margin: 0; /* Elimina márgenes por defecto */
             padding: 0; /* Elimina el padding por defecto */
-            overflow: hidden; /* Oculta el scroll si no es necesario */
+            overflow: auto; /* Permite scroll para Google Picker y otros diálogos */
         }
 
         /* Hace la tabla responsiva */
@@ -297,6 +308,37 @@
                 font-size: 3rem;
                 color: #fff;
             }
+
+            /* Google Picker API - Estilos para asegurar visibilidad */
+            /* Dialog principal del Picker */
+            .goog-md-menu,
+            .goog-menuitem,
+            .goog-menuseparator,
+            .goog-menu-button,
+            .goog-toolbar-button,
+            .goog-imagemenu-value,
+            .picker-dialog,
+            .picker-frame {
+                z-index: 10000 !important;
+            }
+
+            /* IFrame del Picker */
+            iframe[src*="accounts.google.com"],
+            iframe[src*="apis.google.com"],
+            .picker-dialog-bg,
+            .picker-dlg {
+                z-index: 10000 !important;
+            }
+
+            /* Asegurar que el modal no interfiera */
+            .modal-backdrop {
+                z-index: 999;
+            }
+
+            .modal.show {
+                z-index: 1050;
+            }
+
             /*RESPONSIVE LOS BOTONES Y NORMAL CUANDO NO ESTA EN ESE RESPONSIVO
             /* Estilos generales */
             .btn i {
@@ -591,7 +633,7 @@
 
         <!-- Modal for file upload -->
         <div class="modal fade" id="addPhotoModal" tabindex="-1" role="dialog" aria-labelledby="addPhotoModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
+            <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="addPhotoModalLabel">Añadir Fotos</h5>
@@ -601,27 +643,281 @@
                     </div>
                     <div class="modal-body">
                         <form id="uploadForm" enctype="multipart/form-data">
-                            <input type="file" name="files" id="files" multiple accept="image/*">
                             <input type="hidden" name="npedido" id="npedidoModal" th:value="${pedido.npedido}" />
                             <input type="hidden" name="clienteId" id="clienteId" th:value="${pedido.getCliente().id}" />
-                            <button type="button" class="btn btn-primary" onclick="confirmarFotos()">Confirmar Selección</button>
+                            
+                            <!-- Tab Navigation -->
+                            <ul class="nav nav-tabs mb-3" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" id="local-tab" data-toggle="tab" href="#local-files" role="tab">📁 Archivos Locales</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="gdrive-tab" data-toggle="tab" href="#google-drive" role="tab">☁️ Google Drive</a>
+                                </li>
+                            </ul>
+                            
+                            <!-- Tab Content -->
+                            <div class="tab-content">
+                                <!-- Local Files Tab -->
+                                <div class="tab-pane fade show active" id="local-files" role="tabpanel">
+                                    <div class="form-group">
+                                        <label for="files">Seleccionar imágenes locales:</label>
+                                        <input type="file" name="files" id="files" multiple accept="image/*" class="form-control">
+                                        <small class="form-text text-muted">Puedes seleccionar múltiples archivos</small>
+                                    </div>
+                                    <table id="fileListTable" class="table table-bordered table-sm">
+                                    </table>
+                                </div>
+                                
+                                <!-- Google Drive Tab -->
+                                <div class="tab-pane fade" id="google-drive" role="tabpanel">
+                                    <div class="form-group">
+                                        <p class="text-muted">Usa el explorador de Google Drive para seleccionar tus fotos:</p>
+                                        <button type="button" class="btn btn-success" id="openPickerBtn">🔍 Abrir Google Drive</button>
+                                        <span id="driveAuthStatus" class="ml-2"></span>
+                                    </div>
+                                    
+                                    <hr>
+                                    
+                                    <h6>Fotos seleccionadas:</h6>
+                                    <table id="googleDriveFilesTable" class="table table-bordered table-sm">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th>Nombre</th>
+                                                <th>Tamaño</th>
+                                                <th>Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                    <div id="noFilesMessage" class="alert alert-info">No hay archivos seleccionados</div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group mt-3">
+                                <button type="button" class="btn btn-primary" onclick="confirmarFotos()">✅ Confirmar Selección</button>
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            </div>
                         </form>
-
-                        <table id="fileListTable" class="table table-bordered">
-
-                        </table>
                     </div>
                 </div>
             </div>
         </div>
 
         <script src="https://cdn.ckeditor.com/ckeditor5/35.0.1/classic/ckeditor.js"></script>
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <script>
+            // Cargar Picker API dinámicamente cuando sea necesario
+            function cargarPickerAPI(callback) {
+                if (window.gapi && window.gapi.picker) {
+                    if (callback) callback();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = 'https://apis.google.com/js/api.js';
+                script.async = true;
+                script.defer = true;
+                script.onload = function() {
+                    console.log("✅ GAPI script cargado");
+                    gapi.load('picker', function() {
+                        console.log("✅ Picker API módulo cargado");
+                        if (callback) callback();
+                    });
+                };
+                script.onerror = function() {
+                    console.error("❌ Error cargando GAPI script");
+                };
+                document.head.appendChild(script);
+            }
+        </script>
         <script>
             // Variables globales para el manejo del pedido
             var archivosPendientes = [];
-            var googleDriveLinks = [];
+            var googleDriveFiles = [];
+            var googleDriveToken = null;
             var isNew = false;
             var clienteId = null;
+            var npedido = null;
+            
+            // Google API Configuration
+            const GOOGLE_CLIENT_ID = '828501898797-66mt3fps426me6smm5u2macr0ca5d721.apps.googleusercontent.com';
+            const GOOGLE_PROJECT_ID = '828501898797';  // Project ID para Picker
+            let tokenClient = null;
+            let gsi_initialized = false;
+            
+            // Inicializar Google Identity Services - SOLO para obtener tokens
+            function initializeGSI() {
+                console.log("🔵 Inicializando Google Identity Services...");
+                
+                if (typeof google === 'undefined' || !google.accounts) {
+                    console.error("❌ google.accounts no disponible");
+                    setTimeout(initializeGSI, 300);
+                    return;
+                }
+                
+                try {
+                    // Inicializar Token Client para OAuth 2.0
+                    tokenClient = google.accounts.oauth2.initTokenClient({
+                        client_id: GOOGLE_CLIENT_ID,
+                        scope: 'https://www.googleapis.com/auth/drive.readonly',
+                        callback: handleTokenResponse
+                    });
+                    
+                    gsi_initialized = true;
+                    console.log("✅ Google Identity Services inicializado");
+                } catch (error) {
+                    console.error("❌ Error en GSI:", error);
+                }
+            }
+            
+            // Manejar respuesta del token
+            function handleTokenResponse(response) {
+                if (response.access_token) {
+                    console.log("✅ Access Token obtenido");
+                    window.googleDriveToken = response.access_token;
+                    
+                    // Cargar y abrir Picker
+                    cargarPickerAPI(function() {
+                        abrirPickerConToken(response.access_token);
+                    });
+                } else {
+                    console.error("❌ No se obtuvo access token");
+                    alert("Error: No se pudo obtener acceso a Google Drive");
+                }
+            }
+            
+            // Abrir Google Drive Picker
+            function openGoogleDrivePicker() {
+                console.log("🔵 Solicitando permisos para Google Drive...");
+                
+                if (!gsi_initialized || !tokenClient) {
+                    console.error("❌ GSI no está inicializado");
+                    alert("Error: Google Services no está listo. Intenta recargar la página.");
+                    return;
+                }
+                
+                // Solicitar token de acceso
+                tokenClient.requestAccessToken();
+            }
+            
+            // Abrir Picker con token
+            function abrirPickerConToken(accessToken) {
+                console.log("🔵 Abriendo Google Drive Picker...");
+                console.log("   Project ID:", GOOGLE_PROJECT_ID);
+                console.log("   Access Token:", accessToken.substring(0, 30) + "...");
+                console.log("   Page URL:", window.location.origin);
+                
+                if (typeof google === 'undefined' || !google.picker) {
+                    console.error("❌ Picker API no disponible");
+                    console.error("   google:", typeof google);
+                    console.error("   google.picker:", typeof google?.picker);
+                    return;
+                }
+                
+                try {
+                    const pickerBuilder = new google.picker.PickerBuilder()
+                        .addView(new google.picker.DocsView()
+                            .setSelectFolderEnabled(false)
+                            .setMimeTypes('image/jpeg,image/png,image/gif,image/webp'))
+                        .addView(new google.picker.DocsUploadView())
+                        .setOAuthToken(accessToken)
+                        .setCallback(pickerCallback)
+                        .setTitle("Selecciona fotos de Google Drive")
+                        .setAppId(GOOGLE_PROJECT_ID)
+                        .setOrigin(window.location.protocol + '//' + window.location.host)
+                        .setRelayUrl(window.location.protocol + '//' + window.location.host + '/admin/relay.html');
+                    
+                    const picker = pickerBuilder.build();
+                    
+                    console.log("🔹 Picker construido, haciendo visible...");
+                    picker.setVisible(true);
+                    console.log("✅ Picker abierto exitosamente - Revisa la pantalla");
+                } catch (error) {
+                    console.error("❌ Error abriendo Picker:", error);
+                    console.error("Error stack:", error.stack);
+                    alert("Error al abrir Picker: " + error.message + "\n\nRevisa la consola para más detalles");
+                }
+            }
+            
+            // Actualizar estado (para compatibilidad)
+            function updateAuthStatus() {
+                const statusEl = document.getElementById('driveAuthStatus');
+                if (statusEl && gsi_initialized) {
+                    statusEl.innerHTML = '<span class="badge badge-success">✅ Conectado a Google</span>';
+                }
+            }
+            
+            function pickerCallback(data) {
+                console.log("🔵 pickerCallback ejecutado, action:", data.action);
+                
+                if (data.action === google.picker.Action.PICKED) {
+                    const docs = data.docs;
+                    console.log("📁 Archivos seleccionados:", docs.length);
+                    console.log("   Docs array:", docs);
+                    
+                    if (!docs || docs.length === 0) {
+                        console.warn("⚠️ docs está vacío");
+                        return;
+                    }
+                    
+                    docs.forEach(function(doc, idx) {
+                        try {
+                            console.log("   Procesando doc " + idx + ":", doc);
+                            
+                            const fileId = doc.id;
+                            const fileName = doc.getName ? doc.getName() : doc.name || "Archivo sin nombre";
+                            const fileSize = doc.getFileSize ? doc.getFileSize() : (doc.size || 0);
+                            
+                            console.log("      ID:", fileId);
+                            console.log("      Name:", fileName);
+                            console.log("      Size:", fileSize);
+                            
+                            const yaExiste = googleDriveFiles.some(f => f.id === fileId);
+                            if (!yaExiste) {
+                                googleDriveFiles.push({
+                                    id: fileId,
+                                    name: fileName,
+                                    size: fileSize
+                                });
+                                console.log("✅ Archivo agregado a googleDriveFiles");
+                            } else {
+                                console.log("⚠️ Archivo ya existe en la lista");
+                            }
+                        } catch (e) {
+                            console.error("❌ Error procesando documento:", e);
+                        }
+                    });
+                    
+                    console.log("📊 googleDriveFiles total:", googleDriveFiles.length);
+                    console.log("   Contenido:", googleDriveFiles);
+                    
+                    actualizarTablaGoogleDrive();
+                    console.log("✅ Tabla actualizada");
+                    
+                } else if (data.action === google.picker.Action.CANCEL) {
+                    console.log("Picker cancelado");
+                }
+            }
+            
+            // Inicializar cuando GSI esté listo
+            window.addEventListener('load', function() {
+                console.log("🔵 Window loaded - Inicializando GSI...");
+                setTimeout(initializeGSI, 500);
+            });
+            
+            // Event listener para abrir el picker
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log("🔵 DOM Loaded");
+                
+                const openPickerBtn = document.getElementById('openPickerBtn');
+                if (openPickerBtn) {
+                    openPickerBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        openGoogleDrivePicker();
+                    });
+                }
+            });
 
             // Función para limpiar el formulario para crear un nuevo pedido del mismo cliente
             function clearFormForNewOrder() {
@@ -814,13 +1110,69 @@
                 });
             });
             
+            function eliminarArchivoDrive(fileId) {
+                googleDriveFiles = googleDriveFiles.filter(function(f) {
+                    return f.id !== fileId;
+                });
+                actualizarTablaGoogleDrive();
+            }
+
+            function actualizarTablaGoogleDrive() {
+                console.log("🔵 actualizarTablaGoogleDrive() llamado");
+                
+                var table = $('#googleDriveFilesTable tbody');
+                var noFilesMsg = $('#noFilesMessage');
+                
+                console.log("   Tabla jQuery encontrada:", table.length, "elemento(s)");
+                console.log("   Mensaje 'sin archivos' encontrado:", noFilesMsg.length, "elemento(s)");
+                console.log("   googleDriveFiles.length:", googleDriveFiles.length);
+                
+                if (table.length === 0) {
+                    console.error("❌ #googleDriveFilesTable tbody no existe en el DOM");
+                    console.log("   Elementos con ID 'googleDriveFilesTable':", $('#googleDriveFilesTable').length);
+                    return;
+                }
+                
+                table.empty();
+                
+                if (googleDriveFiles.length > 0) {
+                    console.log("✅ Mostrando", googleDriveFiles.length, "archivo(s)");
+                    noFilesMsg.hide();
+                    
+                    googleDriveFiles.forEach(function(file, idx) {
+                        console.log("   Agregando fila " + idx + ":", file.name);
+                        
+                        var row = $('<tr>').append(
+                            $('<td>').text(file.name),
+                            $('<td>').text(((file.size / 1024 / 1024).toFixed(2)) + ' MB'),
+                            $('<td>').append(
+                                $('<button>')
+                                    .text('Eliminar')
+                                    .addClass('btn btn-danger btn-sm')
+                                    .click((function(id) {
+                                        return function() {
+                                            eliminarArchivoDrive(id);
+                                        };
+                                    })(file.id))
+                            )
+                        );
+                        table.append(row);
+                    });
+                    
+                    console.log("✅ Tabla actualizada con", googleDriveFiles.length, "fila(s)");
+                } else {
+                    console.log("ℹ️ Sin archivos para mostrar, ocultando tabla");
+                    noFilesMsg.show();
+                }
+            }
+
             function confirmarFotos() {
-                if (archivosPendientes.length === 0) {
-                    alert("Por favor, selecciona al menos una foto");
+                if (archivosPendientes.length === 0 && googleDriveFiles.length === 0) {
+                    alert("Por favor, selecciona al menos una foto o archivo de Google Drive");
                     return;
                 }
                 $('#addPhotoModal').modal('hide');
-                console.log("Fotos confirmadas:", archivosPendientes.length);
+                console.log("✅ Fotos confirmadas:", archivosPendientes.length, "locales,", googleDriveFiles.length, "archivos Drive");
             }
 
 
@@ -902,19 +1254,32 @@
                     }
                 }
 
-                if (typeof archivosPendientes !== 'undefined' && archivosPendientes.length > 0) {
-                    console.log("📁 Añadiendo " + archivosPendientes.length + " archivos al formulario");
+                console.log("📁 Archivos pendientes:", archivosPendientes.length);
+                console.log("🔗 Archivos de Google Drive:", googleDriveFiles.length);
+                
+                if (archivosPendientes.length > 0) {
+                    console.log("📁 Añadiendo " + archivosPendientes.length + " archivos locales");
                     var resumenArchivos = [];
                     archivosPendientes.forEach(function(file, index) {
-                        var infoArchivo = "Archivo " + (index+1) + ": " + file.name + " (" + (file.size/1024).toFixed(2) + " KB, tipo: " + file.type + ")";
+                        var infoArchivo = "Archivo " + (index+1) + ": " + file.name + " (" + (file.size/1024).toFixed(2) + " KB)";
                         console.log("   " + infoArchivo);
                         resumenArchivos.push(infoArchivo);
                         formData.append('files', file);
                     });
-                    var datosCompletos = "📤 DATOS COMPLETOS A ENVIAR:\n\nCampos del formulario:\n" + camposForm.join('\n') + "\n\nArchivos:\n" + resumenArchivos.join('\n');
-                    alert(datosCompletos);
+                }
+                
+                if (googleDriveFiles.length > 0) {
+                    console.log("🔗 Añadiendo " + googleDriveFiles.length + " archivos de Google Drive");
+                    googleDriveFiles.forEach(function(item, index) {
+                        console.log("   Archivo " + (index+1) + ": " + item.name + " (ID: " + item.id.substring(0, 20) + "...)");
+                        formData.append('googleDriveFileIds', item.id);
+                    });
+                    if (googleDriveToken) {
+                        formData.append('googleDriveToken', googleDriveToken);
+                        console.log("✅ Token OAuth incluido");
+                    }
                 } else {
-                    console.log("ℹ️ No hay archivos pendientes para enviar");
+                    console.log("ℹ️ No hay archivos de Google Drive para enviar");
                 }
 
                 var totalTamaño = 0;
@@ -972,117 +1337,97 @@
                     },
                     success: function(response) {
                         console.log("✅ PASO 1 completado: Pedido guardado", response);
-                        var npedido = response.npedido;
+                        npedido = response.npedido;
                         clienteId = response.clienteId;
                         isNew = response.isNew;
                         
-                        alert("✅ PASO 1 COMPLETADO\n\nPedido #" + npedido + " guardado correctamente\n\narchivosPendientes.length: " + archivosPendientes.length);
+                        alert("✅ PASO 1 COMPLETADO\n\nPedido #" + npedido + " guardado correctamente");
                         
-                        if (archivosPendientes.length > 0 || googleDriveLinks.length > 0) {
+                        if (archivosPendientes.length > 0 || googleDriveFiles.length > 0) {
                             try {
-                                alert("🚀 Iniciando PASO 2: Subiendo " + archivosPendientes.length + " archivo(s) a Cloudinary...");
-                                console.log("📁 PASO 2: Subiendo " + archivosPendientes.length + " archivo(s) directamente a Cloudinary...");
+                                var totalItems = archivosPendientes.length + googleDriveFiles.length;
+                                alert("🚀 PASO 2: Subiendo " + totalItems + " elemento(s)...");
+                                console.log("📁 PASO 2: Subiendo archivos y links al servidor");
+                                
+                                var uploadFormData = new FormData();
+                                
+                                if (archivosPendientes.length > 0) {
+                                    archivosPendientes.forEach(function(file) {
+                                        uploadFormData.append('files', file);
+                                    });
+                                }
+                                
+                                if (googleDriveFiles.length > 0) {
+                                    googleDriveFiles.forEach(function(item) {
+                                        uploadFormData.append('googleDriveFileIds', item.id);
+                                    });
+                                    if (window.googleDriveToken) {
+                                        uploadFormData.append('googleDriveToken', window.googleDriveToken);
+                                    }
+                                }
                                 
                                 $.ajax({
-                                    type: 'GET',
-                                    url: '/pedidos/cloudinary-signature/' + npedido,
+                                    type: 'POST',
+                                    url: '/pedidos/subir-archivos/' + npedido,
+                                    data: uploadFormData,
+                                    cache: false,
+                                    contentType: false,
+                                    processData: false,
+                                    timeout: 120000,
                                     dataType: 'json',
-                                    timeout: 10000,
-                                    success: function(signatureData) {
-                                        console.log("✅ Firma de Cloudinary obtenida", signatureData);
-
-                                        var uploadedUrls = [];
-                                        var archivosSubidos = 0;
-                                        var totalArchivos = archivosPendientes.length;
-
-                                        function uploadNextFile(index) {
-                                            if (index >= totalArchivos) {
-                                                console.log("✅ Todos los archivos subidos a Cloudinary. URLs obtenidas:", uploadedUrls);
-                                                guardarURLsEnServidor(uploadedUrls);
-                                                return;
-                                            }
-
-                                            var file = archivosPendientes[index];
-                                            console.log("📤 Subiendo archivo " + (index+1) + "/" + totalArchivos + ": " + file.name);
-
-                                            var formData = new FormData();
-                                            formData.append('file', file);
-                                            formData.append('upload_preset', signatureData.upload_preset);
-                                            formData.append('folder', signatureData.folder);
-
-                                            fetch('https://api.cloudinary.com/v1_1/' + signatureData.cloud_name + '/auto/upload', {
-                                                method: 'POST',
-                                                body: formData
-                                            })
-                                            .then(response => response.json())
-                                            .then(data => {
-                                                if (data.secure_url) {
-                                                    uploadedUrls.push(data.secure_url);
-                                                    archivosSubidos++;
-                                                    console.log("✅ " + file.name + " -> " + data.secure_url);
-                                                    uploadNextFile(index + 1);
-                                                } else {
-                                                    console.error("❌ Error en respuesta de Cloudinary:", data);
-                                                    if (data.error) {
-                                                        console.error("   Código de error:", data.error.http_code);
-                                                        console.error("   Mensaje:", data.error.message);
-                                                    }
-                                                    uploadNextFile(index + 1);
-                                                }
-                                            })
-                                            .catch(error => {
-                                                console.error("❌ Error al subir a Cloudinary:", error);
-                                                uploadNextFile(index + 1);
-                                            });
+                                    beforeSend: function(xhr) {
+                                        var token = $("meta[name='_csrf']").attr("content");
+                                        var header = $("meta[name='_csrf_header']").attr("content");
+                                        if (token && header) {
+                                            xhr.setRequestHeader(header, token);
                                         }
+                                    },
+                                    success: function(resp) {
+                                        console.log("✅ PASO 2 completado:", resp);
+                                        archivosPendientes = [];
+                                        googleDriveFiles = [];
+                                        googleDriveToken = null;
+                                        $("#spinnerGuardado").hide();
 
-                                        function guardarURLsEnServidor(urls) {
-                                            console.log("💾 Guardando " + urls.length + " URLs en el servidor...");
-
-                                            $.ajax({
-                                                type: 'POST',
-                                                url: '/pedidos/guardar-archivos/' + npedido,
-                                                contentType: 'application/json',
-                                                data: JSON.stringify({urls: urls}),
-                                                timeout: 30000,
-                                                beforeSend: function(xhr) {
-                                                    var token = $("meta[name='_csrf']").attr("content");
-                                                    var header = $("meta[name='_csrf_header']").attr("content");
-                                                    xhr.setRequestHeader(header, token);
-                                                },
-                                                success: function(resp) {
-                                                    console.log("✅ PASO 2 completado: " + resp.archivosGuardados + " archivo(s) guardado(s)", resp);
-                                                    archivosPendientes = [];
-                                                    $("#spinnerGuardado").hide();
-
-                                                    alert("✅ PASO 2 COMPLETADO\n\n" + resp.archivosGuardados + " archivo(s) subido(s) correctamente.\n\nRecargando formulario...");
-                                                    
-                                                    console.log("✅ Recargando formulario desde el servidor...");
-                                                    archivosPendientes = [];
-                                                    googleDriveLinks = [];
-                                                    
-                                                    setTimeout(function() {
-                                                        location.href = "/pedidos/form/" + clienteId;
-                                                    }, 1000);
-                                                },
-                                                error: function(xhr, status, error) {
-                                                    console.error("❌ Error al guardar URLs en servidor", error);
-                                                    alert("⚠️ Los archivos se subieron a Cloudinary, pero hubo un error al guardarlos en la BD.");
-                                                }
-                                            });
+                                        var mensaje = "✅ PASO 2 COMPLETADO\n\n" + resp.archivosSubidos + " elemento(s) procesado(s)";
+                                        if (resp.warnings) {
+                                            mensaje += "\n\n⚠️ Advertencias:\n" + resp.warnings;
                                         }
-
-                                        uploadNextFile(0);
+                                        mensaje += "\n\nRecargando formulario...";
+                                        
+                                        alert(mensaje);
+                                        
+                                        setTimeout(function() {
+                                            location.href = "/pedidos/form/" + clienteId;
+                                        }, 1000);
                                     },
                                     error: function(xhr, status, error) {
-                                        console.error("❌ Error al obtener firma de Cloudinary", error);
-                                        alert("❌ Error al obtener credenciales de Cloudinary.\n\n" + error);
+                                        console.error("❌ Error en PASO 2:", error);
+                                        console.error("   Status:", xhr.status);
+                                        console.error("   Response:", xhr.responseText);
+                                        
+                                        var errorMsg = "❌ Error al procesar archivos\n\n";
+                                        if (status === 'timeout') {
+                                            errorMsg += "⏱️ TIMEOUT: La solicitud tardó demasiado";
+                                        } else if (xhr.status === 500) {
+                                            try {
+                                                var errResp = JSON.parse(xhr.responseText);
+                                                errorMsg += "Error del servidor: " + (errResp.error || errResp.message || "Unknown");
+                                            } catch(e) {
+                                                errorMsg += "Error interno del servidor";
+                                            }
+                                        } else {
+                                            errorMsg += "Error: " + error;
+                                        }
+                                        
+                                        alert(errorMsg);
+                                        $("#spinnerGuardado").hide();
                                     }
                                 });
                             } catch (e) {
-                                console.error("❌ ERROR CRÍTICO en PASO 2 - Exception:", e);
-                                console.error("   Stack:", e.stack);
-                                alert("❌ ERROR CRÍTICO EN PASO 2\n\nExcepción en el código:\n" + e.message + "\n\nRevisa la consola del navegador (F12) para más detalles.");
+                                console.error("❌ ERROR CRÍTICO en PASO 2:", e);
+                                alert("❌ ERROR: " + e.message);
+                                $("#spinnerGuardado").hide();
                             }
                         } else {
                             console.log("ℹ️ Sin archivos para subir");
@@ -1091,7 +1436,7 @@
                             alert("✅ PROCESO COMPLETADO\n\n" + response.info + "\n\n(Sin archivos para subir)\n\nRecargando formulario...");
                             
                             console.log("✅ Recargando formulario desde el servidor...");
-                            googleDriveLinks = [];
+                            googleDriveFiles = [];
                             
                             setTimeout(function() {
                                 location.href = "/pedidos/form/" + clienteId;

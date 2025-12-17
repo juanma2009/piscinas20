@@ -10,8 +10,6 @@ import java.util.Date;
 import java.util.List;
 
 @Entity
-@Getter
-@Setter
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -83,7 +81,7 @@ public class Pedido implements Serializable {
     private List<ArchivoAdjunto> archivosAdjuntos = new ArrayList<>();
 
     @PrePersist
-    public void prePersit() {
+    public void prePersist() {
         dfecha = new Date();
     }
 
