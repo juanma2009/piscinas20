@@ -803,43 +803,83 @@
             
             // Abrir Picker con token
             function abrirPickerConToken(accessToken) {
-                console.log("🔵 Abriendo Google Drive Picker...");
-                console.log("   Project ID:", GOOGLE_PROJECT_ID);
-                console.log("   Access Token:", accessToken.substring(0, 30) + "...");
-                console.log("   Page URL:", window.location.origin);
-                
+                console.log("🔵 Abriendo Google Drive Picker (Multiselección habilitada)...");
+
                 if (typeof google === 'undefined' || !google.picker) {
                     console.error("❌ Picker API no disponible");
-                    console.error("   google:", typeof google);
-                    console.error("   google.picker:", typeof google?.picker);
                     return;
                 }
-                
+
                 try {
+                    // Definimos los tipos de archivo permitidos: Imágenes, PDFs, Office y Google Docs
+                    const mimeTypes = [
+                        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+                        'application/pdf',
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+                        'application/msword', // .doc
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+                        'application/vnd.ms-excel', // .xls
+                        'application/vnd.google-apps.document', // Google Docs
+                        'application/vnd.google-apps.spreadsheet' // Google Sheets
+                    ].join(',');
+
+                    const docsView = new google.picker.DocsView()
+                        .setSelectFolderEnabled(true) // Ponlo en 'true' si quieres poder seleccionar la carpeta entera
+                        .setIncludeFolders(true)      // <--- ESTA LÍNEA PERMITE VER LAS CARPETAS
+                        .setMimeTypes(mimeTypes);     // Tus tipos de archivo ya definidos
+
                     const pickerBuilder = new google.picker.PickerBuilder()
-                        .addView(new google.picker.DocsView()
-                            .setSelectFolderEnabled(false)
-                            .setMimeTypes('image/jpeg,image/png,image/gif,image/webp'))
-                        .addView(new google.picker.DocsUploadView())
+                        .addView(docsView)
+                        // .addView(new google.picker.DocsView()
+                        //     .setSelectFolderEnabled(false)
+                        //     .setMimeTypes(mimeTypes)) // Aplicamos los nuevos MimeTypes
+                      //  .addView(new google.picker.DocsUploadView())
                         .setOAuthToken(accessToken)
                         .setCallback(pickerCallback)
-                        .setTitle("Selecciona fotos de Google Drive")
+                        .setTitle("Selecciona archivos de Google Drive") // Título más genérico
                         .setAppId(GOOGLE_PROJECT_ID)
                         .setOrigin(window.location.protocol + '//' + window.location.host)
-                        .setRelayUrl(window.location.protocol + '//' + window.location.host + '/admin/relay.html');
-                    
+                        .setRelayUrl(window.location.protocol + '//' + window.location.host + '/admin/relay.html')
+
+                        // ACTIVA LA SELECCIÓN DE VARIOS ARCHIVOS
+                        .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+
+                        // Opcional: Permite ver archivos que no son del usuario (compartidos conmigo)
+                        .enableFeature(google.picker.Feature.SUPPORT_DRIVES);
+
                     const picker = pickerBuilder.build();
-                    
-                    console.log("🔹 Picker construido, haciendo visible...");
+
+                    console.log("🔹 Picker construido con multiselección, haciendo visible...");
                     picker.setVisible(true);
-                    console.log("✅ Picker abierto exitosamente - Revisa la pantalla");
+                    console.log("✅ Picker abierto exitosamente");
+
                 } catch (error) {
                     console.error("❌ Error abriendo Picker:", error);
-                    console.error("Error stack:", error.stack);
-                    alert("Error al abrir Picker: " + error.message + "\n\nRevisa la consola para más detalles");
+                    alert("Error al abrir Picker: " + error.message);
                 }
             }
-            
+
+
+
+            async function listarArchivosDeCarpeta(folderId) {
+                // URL de la API de Drive v3 para listar archivos cuyo padre es la carpeta seleccionada
+                const url = `www.googleapis.com{folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType)`;
+
+                try {
+                    const response = await fetch(url, {
+                        headers: { 'Authorization': 'Bearer ' + accessToken } // Usa tu token actual
+                    });
+                    const result = await response.json();
+
+                    console.log("Archivos encontrados en la carpeta:");
+                    result.files.forEach(file => {
+                        console.log(`- ${file.name} (${file.mimeType}) ID: ${file.id}`);
+                    });
+                } catch (error) {
+                    console.error("Error al obtener contenido de la carpeta:", error);
+                }
+            }
+
             // Actualizar estado (para compatibilidad)
             function updateAuthStatus() {
                 const statusEl = document.getElementById('driveAuthStatus');
@@ -848,31 +888,37 @@
                 }
             }
             
-            function pickerCallback(data) {
+            async function pickerCallback(data) {
                 console.log("🔵 pickerCallback ejecutado, action:", data.action);
-                
+
                 if (data.action === google.picker.Action.PICKED) {
                     const docs = data.docs;
                     console.log("📁 Archivos seleccionados:", docs.length);
                     console.log("   Docs array:", docs);
-                    
+                    const folder = data.docs[0]; // Obtenemos la carpeta seleccionada
+
+                    if (folder.mimeType === 'application/vnd.google-apps.folder') {
+                        console.log("Carpeta seleccionada:", folder.name);
+                        await listarArchivosDeCarpeta(folder.id);
+                    }
+
                     if (!docs || docs.length === 0) {
                         console.warn("⚠️ docs está vacío");
                         return;
                     }
-                    
-                    docs.forEach(function(doc, idx) {
+
+                    docs.forEach(function (doc, idx) {
                         try {
                             console.log("   Procesando doc " + idx + ":", doc);
-                            
+
                             const fileId = doc.id;
                             const fileName = doc.getName ? doc.getName() : doc.name || "Archivo sin nombre";
                             const fileSize = doc.getFileSize ? doc.getFileSize() : (doc.size || 0);
-                            
+
                             console.log("      ID:", fileId);
                             console.log("      Name:", fileName);
                             console.log("      Size:", fileSize);
-                            
+
                             const yaExiste = googleDriveFiles.some(f => f.id === fileId);
                             if (!yaExiste) {
                                 googleDriveFiles.push({
@@ -888,13 +934,13 @@
                             console.error("❌ Error procesando documento:", e);
                         }
                     });
-                    
+
                     console.log("📊 googleDriveFiles total:", googleDriveFiles.length);
                     console.log("   Contenido:", googleDriveFiles);
-                    
+
                     actualizarTablaGoogleDrive();
                     console.log("✅ Tabla actualizada");
-                    
+
                 } else if (data.action === google.picker.Action.CANCEL) {
                     console.log("Picker cancelado");
                 }
