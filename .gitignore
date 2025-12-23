@@ -16,7 +16,6 @@ HELP.md
 *.iws
 *.iml
 *.ipr
-*.md
 
 ### NetBeans ###
 /nbproject/private/
@@ -33,9 +32,3 @@ HELP.md
 target/
 .settings/
 .mvn/
-
-#fichero con secret
-# Secrets locales
-src/main/resources/application-local.properties
-src/main/resources/application-dev-local.properties
-.env

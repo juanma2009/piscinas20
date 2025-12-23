@@ -32,7 +32,7 @@ public class CloudinaryService {
             @Value("${CLOUDINARY_CLOUD_NAME}") String cloudName,
             @Value("${CLOUDINARY_API_KEY}") String apiKey,
             @Value("${CLOUDINARY_API_SECRET}") String apiSecret,
-            @Value("${cloudinary.upload-preset}") String uploadPreset,
+            @Value("${CLOUDINARY_UPLOAD_PRESET}") String uploadPreset,
             StringRedisTemplate redisTemplate) {
         this.cloudinary = new Cloudinary(ObjectUtils.asMap(
                 "cloud_name", cloudName,
