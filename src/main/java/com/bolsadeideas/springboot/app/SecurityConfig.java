@@ -2,6 +2,7 @@ package com.bolsadeideas.springboot.app;
 import com.bolsadeideas.springboot.app.apisms.d2fa.TwoFactorAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -24,6 +25,7 @@ public class SecurityConfig {
                 .antMatchers("/login", "/logout").permitAll()
                 .antMatchers("/verify_2fa").permitAll()
                 .antMatchers("/roles/**").hasRole("ADMIN")
+                .antMatchers(HttpMethod.GET, "/api/google/drive/preview/**").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .formLogin()
@@ -46,7 +48,7 @@ public class SecurityConfig {
   "default-src 'self'; " +
   "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://cdn.ckeditor.com https://code.jquery.com https://cdnjs.cloudflare.com https://cdn.datatables.net https://stackpath.bootstrapcdn.com; " +
   "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://code.jquery.com https://cdn.datatables.net https://stackpath.bootstrapcdn.com; " +
-  "img-src 'self' data: https:; " +
+  "img-src 'self' data: https: blob:; " +
   "font-src 'self' https://cdnjs.cloudflare.com; " +
   "connect-src 'self' https://accounts.google.com https://www.googleapis.com https://www.google.com https://upload.cloudinary.com; " +
   "frame-src 'self' https://accounts.google.com https://apis.google.com https://docs.google.com; " +

@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
@@ -1059,22 +1060,26 @@ private boolean validarTipoMime(String contentType, String fileName) {
         }
     }
 
+    @Autowired
+    private GoogleDriveApiService googleDriveApiService;
+
     @PostMapping("/subir-archivos/{npedido}")
     public ResponseEntity<?> subirArchivos(
             @PathVariable Long npedido,
             @RequestParam(name = "files", required = false) MultipartFile[] files,
             @RequestParam(name = "googleDriveFileIds", required = false) String[] googleDriveFileIds,
-            @RequestParam(name = "googleDriveToken", required = false) String googleDriveToken,
+            @RequestParam(name = "googleDriveToken", required = false) String googleDriveToken, // lo puedes dejar por compatibilidad
             RedirectAttributes flash,
-            HttpServletRequest request
-    ) {
+            HttpServletRequest request,
+            Principal principal
+        ) {
         try {
             log.info("🔵 ========== INICIO subirArchivos ==========");
             log.info("📍 Endpoint: /pedidos/subir-archivos/{}", npedido);
-            log.info("📊 Archivos locales: {}, FileIds Google Drive: {}", 
+            log.info("📊 Archivos locales: {}, FileIds Google Drive: {}",
                 files != null ? files.length : 0,
                 googleDriveFileIds != null ? googleDriveFileIds.length : 0);
-            
+
             Pedido pedido = pedidoService.findOne(npedido);
             if (pedido == null) {
                 log.warn("❌ Pedido {} no encontrado", npedido);
@@ -1097,14 +1102,15 @@ private boolean validarTipoMime(String contentType, String fileName) {
             StringBuilder errores = new StringBuilder();
 
             log.info("⚡ Procesando archivos...");
-
+            log.info("🔐 googleDriveToken recibido? {}", (googleDriveToken != null && !googleDriveToken.isBlank()));
+            log.info("🔐 googleDriveToken length: {}", (googleDriveToken != null ? googleDriveToken.length() : null));
             if (files != null && files.length > 0) {
                 for (MultipartFile foto : files) {
                     String nombreOriginal = foto.getOriginalFilename();
                     String contentType = foto.getContentType();
-                    
+
                     log.info("🔍 Validando archivo local: {} ({} bytes, MIME: {})", nombreOriginal, foto.getSize(), contentType);
-                    
+
                     if (foto.isEmpty()) {
                         log.warn("❌ Archivo vacío: {}", nombreOriginal);
                         errores.append("• Archivo vacío: ").append(nombreOriginal).append("\n");
@@ -1129,7 +1135,7 @@ private boolean validarTipoMime(String contentType, String fileName) {
                         String imageBase64 = java.util.Base64.getEncoder().encodeToString(imageBytes);
                         redisTemplate.opsForValue().set(redisKey, imageBase64);
                         redisTemplate.expire(redisKey, java.time.Duration.ofHours(24));
-                        
+
                         String mensaje = npedido + ";" + nombreOriginal + ";" + fileName;
                         redisQueueProducer.sendMessage(mensaje);
 
@@ -1142,52 +1148,58 @@ private boolean validarTipoMime(String contentType, String fileName) {
                     }
                 }
             }
-            
-            if (googleDriveFileIds != null && googleDriveFileIds.length > 0 && googleDriveToken != null) {
-                log.info("🔗 Procesando {} archivos de Google Drive...", googleDriveFileIds.length);
-                
-                for (String fileId : googleDriveFileIds) {
-                    if (fileId == null || fileId.trim().isEmpty()) continue;
-                    
-                    try {
-                        log.info("📥 Descargando archivo de Drive: {}", fileId);
-                        byte[] imageBytes = descargarDesdeGoogleDriveAPI(fileId, googleDriveToken);
 
-                        if (imageBytes == null || imageBytes.length == 0) {
-                            log.warn("⚠️ Descarga vacía para fileId: {}", fileId);
-                            errores.append("• Archivo vacío desde Drive\n");
-                            continue;
+            if (googleDriveFileIds != null && googleDriveFileIds.length > 0) {
+                boolean hasFrontToken = (googleDriveToken != null && !googleDriveToken.isBlank());
+                log.info("🔗 Procesando {} archivo(s) de Google Drive (token frontend? {})",
+                        googleDriveFileIds.length, hasFrontToken);
+
+                if (!hasFrontToken && (principal == null || principal.getName() == null)) {
+                    errores.append("• Usuario no autenticado en la app (principal null)\n");
+                } else {
+                    String userId = hasFrontToken ? null : principal.getName();
+
+                    for (String fileId : googleDriveFileIds) {
+                        if (fileId == null || fileId.trim().isEmpty()) continue;
+
+                        try {
+                            log.info("📥 Descargando archivo de Drive: {}", fileId);
+
+                            byte[] imageBytes;
+                            if (hasFrontToken) {
+                                // flujo antiguo: token venía del frontend
+                                imageBytes = descargarDesdeGoogleDriveAPI(fileId, googleDriveToken);
+                            } else {
+                                // flujo nuevo: backend gestiona refresh_token
+                                imageBytes = googleDriveApiService.downloadFileBytes(userId, fileId);
+                            }
+
+                            if (imageBytes == null || imageBytes.length == 0) {
+                                log.warn("⚠️ Descarga vacía para fileId: {}", fileId);
+                                errores.append("• Archivo vacío desde Drive: ").append(fileId).append("\n");
+                                continue;
+                            }
+
+                            String fileName = "gdrive_" + npedido + "_" + System.currentTimeMillis();
+                            String url = cloudinaryService.uploadImage(imageBytes, npedido, fileName);
+
+                            ArchivoAdjunto adjunto = new ArchivoAdjunto(npedido, "Google Drive - " + fileId, url);
+                            archivoAdjuntoService.guardar(adjunto);
+
+                            archivosProcesados++;
+                            log.info("✅ Drive -> Cloudinary OK: {} -> {}", fileId, url);
+
+                        } catch (RuntimeException e) {
+                            log.error("❌ Error Drive fileId={} msg={}", fileId, e.getMessage());
+                            errores.append("• Error Drive (").append(fileId).append("): ").append(e.getMessage()).append("\n");
+                        } catch (Exception e) {
+                            log.error("❌ Error procesando Drive fileId={}", fileId, e);
+                            errores.append("• Error procesando Drive (").append(fileId).append("): ").append(e.getMessage()).append("\n");
                         }
-
-                        String fileName = "gdrive_" + npedido + "_" + System.currentTimeMillis();
-                        String url = cloudinaryService.uploadImage(imageBytes, npedido, fileName);
-                        ArchivoAdjunto adjunto = new ArchivoAdjunto(npedido, "Google Drive - " + fileId, url);
-                        archivoAdjuntoService.guardar(adjunto);
-
-                        archivosProcesados++;
-                        log.info("✅ Archivo de Drive subido a Cloudinary: {} -> {}", fileId, url);
-
-                    } catch (RuntimeException e) {
-                        String errorMsg = e.getMessage();
-                        if (errorMsg.contains("401_TOKEN_EXPIRED")) {
-                            log.error("❌ Token expirado para fileId: {}", fileId);
-                            errores.append("• Token expirado - Debes re-autenticarte con Google\n");
-                        } else if (errorMsg.contains("403_ACCESS_DENIED")) {
-                            log.error("❌ Permiso denegado para fileId: {}", fileId);
-                            errores.append("• No tienes permiso para acceder a este archivo en Drive\n");
-                        } else if (errorMsg.contains("404_NOT_FOUND")) {
-                            log.error("❌ Archivo no encontrado para fileId: {}", fileId);
-                            errores.append("• El archivo no existe o fue eliminado de Drive\n");
-                        } else {
-                            log.error("❌ Error de Google Drive: {}", errorMsg);
-                            errores.append("• Error al descargar de Drive: ").append(errorMsg).append("\n");
-                        }
-                    } catch (Exception e) {
-                        log.error("❌ Error procesando archivo de Drive: {}", fileId, e);
-                        errores.append("• Error al procesar archivo: ").append(e.getMessage()).append("\n");
                     }
                 }
             }
+
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", archivosProcesados > 0);

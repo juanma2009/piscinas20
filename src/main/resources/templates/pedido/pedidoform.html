@@ -23,7 +23,51 @@
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 
     <style>
+        /* ✅ Columna nombre: por defecto normal en escritorio (puedes cambiarlo a ellipsis si quieres) */
+        #fileListTable td.file-name-cell,
+        #googleDriveFilesTable td.file-name-cell {
+            white-space: normal;          /* escritorio: permite salto */
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        /* ✅ En móvil/tablet: ellipsis profesional */
+        @media (max-width: 992px) {
+
+            /* tabla fija para que ellipsis funcione */
+            #fileListTable, #googleDriveFilesTable {
+                table-layout: fixed;
+                width: 100%;
+            }
+
+            /* el nombre no salta, se corta con "..." */
+            #fileListTable td.file-name-cell,
+            #googleDriveFilesTable td.file-name-cell {
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+
+                max-width: 140px;         /* ajusta si quieres (120-200 suele ir bien) */
+                font-size: 13px;
+            }
+        }
+
+
         /*boton modal*/
+        .btn-modern{
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 10px !important;
+            font-weight: 700;
+            letter-spacing: .2px;
+        }
+        .btn-modern i{
+            font-size: 1.15rem;
+            line-height: 1;
+        }
+
         .btn {
             border-radius: 8px !important;
             font-weight: 600;
@@ -656,33 +700,51 @@
                                 </li>
                             </ul>
                             
+
                             <!-- Tab Content -->
                             <div class="tab-content">
                                 <!-- Local Files Tab -->
                                 <div class="tab-pane fade show active" id="local-files" role="tabpanel">
                                     <div class="form-group">
-                                        <label for="files">Seleccionar imágenes locales:</label>
-                                        <input type="file" name="files" id="files" multiple accept="image/*" class="form-control">
-                                        <small class="form-text text-muted">Puedes seleccionar múltiples archivos</small>
+                                        <p class="text-muted">Usa el explorador local para seleccionar tus fotos:</p>
+
+                                        <!-- Input real (oculto) -->
+                                        <input type="file" name="files" id="files" multiple accept="image/*" class="d-none">
+
+                                        <!-- Botón moderno (igual que Drive) -->
+                                        <button type="button" class="btn btn-success btn-modern" id="chooseLocalBtn">
+                                            <i class="fas fa-folder-open"></i> <span>Elegir archivos</span>
+                                        </button>
+
+                                        <span id="localFilesStatus" class="ml-2"></span>
+
+                                        <small class="form-text text-muted mt-2">Puedes seleccionar múltiples archivos</small>
                                     </div>
-                                    <table id="fileListTable" class="table table-bordered table-sm">
-                                    </table>
+
+                                    <table id="fileListTable" class="table table-bordered table-sm"></table>
                                 </div>
-                                
+
                                 <!-- Google Drive Tab -->
                                 <div class="tab-pane fade" id="google-drive" role="tabpanel">
                                     <div class="form-group">
                                         <p class="text-muted">Usa el explorador de Google Drive para seleccionar tus fotos:</p>
-                                        <button type="button" class="btn btn-success" id="openPickerBtn">🔍 Abrir Google Drive</button>
+
+                                        <!-- Botón moderno (igual que Local) -->
+                                        <button type="button" class="btn btn-success btn-modern" id="openPickerBtn">
+                                            <i class="fas fa-cloud"></i> <span>Elegir archivos</span>
+                                        </button>
+
                                         <span id="driveAuthStatus" class="ml-2"></span>
                                     </div>
-                                    
+
                                     <hr>
-                                    
+
+
                                     <h6>Fotos seleccionadas:</h6>
                                     <table id="googleDriveFilesTable" class="table table-bordered table-sm">
                                         <thead class="bg-light">
                                             <tr>
+                                                <th>Vista previa</th>
                                                 <th>Nombre</th>
                                                 <th>Tamaño</th>
                                                 <th>Acción</th>
@@ -713,7 +775,7 @@
                     if (callback) callback();
                     return;
                 }
-                
+
                 const script = document.createElement('script');
                 script.src = 'https://apis.google.com/js/api.js';
                 script.async = true;
@@ -731,76 +793,123 @@
                 document.head.appendChild(script);
             }
         </script>
+
         <script>
             // Variables globales para el manejo del pedido
             var archivosPendientes = [];
             var googleDriveFiles = [];
-            var googleDriveToken = null;
             var isNew = false;
             var clienteId = null;
             var npedido = null;
-            
+
             // Google API Configuration
             const GOOGLE_CLIENT_ID = '828501898797-66mt3fps426me6smm5u2macr0ca5d721.apps.googleusercontent.com';
             const GOOGLE_PROJECT_ID = '828501898797';  // Project ID para Picker
-            let tokenClient = null;
+
+            const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
+
+            // ✅ Ajusta si tu backend usa rutas distintas
+            const BACKEND_CODE_URL  = '/api/google/oauth/code';
+            const BACKEND_TOKEN_URL = '/api/google/oauth/access-token'; // si en tu backend es /api/google/oauth/access-token, cambia aquí
+
+            let codeClient = null;
             let gsi_initialized = false;
-            
-            // Inicializar Google Identity Services - SOLO para obtener tokens
+            let googleDriveToken = null; // ✅ UNA sola variable
+
+            function updateAuthStatus(conectado) {
+                const statusEl = document.getElementById('driveAuthStatus');
+                if (!statusEl) return;
+                statusEl.innerHTML = conectado
+                    ? '<span class="badge badge-success">✅ Conectado a Google</span>'
+                    : '<span class="badge badge-secondary">⏳ No conectado</span>';
+            }
+
+            // Inicializar Google Identity Services - Code Model (1ª vez popup, luego silencioso)
             function initializeGSI() {
-                console.log("🔵 Inicializando Google Identity Services...");
-                
-                if (typeof google === 'undefined' || !google.accounts) {
-                    console.error("❌ google.accounts no disponible");
+                if (!google?.accounts?.oauth2) {
                     setTimeout(initializeGSI, 300);
                     return;
                 }
-                
-                try {
-                    // Inicializar Token Client para OAuth 2.0
-                    tokenClient = google.accounts.oauth2.initTokenClient({
-                        client_id: GOOGLE_CLIENT_ID,
-                        scope: 'https://www.googleapis.com/auth/drive.readonly',
-                        callback: handleTokenResponse
-                    });
-                    
-                    gsi_initialized = true;
-                    console.log("✅ Google Identity Services inicializado");
-                } catch (error) {
-                    console.error("❌ Error en GSI:", error);
+
+                codeClient = google.accounts.oauth2.initCodeClient({
+                    client_id: GOOGLE_CLIENT_ID,
+                    scope: DRIVE_SCOPE,
+                    ux_mode: 'popup',
+                    callback: async (resp) => {
+                        if (resp.error) {
+                            console.error("OAuth error:", resp);
+                            updateAuthStatus(false);
+                            return;
+                        }
+                        try {
+                            await enviarCodeAlBackend(resp.code);
+                            await obtenerTokenBackendYAbrirPicker();
+                        } catch (e) {
+                            console.error("Error OAuth backend:", e);
+                            updateAuthStatus(false);
+                            alert("Error conectando Google con backend: " + (e.message || e));
+                        }
+                    }
+                });
+
+                gsi_initialized = true;
+                updateAuthStatus(false);
+                console.log("✅ Code Client listo");
+            }
+
+            async function enviarCodeAlBackend(code) {
+                const csrfToken = document.querySelector("meta[name='_csrf']")?.content;
+                const csrfHeader = document.querySelector("meta[name='_csrf_header']")?.content;
+
+                const headers = {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XmlHttpRequest'
+                };
+                if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+
+                const body = new URLSearchParams({
+                    code,
+                    redirectUri: window.location.origin
+                });
+
+                const r = await fetch(BACKEND_CODE_URL, { method: 'POST', headers, body });
+                if (!r.ok) {
+                    const txt = await r.text();
+                    throw new Error("No se pudo guardar credenciales Google en backend: " + txt);
                 }
             }
-            
-            // Manejar respuesta del token
-            function handleTokenResponse(response) {
-                if (response.access_token) {
-                    console.log("✅ Access Token obtenido");
-                    window.googleDriveToken = response.access_token;
-                    
-                    // Cargar y abrir Picker
-                    cargarPickerAPI(function() {
-                        abrirPickerConToken(response.access_token);
-                    });
-                } else {
-                    console.error("❌ No se obtuvo access token");
-                    alert("Error: No se pudo obtener acceso a Google Drive");
-                }
+
+            async function obtenerTokenBackendYAbrirPicker() {
+                const r = await fetch(BACKEND_TOKEN_URL, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (!r.ok) { console.warn("No token backend:", r.status); return false; }
+                const json = await r.json();
+                const accessToken = json.accessToken;
+                if (!accessToken) return false;
+
+                googleDriveToken = accessToken;
+                updateAuthStatus(true);
+
+                cargarPickerAPI(() => abrirPickerConToken(accessToken));
+                return true;
             }
-            
-            // Abrir Google Drive Picker
-            function openGoogleDrivePicker() {
-                console.log("🔵 Solicitando permisos para Google Drive...");
-                
-                if (!gsi_initialized || !tokenClient) {
-                    console.error("❌ GSI no está inicializado");
-                    alert("Error: Google Services no está listo. Intenta recargar la página.");
+
+            async function openGoogleDrivePicker() {
+                if (!gsi_initialized || !codeClient) {
+                    alert("Google Services no está listo. Recarga la página.");
                     return;
                 }
-                
-                // Solicitar token de acceso
-                tokenClient.requestAccessToken();
+
+                // 1) intenta token silencioso desde backend
+                if (await obtenerTokenBackendYAbrirPicker()) return;
+
+                // 2) si no hay refresh_token todavía, popup SOLO esta vez
+                codeClient.requestCode();
             }
-            
+
             // Abrir Picker con token
             function abrirPickerConToken(accessToken) {
                 console.log("🔵 Abriendo Google Drive Picker (Multiselección habilitada)...");
@@ -811,7 +920,7 @@
                 }
 
                 try {
-                    // Definimos los tipos de archivo permitidos: Imágenes, PDFs, Office y Google Docs
+                    // Definimos los tipos de archivo permitidos: Imágenes, PDFs, Office y Google Docs + Carpeta
                     const mimeTypes = [
                         'image/jpeg', 'image/png', 'image/gif', 'image/webp',
                         'application/pdf',
@@ -820,31 +929,24 @@
                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
                         'application/vnd.ms-excel', // .xls
                         'application/vnd.google-apps.document', // Google Docs
-                        'application/vnd.google-apps.spreadsheet' // Google Sheets
+                        'application/vnd.google-apps.spreadsheet', // Google Sheets
+                        'application/vnd.google-apps.folder' // ✅ Folder
                     ].join(',');
 
                     const docsView = new google.picker.DocsView()
-                        .setSelectFolderEnabled(true) // Ponlo en 'true' si quieres poder seleccionar la carpeta entera
-                        .setIncludeFolders(true)      // <--- ESTA LÍNEA PERMITE VER LAS CARPETAS
-                        .setMimeTypes(mimeTypes);     // Tus tipos de archivo ya definidos
+                        .setSelectFolderEnabled(true)
+                        .setIncludeFolders(true)
+                        .setMimeTypes(mimeTypes);
 
                     const pickerBuilder = new google.picker.PickerBuilder()
                         .addView(docsView)
-                        // .addView(new google.picker.DocsView()
-                        //     .setSelectFolderEnabled(false)
-                        //     .setMimeTypes(mimeTypes)) // Aplicamos los nuevos MimeTypes
-                      //  .addView(new google.picker.DocsUploadView())
                         .setOAuthToken(accessToken)
                         .setCallback(pickerCallback)
-                        .setTitle("Selecciona archivos de Google Drive") // Título más genérico
+                        .setTitle("Selecciona archivos de Google Drive")
                         .setAppId(GOOGLE_PROJECT_ID)
                         .setOrigin(window.location.protocol + '//' + window.location.host)
                         .setRelayUrl(window.location.protocol + '//' + window.location.host + '/admin/relay.html')
-
-                        // ACTIVA LA SELECCIÓN DE VARIOS ARCHIVOS
                         .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
-
-                        // Opcional: Permite ver archivos que no son del usuario (compartidos conmigo)
                         .enableFeature(google.picker.Feature.SUPPORT_DRIVES);
 
                     const picker = pickerBuilder.build();
@@ -859,103 +961,66 @@
                 }
             }
 
+            async function listarArchivosDeCarpeta(folderId, token) {
+                const params = new URLSearchParams({
+                    q: `'${folderId}' in parents and trashed=false`,
+                    fields: 'nextPageToken,files(id,name,mimeType,size)',
+                    pageSize: '200',
+                    supportsAllDrives: 'true',
+                    includeItemsFromAllDrives: 'true'
+                });
 
+                const url = 'https://www.googleapis.com/drive/v3/files?' + params.toString();
 
-            async function listarArchivosDeCarpeta(folderId) {
-                // URL de la API de Drive v3 para listar archivos cuyo padre es la carpeta seleccionada
-                const url = `www.googleapis.com{folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType)`;
+                const resp = await fetch(url, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
 
-                try {
-                    const response = await fetch(url, {
-                        headers: { 'Authorization': 'Bearer ' + accessToken } // Usa tu token actual
-                    });
-                    const result = await response.json();
-
-                    console.log("Archivos encontrados en la carpeta:");
-                    result.files.forEach(file => {
-                        console.log(`- ${file.name} (${file.mimeType}) ID: ${file.id}`);
-                    });
-                } catch (error) {
-                    console.error("Error al obtener contenido de la carpeta:", error);
+                if (!resp.ok) {
+                    const txt = await resp.text();
+                    throw new Error("Drive files.list falló: " + txt);
                 }
+
+                const json = await resp.json();
+                return json.files || [];
             }
 
-            // Actualizar estado (para compatibilidad)
-            function updateAuthStatus() {
-                const statusEl = document.getElementById('driveAuthStatus');
-                if (statusEl && gsi_initialized) {
-                    statusEl.innerHTML = '<span class="badge badge-success">✅ Conectado a Google</span>';
-                }
-            }
-            
             async function pickerCallback(data) {
-                console.log("🔵 pickerCallback ejecutado, action:", data.action);
+                if (data.action !== google.picker.Action.PICKED) return;
 
-                if (data.action === google.picker.Action.PICKED) {
-                    const docs = data.docs;
-                    console.log("📁 Archivos seleccionados:", docs.length);
-                    console.log("   Docs array:", docs);
-                    const folder = data.docs[0]; // Obtenemos la carpeta seleccionada
+                for (const doc of (data.docs || [])) {
+                    if (doc.mimeType === 'application/vnd.google-apps.folder') {
+                        const hijos = await listarArchivosDeCarpeta(doc.id, googleDriveToken);
 
-                    if (folder.mimeType === 'application/vnd.google-apps.folder') {
-                        console.log("Carpeta seleccionada:", folder.name);
-                        await listarArchivosDeCarpeta(folder.id);
+                        hijos
+                            .filter(f => (f.mimeType || '').startsWith('image/'))
+                            .forEach(f => addDriveFile(f.id, f.name, f.size || 0, f.mimeType));
+
+                    } else {
+                        addDriveFile(doc.id, doc.name, doc.sizeBytes || doc.size || 0, doc.mimeType);
                     }
+                }
 
-                    if (!docs || docs.length === 0) {
-                        console.warn("⚠️ docs está vacío");
-                        return;
-                    }
+                actualizarTablaGoogleDrive();
+            }
 
-                    docs.forEach(function (doc, idx) {
-                        try {
-                            console.log("   Procesando doc " + idx + ":", doc);
 
-                            const fileId = doc.id;
-                            const fileName = doc.getName ? doc.getName() : doc.name || "Archivo sin nombre";
-                            const fileSize = doc.getFileSize ? doc.getFileSize() : (doc.size || 0);
-
-                            console.log("      ID:", fileId);
-                            console.log("      Name:", fileName);
-                            console.log("      Size:", fileSize);
-
-                            const yaExiste = googleDriveFiles.some(f => f.id === fileId);
-                            if (!yaExiste) {
-                                googleDriveFiles.push({
-                                    id: fileId,
-                                    name: fileName,
-                                    size: fileSize
-                                });
-                                console.log("✅ Archivo agregado a googleDriveFiles");
-                            } else {
-                                console.log("⚠️ Archivo ya existe en la lista");
-                            }
-                        } catch (e) {
-                            console.error("❌ Error procesando documento:", e);
-                        }
-                    });
-
-                    console.log("📊 googleDriveFiles total:", googleDriveFiles.length);
-                    console.log("   Contenido:", googleDriveFiles);
-
-                    actualizarTablaGoogleDrive();
-                    console.log("✅ Tabla actualizada");
-
-                } else if (data.action === google.picker.Action.CANCEL) {
-                    console.log("Picker cancelado");
+            function addDriveFile(id, name, size) {
+                if (!googleDriveFiles.some(f => f.id === id)) {
+                    googleDriveFiles.push({ id, name, size });
                 }
             }
-            
+
             // Inicializar cuando GSI esté listo
             window.addEventListener('load', function() {
                 console.log("🔵 Window loaded - Inicializando GSI...");
                 setTimeout(initializeGSI, 500);
             });
-            
+
             // Event listener para abrir el picker
             document.addEventListener('DOMContentLoaded', function() {
                 console.log("🔵 DOM Loaded");
-                
+
                 const openPickerBtn = document.getElementById('openPickerBtn');
                 if (openPickerBtn) {
                     openPickerBtn.addEventListener('click', function(e) {
@@ -969,22 +1034,22 @@
             function clearFormForNewOrder() {
                 const form = document.getElementById('pedidoForm');
                 const elements = form.elements;
-                
+
                 for (let i = 0; i < elements.length; i++) {
                     const el = elements[i];
-                    
+
                     // Mantener cliente pero limpiar npedido
                     if (el.name === 'cliente') {
                         continue;
                     }
-                    
+
                     if (el.type === 'hidden') {
                         if (el.name === 'npedido') {
                             el.value = '';
                         }
                         continue;
                     }
-                    
+
                     if (el.type === 'text' || el.type === 'date' || el.type === 'number' || el.type === 'textarea') {
                         el.value = '';
                     } else if (el.tagName === 'SELECT') {
@@ -993,25 +1058,25 @@
                         el.checked = false;
                     }
                 }
-                
+
                 // Limpiar campos de texto (sin hidden ni cliente)
                 document.querySelectorAll('input[type="text"]:not([name="cliente"])').forEach(input => {
                     input.value = '';
                 });
-                
+
                 document.querySelectorAll('input[type="date"]').forEach(input => {
                     input.value = '';
                 });
-                
+
                 document.querySelectorAll('input[type="number"]').forEach(input => {
                     input.value = '';
                 });
-                
+
                 // Limpiar selects
                 document.querySelectorAll('select').forEach(select => {
                     select.selectedIndex = 0;
                 });
-                
+
                 // Scroll al top del formulario
                 window.scrollTo(0, 0);
             }
@@ -1022,7 +1087,6 @@
                 const fechaContainer = document.getElementById('fechaFieldContainer');
 
                 function toggleFechaField() {
-                    // Comprueba si el valor del select es "Finalizado"
                     if(estadoSelect.value === 'Finalizado') {
                         fechaContainer.style.display = 'block';
                     } else {
@@ -1030,10 +1094,7 @@
                     }
                 }
 
-                // Ejecuta la función al cargar la página
                 toggleFechaField();
-
-                // Escucha los cambios en el select para actualizar la visibilidad
                 estadoSelect.addEventListener('change', toggleFechaField);
             });
 
@@ -1043,11 +1104,8 @@
                     console.error(error);
                 });
         </script>
+
         <script th:inline="javascript">
-
-
-
-
             // Función para actualizar los tipos de pieza (se conserva)
             function actualizarTipos() {
                 var pieza = document.getElementById('pieza').value;
@@ -1075,7 +1133,6 @@
                 });
             }
 
-
             // Al cargar la página, forzar llenado si ya hay valor en pedido.pieza (se conserva)
             document.addEventListener('DOMContentLoaded', function() {
                 if (document.getElementById('pieza').value) {
@@ -1090,7 +1147,45 @@
 
             //-------------* MODIFICADO: Manejo de archivos en el modal *-------------/
 
+            document.addEventListener('DOMContentLoaded', function () {
+                const chooseBtn = document.getElementById('chooseLocalBtn');
+                const filesInput = document.getElementById('files');
+                const status = document.getElementById('localFilesStatus');
+
+                if (chooseBtn && filesInput) {
+                    chooseBtn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        filesInput.click();
+                    });
+                }
+
+            });
+
             $(document).ready(function() {
+
+                $('#uploadForm').on('submit', function(e){
+                    e.preventDefault();
+                });
+                // Limpieza de previews (evita fugas de memoria) cuando se cierra el modal
+                // Usamos namespace ".previewCleanup" para poder evitar duplicados con .off(...)
+                $('#addPhotoModal')
+                    .off('hidden.bs.modal.previewCleanup')
+                    .on('hidden.bs.modal.previewCleanup', function () {
+                        archivosPendientes.forEach(f => {
+                            if (f && f._blobUrl) {
+                                console.log("🧠🧹 revoke (cerrar modal):", f.name, "=>", f._blobUrl);
+                                URL.revokeObjectURL(f._blobUrl);
+                                f._blobUrl = null;
+                                f._blobUrl = null;
+                                count++;
+                            }
+                        });
+                        console.log("🧠✅ cleanup terminado. blobs liberados:", count);
+                        // Si quieres reset total al cerrar modal, descomenta:
+                        // archivosPendientes = [];
+                        // actualizarTabla();
+                    });
 
                 // Función para eliminar el archivo en el backend
                 function eliminarArchivo(fileName, npedido) {
@@ -1123,8 +1218,8 @@
 
                         console.log("🔍 Verificando archivo:", file.name, "- Tamaño:", file.size, "- Tipo:", file.type);
 
-                        const isImage = file.type.startsWith('image/') || 
-                                       /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file.name);
+                        const isImage = file.type.startsWith('image/') ||
+                            /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file.name);
 
                         if (!isImage) {
                             console.warn("❌ Archivo no es imagen válida:", file.name, "tipo:", file.type);
@@ -1144,9 +1239,13 @@
 
                         if (!yaIncluido) {
                             console.log("✅ Archivo añadido a archivosPendientes:", file.name, "Tamaño:", (file.size / 1024).toFixed(2), "KB");
+                            file._blobUrl = URL.createObjectURL(file);
+                            console.log("🧠✅ blob creado:", file.name, "=>", file._blobUrl);
                             archivosPendientes.push(file);
                         } else {
                             console.log("⚠️ Archivo ya está incluido:", file.name);
+                            console.log("🧠ℹ️ blob reutilizado:", file.name);
+
                         }
                     });
 
@@ -1155,7 +1254,7 @@
                     event.target.value = '';
                 });
             });
-            
+
             function eliminarArchivoDrive(fileId) {
                 googleDriveFiles = googleDriveFiles.filter(function(f) {
                     return f.id !== fileId;
@@ -1164,53 +1263,91 @@
             }
 
             function actualizarTablaGoogleDrive() {
+
                 console.log("🔵 actualizarTablaGoogleDrive() llamado");
-                
+
                 var table = $('#googleDriveFilesTable tbody');
                 var noFilesMsg = $('#noFilesMessage');
-                
+
                 console.log("   Tabla jQuery encontrada:", table.length, "elemento(s)");
                 console.log("   Mensaje 'sin archivos' encontrado:", noFilesMsg.length, "elemento(s)");
                 console.log("   googleDriveFiles.length:", googleDriveFiles.length);
-                
+
                 if (table.length === 0) {
                     console.error("❌ #googleDriveFilesTable tbody no existe en el DOM");
                     console.log("   Elementos con ID 'googleDriveFilesTable':", $('#googleDriveFilesTable').length);
                     return;
                 }
-                
+
                 table.empty();
-                
+
                 if (googleDriveFiles.length > 0) {
                     console.log("✅ Mostrando", googleDriveFiles.length, "archivo(s)");
                     noFilesMsg.hide();
-                    
+
                     googleDriveFiles.forEach(function(file, idx) {
                         console.log("   Agregando fila " + idx + ":", file.name);
-                        
+
+                        // ✅ Detectar si es imagen (si no hay mimeType, intentamos igual y ponemos fallback si falla)
+                        const mime = (file.mimeType || '').toLowerCase();
+                        const isImage = mime.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file.name || '');
+
+                        // ✅ Vista previa desde TU backend (recomendado)
+                        // Necesitas tener el endpoint: /api/google/drive/preview/{fileId}
+                        const previewCell = $('<td>').append(
+                            isImage
+                                ? $('<img>')
+                                    .attr('src', '/api/google/drive/preview/' + encodeURIComponent(file.id))
+                                    .attr('alt', file.name || 'preview')
+                                    .css({
+                                        'max-width': '50px',
+                                        'max-height': '50px',
+                                        'border-radius': '4px',
+                                        'border': '1px solid #ccc',
+                                        'object-fit': 'cover'
+                                    })
+                                    .attr('loading', 'lazy')
+                                    .on('error', function() {
+                                        // fallback si no puede cargar
+                                        $(this).replaceWith($('<span>').text('🖼️'));
+                                    })
+                                : $('<span>').text('—')
+                        );
+
+                        var sizeMb = 0;
+                        try {
+                            sizeMb = ((file.size || 0) / 1024 / 1024).toFixed(2);
+                        } catch (e) {
+                            sizeMb = "0.00";
+                        }
+
                         var row = $('<tr>').append(
-                            $('<td>').text(file.name),
-                            $('<td>').text(((file.size / 1024 / 1024).toFixed(2)) + ' MB'),
+                            previewCell,                               // ✅ Nueva columna: Vista previa
+                            $('<td>').addClass('file-name-cell').attr('title', file.name).text(file.name),
+                            $('<td>').text(sizeMb + ' MB'),
                             $('<td>').append(
                                 $('<button>')
+                                    .attr('type', 'button')
                                     .text('Eliminar')
                                     .addClass('btn btn-danger btn-sm')
-                                    .click((function(id) {
-                                        return function() {
-                                            eliminarArchivoDrive(id);
-                                        };
-                                    })(file.id))
+                                    .on('click', function(e) {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        eliminarArchivoDrive(file.id);
+                                    })
                             )
                         );
+
                         table.append(row);
                     });
-                    
+
                     console.log("✅ Tabla actualizada con", googleDriveFiles.length, "fila(s)");
                 } else {
                     console.log("ℹ️ Sin archivos para mostrar, ocultando tabla");
                     noFilesMsg.show();
                 }
             }
+
 
             function confirmarFotos() {
                 if (archivosPendientes.length === 0 && googleDriveFiles.length === 0) {
@@ -1221,75 +1358,96 @@
                 console.log("✅ Fotos confirmadas:", archivosPendientes.length, "locales,", googleDriveFiles.length, "archivos Drive");
             }
 
-
             // ✅ Función para actualizar la tabla del modal
             function actualizarTabla() {
-                var table = $('#fileListTable');
+                const table = $('#fileListTable');
                 table.empty();
 
-                if (archivosPendientes.length > 0) {
-                    var thead = $('<thead>').append(
-                        $('<tr>').append(
-                            $('<th>').text('Archivo'),
-                            $('<th>').text('Tamaño'),
-                            $('<th>').text('Vista previa'),
-                            $('<th>').text('Acciones')
-                        )
-                    );
-                    table.append(thead);
-
-                    var tbody = $('<tbody>');
-
-                    for (let i = 0; i < archivosPendientes.length; i++) {
-                        const file = archivosPendientes[i];
-                        const fileURL = URL.createObjectURL(file);
-                        const fileSize = (file.size / 1024 / 1024).toFixed(2) + ' MB';
-
-                        const row = $('<tr>').append(
-                            $('<td>').text(file.name).css({'word-break': 'break-all'}),
-                            $('<td>').text(fileSize),
-                            $('<td>').append(
-                                $('<img>').attr('src', fileURL).attr('alt', file.name).css({
-                                    'max-width': '50px',
-                                    'max-height': '50px',
-                                    'border-radius': '4px',
-                                    'border': '1px solid #ccc',
-                                    'object-fit': 'cover'
-                                })
-                            ),
-                            $('<td>').append(
-                                $('<button>')
-                                    .text('Eliminar')
-                                    .addClass('btn btn-danger btn-sm')
-                                    .click((function(index) {
-                                        return function() {
-                                            archivosPendientes.splice(index, 1);
-                                            actualizarTabla();
-                                        };
-                                    })(i))
-                            )
-                        );
-                        tbody.append(row);
-                    }
-                    table.append(tbody);
-                } else {
+                if (archivosPendientes.length === 0) {
                     table.append(
                         $('<tr>').append(
-                            $('<td colspan="4" class="text-center text-muted">')
-                                .text('No se han seleccionado archivos.')
+                            $('<td colspan="4" class="text-center text-muted">').text('No se han seleccionado archivos.')
                         )
                     );
+                    return;
                 }
+
+                // THEAD
+                const thead = $('<thead>').append(
+                    $('<tr>').append(
+                        $('<th>').text('Archivo'),
+                        $('<th>').text('Tamaño'),
+                        $('<th>').text('Vista previa'),
+                        $('<th>').text('Acciones')
+                    )
+                );
+
+                // TBODY
+                const tbody = $('<tbody>');
+
+                archivosPendientes.forEach((file, i) => {
+                    const fileURL = file._blobUrl || (file._blobUrl = URL.createObjectURL(file));
+                    const fileSize = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+                    const idx = i;
+                    const img = $('<img>')
+                        .attr('src', fileURL)
+                        .attr('alt', file.name)
+                        .css({
+                            'max-width': '60px',
+                            'max-height': '60px',
+                            'border-radius': '4px',
+                            'border': '1px solid #ccc',
+                            'object-fit': 'cover',
+                            'display': 'block'
+                        })
+                        // 🔧 si falla la carga de imagen, lo verás en consola
+                        .on('error', function() {
+                            console.error("❌ No se pudo renderizar preview de:", file.name, "type:", file.type, "size:", file.size);
+                        })
+                        // opcional: liberar blob cuando ya cargó
+                        .on('load', function() {
+                            // URL.revokeObjectURL(fileURL); // si lo activas, revoca cuando cargue
+                        });
+
+                    const row = $('<tr>').append(
+                        $('<td>').addClass('file-name-cell').attr('title', file.name).text(file.name),
+                        $('<td>').text(fileSize),
+                        $('<td>').append(img),
+                        $('<td>').append(
+                            $('<button>')
+                                .text('Eliminar')
+                                .addClass('btn btn-danger btn-sm')
+                                .on('click', (e) => {            // ✅ captura el evento
+                                    e.preventDefault();            // ✅ evita submit
+                                    e.stopPropagation();           // ✅ evita efectos colaterales
+
+                                    if (archivosPendientes[idx] && archivosPendientes[idx]._blobUrl) {
+                                        URL.revokeObjectURL(archivosPendientes[idx]._blobUrl);
+                                        archivosPendientes[idx]._blobUrl = null;
+                                    }
+                                    archivosPendientes.splice(idx, 1);
+                                    actualizarTabla();
+                                })
+                        )
+                    );
+
+                    tbody.append(row);
+                });
+
+                table.append(thead).append(tbody);
             }
+
+
             // Manejar el envío del formulario principal (#pedidoForm)
             $(document).on('submit', '#pedidoForm', function(event) {
+
 
                 event.preventDefault();
 
                 $("#spinnerGuardado").show();
 
                 var formData = new FormData(this);
-                
+
                 console.log("📋 DATOS DEL FORMULARIO:");
                 var camposForm = [];
                 var formIterator = formData.entries();
@@ -1302,7 +1460,7 @@
 
                 console.log("📁 Archivos pendientes:", archivosPendientes.length);
                 console.log("🔗 Archivos de Google Drive:", googleDriveFiles.length);
-                
+
                 if (archivosPendientes.length > 0) {
                     console.log("📁 Añadiendo " + archivosPendientes.length + " archivos locales");
                     var resumenArchivos = [];
@@ -1313,28 +1471,26 @@
                         formData.append('files', file);
                     });
                 }
-                
+
                 if (googleDriveFiles.length > 0) {
                     console.log("🔗 Añadiendo " + googleDriveFiles.length + " archivos de Google Drive");
                     googleDriveFiles.forEach(function(item, index) {
                         console.log("   Archivo " + (index+1) + ": " + item.name + " (ID: " + item.id.substring(0, 20) + "...)");
                         formData.append('googleDriveFileIds', item.id);
                     });
-                    if (googleDriveToken) {
-                        formData.append('googleDriveToken', googleDriveToken);
-                        console.log("✅ Token OAuth incluido");
-                    }
+
+                    // ✅ IMPORTANTE: ya NO se envía googleDriveToken al backend (backend lo gestiona)
                 } else {
                     console.log("ℹ️ No hay archivos de Google Drive para enviar");
                 }
 
                 var totalTamaño = 0;
                 var archivosCorrompidos = [];
-                
+
                 for (let i = 0; i < archivosPendientes.length; i++) {
                     var file = archivosPendientes[i];
                     totalTamaño += file.size;
-                    
+
                     if (file.size === 0) {
                         archivosCorrompidos.push(file.name + " (0 bytes - archivo vacío)");
                     }
@@ -1342,15 +1498,15 @@
                         archivosCorrompidos.push(file.name + " (" + (file.size / 1024 / 1024).toFixed(2) + " MB - demasiado grande)");
                     }
                 }
-                
+
                 var totalMB = (totalTamaño / 1024 / 1024).toFixed(2);
                 console.log("📦 Tamaño total a enviar: " + totalMB + " MB");
-                
+
                 if (archivosCorrompidos.length > 0) {
                     alert("⚠️ PROBLEMAS DETECTADOS EN ARCHIVOS:\n\n" + archivosCorrompidos.join('\n') + "\n\nIntenta eliminando estos archivos de la lista.");
                     return false;
                 }
-                
+
                 var urlAccion = $(this).attr('action');
                 console.log("🔗 URL destino: " + urlAccion);
                 console.log("📋 Método: POST");
@@ -1358,7 +1514,7 @@
                 console.log("⏱️ Timeout: 120000ms");
 
                 console.log("🚀 PASO 1: Guardando SOLO datos del formulario (sin archivos)...");
-                
+
                 var formDataSinArchivos = new FormData();
                 for (let key of formData.keys()) {
                     if (key !== 'files') {
@@ -1368,7 +1524,7 @@
                         }
                     }
                 }
-                
+
                 $.ajax({
                     type: 'POST',
                     url: $(this).attr('action'),
@@ -1386,32 +1542,31 @@
                         npedido = response.npedido;
                         clienteId = response.clienteId;
                         isNew = response.isNew;
-                        
+
                         alert("✅ PASO 1 COMPLETADO\n\nPedido #" + npedido + " guardado correctamente");
-                        
+
                         if (archivosPendientes.length > 0 || googleDriveFiles.length > 0) {
                             try {
                                 var totalItems = archivosPendientes.length + googleDriveFiles.length;
                                 alert("🚀 PASO 2: Subiendo " + totalItems + " elemento(s)...");
                                 console.log("📁 PASO 2: Subiendo archivos y links al servidor");
-                                
+
                                 var uploadFormData = new FormData();
-                                
+
                                 if (archivosPendientes.length > 0) {
                                     archivosPendientes.forEach(function(file) {
                                         uploadFormData.append('files', file);
                                     });
                                 }
-                                
+
                                 if (googleDriveFiles.length > 0) {
                                     googleDriveFiles.forEach(function(item) {
                                         uploadFormData.append('googleDriveFileIds', item.id);
                                     });
-                                    if (window.googleDriveToken) {
-                                        uploadFormData.append('googleDriveToken', window.googleDriveToken);
-                                    }
+
+                                    // ✅ IMPORTANTE: ya NO se envía googleDriveToken al backend
                                 }
-                                
+
                                 $.ajax({
                                     type: 'POST',
                                     url: '/pedidos/subir-archivos/' + npedido,
@@ -1440,9 +1595,9 @@
                                             mensaje += "\n\n⚠️ Advertencias:\n" + resp.warnings;
                                         }
                                         mensaje += "\n\nRecargando formulario...";
-                                        
+
                                         alert(mensaje);
-                                        
+
                                         setTimeout(function() {
                                             location.href = "/pedidos/form/" + clienteId;
                                         }, 1000);
@@ -1451,7 +1606,7 @@
                                         console.error("❌ Error en PASO 2:", error);
                                         console.error("   Status:", xhr.status);
                                         console.error("   Response:", xhr.responseText);
-                                        
+
                                         var errorMsg = "❌ Error al procesar archivos\n\n";
                                         if (status === 'timeout') {
                                             errorMsg += "⏱️ TIMEOUT: La solicitud tardó demasiado";
@@ -1465,7 +1620,7 @@
                                         } else {
                                             errorMsg += "Error: " + error;
                                         }
-                                        
+
                                         alert(errorMsg);
                                         $("#spinnerGuardado").hide();
                                     }
@@ -1480,10 +1635,10 @@
                             archivosPendientes = [];
                             $("#spinnerGuardado").hide();
                             alert("✅ PROCESO COMPLETADO\n\n" + response.info + "\n\n(Sin archivos para subir)\n\nRecargando formulario...");
-                            
+
                             console.log("✅ Recargando formulario desde el servidor...");
                             googleDriveFiles = [];
-                            
+
                             setTimeout(function() {
                                 location.href = "/pedidos/form/" + clienteId;
                             }, 1000);
@@ -1494,10 +1649,10 @@
                         console.error("   Error type:", error);
                         console.error("   Status:", xhr.status);
                         console.error("   Status text:", xhr.statusText);
-                        
+
                         var errorMessage = "❌ ERROR EN PASO 1: No se pudo guardar el pedido\n\n";
                         var detalleError = "";
-                        
+
                         if (status === 'timeout') {
                             errorMessage += "⏱️ TIMEOUT: La solicitud tardó demasiado (>30 segundos)";
                             detalleError = "El servidor no respondió a tiempo.\n\nSoluciones:\n1. Revisa tu conexión a internet\n2. Intenta nuevamente en unos segundos\n3. Si persiste, contacta al administrador";
@@ -1521,19 +1676,18 @@
                             errorMessage += "❌ Error HTTP " + xhr.status;
                             detalleError = "Error desconocido: " + xhr.statusText;
                         }
-                        
+
                         console.log("Detalle completo del error en PASO 1:", detalleError);
-                        
+
                         $("#spinnerGuardado").hide();
                         alert(errorMessage + "\n\nDetalle:\n" + detalleError);
                     }
                 });
-                
+
                 return false;
             });
-
-
         </script>
+
     </section>
 </div>
 </body>
