@@ -29,9 +29,9 @@ public class CloudinaryService {
     private final StringRedisTemplate redisTemplate;
 
     public CloudinaryService(
-            @Value("${CLOUDINARY_CLOUD_NAME}") String cloudName,
-            @Value("${CLOUDINARY_API_KEY}") String apiKey,
-            @Value("${CLOUDINARY_API_SECRET}") String apiSecret,
+            @Value("${spring.cloudinary.cloud-name}") String cloudName,
+            @Value("${spring.cloudinary.api-key}") String apiKey,
+            @Value("${spring.cloudinary.api-secret}") String apiSecret,
             @Value("${cloudinary.upload-preset}") String uploadPreset,
             StringRedisTemplate redisTemplate) {
         this.cloudinary = new Cloudinary(ObjectUtils.asMap(
