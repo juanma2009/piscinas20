@@ -19,6 +19,8 @@
 	<properties>
 		<java.version>11</java.version>
 		<tests.skip>false</tests.skip>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
 	<repositories>
 		<repository>
@@ -56,16 +58,6 @@
 			<artifactId>caffeine</artifactId>
 			<version>2.9.2</version>
 		</dependency>
-		<!--Caching para evitar consultas Repetivas -->
-
-		<dependency>
-			<groupId>com.github.ben-manes.caffeine</groupId>
-			<artifactId>caffeine</artifactId>
-			<version>2.9.2</version>
-		</dependency>
-
-
-
 		<dependency>
 			<groupId>org.springframework.session</groupId>
 			<artifactId>spring-session-core</artifactId>

@@ -32,7 +32,7 @@ HELP.md
 ### SETUP ###
 target/
 .settings/
-.mvn/
+
 
 #fichero con secret
 # Secrets locales
