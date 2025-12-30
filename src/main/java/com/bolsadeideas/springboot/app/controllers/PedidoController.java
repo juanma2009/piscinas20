@@ -274,7 +274,7 @@ public class PedidoController {
     }
 
 
-    private void actualizarPedidoExistente(Pedido pedidoExistente, String observacion, String estado, String tipoPedido, String grupo, String pieza, Double peso, String horas, Double cobrado, Date fechaEntrega, Date fechaFinalizado, String empleado, String ref, RedirectAttributes flash) {
+    private void actualizarPedidoExistente(Pedido pedidoExistente, String observacion, String estado, String tipoPedido, String grupo, String pieza,String tipo, Double peso, String horas, Double cobrado, Date fechaEntrega, Date fechaFinalizado, String empleado, String ref, RedirectAttributes flash) {
         log.info("📝 Iniciando actualización de pedido: {}", pedidoExistente.getNpedido());
         
         pedidoExistente.setObservacion(observacion);
@@ -282,6 +282,7 @@ public class PedidoController {
         pedidoExistente.setTipoPedido(tipoPedido);
         pedidoExistente.setGrupo(grupo);
         pedidoExistente.setSubgrupo(pieza);
+        pedidoExistente.setTipo(tipo);
         pedidoExistente.setPeso(peso);
         pedidoExistente.setHoras(horas);
         pedidoExistente.setCobrado(cobrado);
@@ -291,7 +292,7 @@ public class PedidoController {
         pedidoExistente.setEmpleado(empleado);
         pedidoExistente.setPieza(pieza);
         
-        log.info("📋 Datos actualizados - Estado: {}, Peso: {}, Cobrado: {}", estado, peso, cobrado);
+        log.info("📋 Datos actualizados - Estado: {}, Peso: {}, Cobrado: {},tipo:{}", estado, peso, cobrado,tipo);
 
         try {
             if ("Fin".equalsIgnoreCase(pedidoExistente.getEstado()) && !pedidoExistente.getEnviadoSms()) {
@@ -346,6 +347,7 @@ public class PedidoController {
             @RequestParam(name = "tipoPedido", required = false) String tipoPedido,
             @RequestParam(name = "grupo", required = false) String grupo,
             @RequestParam(name = "pieza", required = false) String pieza,
+            @RequestParam(name = "tipo", required = false) String tipo,
             @RequestParam(name = "peso", required = false) String peso,
             @RequestParam(name = "horas", required = false) String horas,
             @RequestParam(name = "cobrado", required = false) String cobrado,
@@ -367,6 +369,7 @@ public class PedidoController {
             log.info("     - observacion: {}", observacion != null ? observacion.substring(0, Math.min(50, observacion.length())) : "NULL");
             log.info("     - estado: {}", estado);
             log.info("     - tipoPedido: {}", tipoPedido);
+            log.info("     - tipo: {}", tipo);
             log.info("     - grupo: {}", grupo);
             log.info("     - pieza: {}", pieza);
             log.info("     - peso: {}", peso);
@@ -415,7 +418,7 @@ public class PedidoController {
                 Pedido pedidoExistente = pedidoService.findOne(npedido);
                 if (pedidoExistente != null) {
                     log.info("🔄 Actualizando pedido existente: {}", npedido);
-                    actualizarPedidoExistente(pedidoExistente, observacion, estado, tipoPedido, grupo, pieza,
+                    actualizarPedidoExistente(pedidoExistente, observacion, estado, tipoPedido, grupo, pieza,tipo,
                             pesoDouble, horasSaneadas, cobradoDouble, fechaEntrega,
                             fechaFinalizado, empleado, ref, flash);
 
@@ -740,7 +743,6 @@ private boolean validarTipoMime(String contentType, String fileName) {
         // Datos estáticos (estados, grupos, subgrupos, etc.)
         List<String> estados = Arrays.asList("Finalizado", "Pendiente");
         model.addAttribute("estados", estados);
-        //todo añadir al metodo editar los nuevos campos metal,pieza,tipo
 
         // 1. Listado de Servicio
         List<String> servicios = Arrays.asList("Pedido", "Compostela");
@@ -772,7 +774,7 @@ private boolean validarTipoMime(String contentType, String fileName) {
         model.addAttribute("grupoSeleccionado", grupo);
         model.addAttribute("tipoPedidoSeleccionado", tipoPedido);
         model.addAttribute("subgrupoSeleccionado", pieza);
-        //todo poner tipo
+
         model.addAttribute("tipoSeleccionado", tipo);
         model.addAttribute("fechaDesdeSeleccionada", fechaDesde != null ? fechaDesde : "");
         model.addAttribute("fechaHastaSeleccionada", fechaHasta != null ? fechaHasta : "");
@@ -960,7 +962,7 @@ private boolean validarTipoMime(String contentType, String fileName) {
         model.put("tiposPorPieza", tiposPorPieza);
 
         // Empleados
-        List<String> empleado = List.of("Anselmo");
+        List<String> empleado = List.of("Anselmo");//TODO ESTO DEBE CAMBIAR PARA ACOGER LA PERSONA LOGUEADA O EL LISTADO DE PERSONAS EN EL LISTADO DE LAS EMPLEADOS CREADOS
         model.put("empleado", empleado);
 
         model.put("pedido", pedido);
