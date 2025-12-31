@@ -39,3 +39,24 @@ target/
 src/main/resources/application-local.properties
 src/main/resources/application-dev-local.properties
 .env
+
+
+# Maven
+
+.mvn/
+mvnw
+mvnw.cmd
+
+# Archivos generados
+*.class
+*.jar
+*.war
+
+# IntelliJ
+.idea/
+out/
+
+# Otros
+.DS_Store
+Thumbs.db
+*.log
