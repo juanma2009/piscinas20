@@ -1,18 +1,893 @@
-<div class="btn-group btn-group-toggle">
-    <a th:href="@{/pedidos}" class="btn btn-secondary">
-        <i class="fas fa-list"></i> Pedidos
-    </a>
-    <a th:href="@{/pedidos/galeria}" class="btn btn-secondary">
-        <i class="fas fa-images"></i> Galería
-    </a>
-    <a th:href="@{/clientes}" class="btn btn-secondary">
-        <i class="fas fa-users"></i> Clientes
-    </a>
-    <a th:href="@{/clientes/form}" class="btn btn-secondary">
-        <i class="fas fa-user-plus"></i> Nuevo Cliente
-    </a>
-    <a th:href="@{/pedidos/form/{npedido}(npedido=${pedido.npedido})}" class="btn btn-primary">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="admin/admin_layout">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Agregar jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <!-- Slick Carousel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.css">
+
+    <link rel="stylesheet" href="cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <style>
+        .card-header.bg-white {
+            background-color: white !important;
+        }
+
+        .card-header bg-primary text-white {
+            width: 100%;
+            height: 100px;
+            border-radius: 10px 10px 0 0;
+        }
+        /* Establecer un padding y margen general para todas las secciones internas */
+        .container-fluid,
+        .card,
+        .card-body,
+        .card-header,
+        section.content-header {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Asegura que las tarjetas no queden pegadas entre sí o a los bordes */
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Control uniforme para las tablas */
+        .table {
+            margin-bottom: 1rem;
+        }
+
+        /* Espaciado entre botones */
+        .btn-group .btn {
+            margin-right: 0.5rem;
+        }
+
+        /* Botones pequeños con padding uniforme */
+        .btn-sm {
+            padding: 0.4rem 0.75rem;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #0062cc, #004085); /* Gradiente de azul */
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+            text-transform: uppercase; /* Texto en mayúsculas */
+            font-size: 1.25rem; /* Aumentar el tamaño de la fuente */
+            border-radius: 8px 8px 0 0; /* Bordes redondeados */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra ligera */
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card-header:hover {
+            background-color: #0056b3; /* Tono más oscuro de azul */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
+        }
+
+        body {
+            width: 100vw;
+            min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
+            overflow-x: hidden;
+            background-color: #f9f9f9; /* opcional: fondo más suave */
+        }
+        html, body {
+            height: 100%; /* Asegura que el contenido cubra toda la pantalla */
+            margin: 0; /* Elimina márgenes por defecto */
+            padding: 0; /* Elimina el padding por defecto */
+            overflow: hidden; /* Oculta el scroll si no es necesario */
+        }
+        .nav-tabs .nav-link.active {
+            color: #007bff !important; /* azul Bootstrap */
+            border-color: #007bff #007bff #fff;
+        }
+        .list-group-item {
+            border: none;
+        }
+        @media screen and (min-width: 1268px) {
+
+            html, body {
+                overflow-x: hidden;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            .container-fluid {
+                width: 100%;
+                max-width: 100vw;
+                padding: 0;
+                margin: 0 auto;
+                overflow-x: hidden;
+            }
+            .tab-content {
+                margin-top: 20px;
+            }
+
+            /* Contenedor scrollable de la tabla */
+            .dataTables_scrollBody {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 290px; /* 🔹 Altura fija de la tabla visible */
+
+                overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
+                overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
+                display: block;
+            }
+
+            /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
+            .dataTables_scrollBody table {
+                width: 100% !important;
+                max-width: 100%;
+                min-width: auto !important;
+                table-layout: auto;
+
+            }
+
+            .dataTables_scrollBody {
+
+                th, td {
+                    padding: 10px;
+                    white-space: nowrap;
+                }
+            }
+        }
+
+        /* Estilos para el carrusel ORIGINAL con mejoras */
+        #fotoMini {
+            position: relative;
+            margin: 20px 0;
+            padding: 0 40px;
+        }
+
+        #fotoMini img {
+            width: 200px;
+            height: 200px;
+            margin: 0 5px;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 3px solid transparent;
+        }
+
+        #fotoMini img:hover {
+            transform: scale(1.05);
+            border-color: #007bff;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .slick-prev, .slick-next {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1000;
+            background-color: rgba(0, 123, 255, 0.8);
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: white;
+            font-size: 16px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .slick-prev:hover, .slick-next:hover {
+            background-color: rgba(0, 86, 179, 0.9);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .slick-prev {
+            left: 0;
+        }
+
+        .slick-next {
+            right: 0;
+        }
+
+        .slick-prev:before {
+            content: '←';
+        }
+
+        .slick-next:before {
+            content: '→';
+        }
+
+        /* Estilos para archivos no-imagen */
+        .non-image-file {
+            width: 200px;
+            height: 200px;
+            margin: 0 5px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex !important;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .non-image-file:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .non-image-file .file-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .non-image-file .file-name {
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            padding: 0 10px;
+            word-break: break-word;
+            max-width: 100%;
+        }
+
+        .file-type-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        /* Iconos por tipo de archivo */
+        .pdf-file {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .doc-file {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .txt-file {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .other-file {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+        }
+
+        .other-file .file-type-badge {
+            color: #333;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Estilo para la imagen que se hace zoom hacia la parte de la imagen */
+        .zoomed {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(2);
+            transition: transform 0.5s;
+            z-index: 1000;
+            max-width: 50vw;
+            max-height: 50vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+        }
+
+        @media (max-width: 745px) {
+            .zoomed {
+                max-width: 50vw;
+                max-height: 50vh;
+                top: 82%;
+                left: 52%;
+                z-index: 1000;
+                overflow: auto;
+                transition: transform 0.5s;
+            }
+        }
+
+        /* Ajustes para el carrusel en móviles */
+        @media (max-width: 768px) {
+            #fotoMini img, .non-image-file {
+                width: 150px;
+                height: 150px;
+            }
+
+            .non-image-file .file-icon {
+                font-size: 36px;
+            }
+
+            .non-image-file .file-name {
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            #fotoMini img, .non-image-file {
+                width: 120px;
+                height: 120px;
+            }
+
+            .non-image-file .file-icon {
+                font-size: 28px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            #fotoMini img, .non-image-file {
+                width: 100px;
+                height: 100px;
+            }
+        }
+
+        /* Estilos para la vista previa modal de archivos no-imagen */
+        .file-preview-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .file-preview-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .file-preview-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .file-preview-content .file-icon-large {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .file-preview-content .file-name-large {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+
+        .file-preview-content .file-type-large {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .file-preview-content .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 24px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .file-preview-content .close-modal:hover {
+            color: #333;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <section class="content-header">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-info-circle"></i> Detalles del Pedidos
+            </div>
+            <!-- Botones de navegación -->
+            <div class="row justify-content-between align-items-center">
+                <div class="col-md-8">
+                    <div class="btn-group btn-group-toggle">
+                        <a th:href="@{/pedidos/listarPedidos}" class=" btn btn-outline-primary">
+                            <i class="fas fa-list"></i> Pedidos
+                        </a>
+<a th:href="@{/pedidos/form/{npedido}(npedido=${pedido.npedido})}" class="btn btn-primary">
         <i class="fas fa-edit"></i> Editar
     </a>
+                        <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary">
+                            <i class="fas fa-images"></i> Galería
+                        </a>
+                        <a th:href="@{/listar}" class="btn btn-outline-primary">
+                            <i class="fas fa-user"></i> Clientes
+                        </a>
+
+                        <a th:href="@{/form}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-plus"></i> Nuevo Cliente
+                        </a>
+                        <div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- Pestañas de navegación -->
+                <ul class="nav nav-tabs" id="pedidoTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="informacion-tab" data-toggle="tab" href="#informacion" role="tab" aria-controls="informacion" aria-selected="true">Información General</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="detalles-tab" data-toggle="tab" href="#detalles" role="tab" aria-controls="detalles" aria-selected="false">Detalles Técnicos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="fotos-tab" data-toggle="tab" href="#fotos" role="tab" aria-controls="fotos" aria-selected="false">Archivos Adjuntos</a>
+                    </li>
+                </ul>
+                <div class="tab-content" id="pedidoTabsContent">
+                    <!-- Información General -->
+                    <div class="tab-pane fade show active" id="informacion" role="tabpanel" aria-labelledby="informacion-tab">
+                        <ul class="list-group my-2">
+                            <li class="list-group-item">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <strong>Cliente:</strong>
+                                        <div th:text="${pedido.cliente.nombre}+${pedido.cliente.apellido}"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Nº Cliente</strong>
+                                        <div th:text="${pedido.cliente.id}"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Nº Pedido</strong>
+                                        <div th:text="${pedido.npedido}"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Referencia:</strong>
+                                        <div th:text="${pedido.ref}"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Empleado:</strong>
+                                        <div th:text="${pedido.empleado}"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Estado del Pedido:</strong>
+                                        <div th:text="${pedido.estado}"></div>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="list-group-item">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <strong>Fecha de Registro:</strong>
+                                        <div th:text="${#dates.format(pedido.dfecha, 'dd/MM/yyyy')}"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Fecha de Entrega:</strong>
+                                        <div th:text="${#dates.format(pedido.fechaEntrega, 'dd/MM/yyyy')}"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Fecha de Finalizdo:</strong>
+                                        <div th:text="${#dates.format(pedido.fechaFinalizado, 'dd/MM/yyyy')}"></div>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="list-group-item">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <strong>Horas:</strong>
+                                        <div th:text="${pedido.horas}"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Cobrado:</strong>
+                                        <div th:text="${pedido.cobrado}"></div>
+                                    </div>
+                                </div>
+                            </li>
+                            <!-- Observaciones -->
+                            <li class="list-group-item" th:if="${pedido.observacion != null and !#strings.isEmpty(pedido.observacion)}">
+                                <div class="form-group">
+                                    <label><strong>Observaciones:</strong></label>
+                                    <div th:utext="${pedido.observacion}" class="form-control-plaintext"></div>
+                                </div>
+                            </li>
+                        </ul>
+
+                        <input type="hidden" th:field="*{pedido.npedido}" id="npedido" class="form-control" readonly="readonly"
+                               th:value="${pedido.npedido}"/>
+                    </div>
+
+                    <!-- Detalles Técnicos -->
+                    <div class="tab-pane fade" id="detalles" role="tabpanel" aria-labelledby="detalles-tab">
+                        <div class="row my-2">
+                            <div class="col-md-4">
+                                <div class="list-group-item">
+                                    <strong>Tipo de Servicio:</strong>
+                                    <div th:text="${pedido.tipoPedido}"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="list-group-item">
+                                    <strong>Peso:</strong>
+                                    <div th:text="${pedido.peso}"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row my-2">
+                            <div class="col-md-4">
+                                <div class="list-group-item">
+                                    <strong>Metal:</strong>
+                                    <div th:text="${pedido.grupo}"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="list-group-item">
+                                    <strong>Tipo de Pieza:</strong>
+                                    <div th:text="${pedido.pieza}"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="list-group-item">
+                                    <strong>Tipo de Joya:</strong>
+                                    <div th:text="${pedido.tipo}"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Archivos Adjuntos -->
+                    <div class="tab-panel fade" id="fotos" role="tabpanel" aria-labelledby="fotos-tab">
+                        <div class="list-group-item">
+                            <div id="fotoMini">
+                                <!-- Archivos se cargarán aquí -->
+                            </div>
+                            <div id="noFilesMessage" style="display: none; text-align: center; padding: 40px;">
+                                <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">Este pedido no tiene archivos adjuntos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 </div>
-<!-- El resto del contenido del archivo sigue aquí -->
+
+<!-- Modal para vista previa de archivos no-imagen -->
+<div class="file-preview-modal" id="filePreviewModal">
+    <div class="file-preview-content" id="filePreviewContent">
+        <button class="close-modal" onclick="closeFilePreview()">&times;</button>
+        <div class="file-icon-large" id="modalFileIcon"></div>
+        <div class="file-name-large" id="modalFileName"></div>
+        <div class="file-type-large" id="modalFileType"></div>
+        <a href="#" class="download-btn" id="modalDownloadBtn" target="_blank">
+            <i class="fas fa-download"></i> Descargar Archivo
+        </a>
+    </div>
+</div>
+</body>
+</html>
+
+<script src="https://cdn.ckeditor.com/ckeditor5/35.3.0/classic/ckeditor.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        if (document.querySelector('#observacion')) {
+            ClassicEditor
+                .create(document.querySelector('#observacion'), {
+                    toolbar: [],
+                    isReadOnly: true,
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+
+        // Cargar archivos al iniciar
+        cargarArchivos();
+    });
+
+    // Función para obtener icono según tipo de archivo
+    function getFileIcon(fileName) {
+        var extension = fileName.split('.').pop().toLowerCase();
+
+        switch(extension) {
+            case 'jpg':
+            case 'jpeg':
+            case 'png':
+            case 'gif':
+            case 'bmp':
+            case 'webp':
+                return '<i class="fas fa-file-image"></i>';
+            case 'pdf':
+                return '<i class="fas fa-file-pdf"></i>';
+            case 'doc':
+            case 'docx':
+                return '<i class="fas fa-file-word"></i>';
+            case 'txt':
+                return '<i class="fas fa-file-alt"></i>';
+            default:
+                return '<i class="fas fa-file"></i>';
+        }
+    }
+
+    // Función para obtener clase CSS según tipo de archivo
+    function getFileClass(fileName) {
+        var extension = fileName.split('.').pop().toLowerCase();
+
+        switch(extension) {
+            case 'pdf':
+                return 'pdf-file';
+            case 'doc':
+            case 'docx':
+                return 'doc-file';
+            case 'txt':
+                return 'txt-file';
+            default:
+                if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension)) {
+                    return ''; // Imagen - no necesita clase especial
+                } else {
+                    return 'other-file';
+                }
+        }
+    }
+
+    // Función para obtener tipo de archivo para mostrar
+    function getFileTypeDisplay(fileName) {
+        var extension = fileName.split('.').pop().toLowerCase();
+
+        switch(extension) {
+            case 'jpg':
+            case 'jpeg':
+                return 'JPG';
+            case 'png':
+                return 'PNG';
+            case 'gif':
+                return 'GIF';
+            case 'pdf':
+                return 'PDF';
+            case 'doc':
+                return 'DOC';
+            case 'docx':
+                return 'DOCX';
+            case 'txt':
+                return 'TXT';
+            default:
+                return extension.toUpperCase();
+        }
+    }
+
+    // Función para determinar si es imagen
+    function isImageFile(fileName) {
+        var extension = fileName.split('.').pop().toLowerCase();
+        return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension);
+    }
+
+    // Función para truncar nombre de archivo
+    function truncateFileName(fileName, maxLength = 20) {
+        if (fileName.length <= maxLength) return fileName;
+        var extension = fileName.split('.').pop();
+        var name = fileName.substring(0, maxLength - extension.length - 4);
+        return name + '...' + extension;
+    }
+
+    // Función para cargar archivos
+    function cargarArchivos() {
+        var id = $("#npedido").val();
+        var fotoMini = $("#fotoMini");
+        var noFilesMessage = $("#noFilesMessage");
+
+        // Limpiar contenedor
+        fotoMini.empty();
+
+        $.ajax({
+            url: "/pedidos/cargarImagenes/" + id,
+            type: "GET",
+            success: function (data) {
+                if (data && data.length > 0) {
+                    noFilesMessage.hide();
+
+                    data.forEach(function (fileUrl, index) {
+                        var fileName = fileUrl.split('/').pop();
+                        var fileIcon = getFileIcon(fileName);
+                        var fileClass = getFileClass(fileName);
+                        var fileType = getFileTypeDisplay(fileName);
+                        var isImage = isImageFile(fileName);
+
+                        if (isImage) {
+                            // Para imágenes: usar el mismo formato original
+                            var slide = `
+                                <div>
+                                    <img src="${fileUrl}" alt="${fileName}"
+                                         data-url="${fileUrl}"
+                                         data-index="${index}"
+                                         onerror="this.onerror=null; this.src='https://via.placeholder.com/200x200?text=Error+Imagen'">
+                                </div>`;
+                        } else {
+                            // Para archivos no-imagen: crear tarjeta estilizada
+                            var slide = `
+                                <div>
+                                    <div class="non-image-file ${fileClass}"
+                                         data-url="${fileUrl}"
+                                         data-filename="${fileName}"
+                                         data-index="${index}">
+                                        <div class="file-icon">
+                                            ${fileIcon}
+                                        </div>
+                                        <div class="file-name">
+                                            ${truncateFileName(fileName)}
+                                        </div>
+                                        <div class="file-type-badge">
+                                            ${fileType}
+                                        </div>
+                                    </div>
+                                </div>`;
+                        }
+
+                        fotoMini.append(slide);
+                    });
+
+                    // Inicializar Slick Carousel EXACTAMENTE como antes
+                    $('#fotoMini').slick({
+                        dots: false,
+                        infinite: true,
+                        slidesToShow: Math.min(5, data.length),
+                        slidesToScroll: 1,
+                        prevArrow: '<button type="button" class="slick-prev">&#10094;</button>',
+                        nextArrow: '<button type="button" class="slick-next">&#10095;</button>',
+                        responsive: [
+                            {
+                                breakpoint: 768,
+                                settings: {
+                                    slidesToShow: Math.min(3, data.length),
+                                    slidesToScroll: 1
+                                }
+                            },
+                            {
+                                breakpoint: 480,
+                                settings: {
+                                    slidesToShow: Math.min(2, data.length),
+                                    slidesToScroll: 1
+                                }
+                            }
+                        ]
+                    });
+
+                    // Agregar eventos para imágenes (zoom)
+                    $(document).on("click", "#fotoMini img", function () {
+                        var $clone = $(this).clone().addClass("zoomed");
+                        $("body").append($clone);
+                        $("body").css("background-color", "rgba(0, 0, 0, 0.8)");
+                    });
+
+                    // Agregar eventos para archivos no-imagen
+                    $(document).on("click", ".non-image-file", function () {
+                        var fileUrl = $(this).data('url');
+                        var fileName = $(this).data('filename');
+                        openFilePreview(fileUrl, fileName);
+                    });
+
+                } else {
+                    noFilesMessage.show();
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("Error al cargar archivos:", error);
+                noFilesMessage.show();
+                noFilesMessage.html(`
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5 class="text-warning">Error al cargar archivos</h5>
+                    <p class="text-muted">No se pudieron cargar los archivos adjuntos</p>
+                `);
+            }
+        });
+    }
+
+    // Función para abrir vista previa de archivo no-imagen
+    function openFilePreview(fileUrl, fileName) {
+        var modal = $("#filePreviewModal");
+        var iconContainer = $("#modalFileIcon");
+        var nameContainer = $("#modalFileName");
+        var typeContainer = $("#modalFileType");
+        var downloadBtn = $("#modalDownloadBtn");
+
+        var fileIcon = getFileIcon(fileName);
+        var fileType = getFileTypeDisplay(fileName);
+
+        iconContainer.html(fileIcon);
+        nameContainer.text(fileName);
+        typeContainer.text(fileType.toUpperCase());
+        downloadBtn.attr('href', fileUrl);
+        downloadBtn.attr('download', fileName);
+
+        modal.addClass("active");
+        $("body").css("overflow", "hidden");
+    }
+
+    // Función para cerrar vista previa de archivo
+    function closeFilePreview() {
+        $("#filePreviewModal").removeClass("active");
+        $("body").css("overflow", "auto");
+    }
+
+    // Cerrar modal con ESC
+    $(document).on('keydown', function(e) {
+        if (e.key === "Escape") {
+            if ($("#filePreviewModal").hasClass("active")) {
+                closeFilePreview();
+            }
+        }
+    });
+
+    // Restablecer tamaño de imagen al hacer clic en la imagen ampliada (MANTENER FUNCIONALIDAD ORIGINAL)
+    $(document).ready(function () {
+        $(document).on("click", ".zoomed", function () {
+            $(this).remove();
+            $("body").css("background-color", "white");
+        });
+    });
+</script>
