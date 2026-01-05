@@ -95,6 +95,19 @@ public class Pedido implements Serializable {
 
     }
 
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean activo = true;  // Valor por defecto: true (todos los existentes quedan activos)
+//----metodos /
+
+    // Método útil para dar de baja
+    public void darDeBaja() {
+        this.activo = false;
+    }
+
+    // Método para reactivar (por si acaso)
+    public void reactivar() {
+        this.activo = true;
+    }
 
     // Métodos para agregar y eliminar comentarios
     public void addComentario(Comentario comentario) {
@@ -106,6 +119,7 @@ public class Pedido implements Serializable {
         comentarios.remove(comentario);
         comentario.setPedido(null);
     }
+
 
 
 }

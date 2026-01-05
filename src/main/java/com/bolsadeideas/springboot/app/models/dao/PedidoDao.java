@@ -44,7 +44,7 @@ public interface PedidoDao extends PagingAndSortingRepository<Pedido, Long> {
 	Page<Pedido> findPedidosByIdClienteAndTerminado(Long idCliente, Pageable pageable);
 
 	@Query(
-			value = "SELECT p FROM Pedido p JOIN FETCH p.cliente",  // Carga cliente junto con pedido
+			value = "SELECT p FROM Pedido p JOIN FETCH p.cliente where p.activo=true",  // Carga cliente junto con pedido
 			countQuery = "SELECT COUNT(p) FROM Pedido p"
 	)
 	Page<Pedido> findAllWithCliente(Pageable pageable);

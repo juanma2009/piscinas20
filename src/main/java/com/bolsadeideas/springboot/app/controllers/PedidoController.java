@@ -27,6 +27,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -160,10 +161,22 @@ public class PedidoController {
 
 
     @RequestMapping(value = "/listarPedidos", method = RequestMethod.GET)
-    public String listar(@RequestParam(name = "page", defaultValue = "0") int page, Model model) {
+    public String listar(@RequestParam(name = "page", defaultValue = "0") int page, @RequestParam(required = false) String activo,
+                         Authentication authentication, Model model) {
         Pageable pageRequest = PageRequest.of(page, 5);
         Page<Pedido> pedido = pedidoService.findAllPedidos(pageRequest);
+        Boolean activoBool = null;
 
+        // Solo los admins pueden ver pedidos dados de baja
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if ("false".equals(activo) && !isAdmin) {
+            // Si un usuario no admin intenta ver los de baja → ignoramos el filtro
+            activoBool = true;  // Fuerza solo activos
+        } else if (activo != null && !activo.isEmpty()) {
+            activoBool = Boolean.valueOf(activo);
+        }
         log.info("Listado de {} pedidos obtenidos", pedido.getTotalElements());
         PageRender<Pedido> pageRender = new PageRender<>("listarPedidos", pedido);
 
@@ -359,7 +372,8 @@ public class PedidoController {
             @RequestParam(name = "ref", required = false) String ref,
             RedirectAttributes flash, SessionStatus status,
             @RequestParam(name = "fileNamesJSON", required = false) String fileNamesJSON,
-            @RequestParam(name = "files", required = false) MultipartFile[] files
+            @RequestParam(name = "files", required = false) MultipartFile[] files,
+            @RequestParam(name = "npedido", required = false) Long npedido
 
     ) {
         try {
@@ -398,7 +412,7 @@ public class PedidoController {
                 ));
             }
 
-            Long npedido = pedido.getNpedido();
+           npedido = pedido.getNpedido();
             log.info("📊 Parseando parámetros...");
             
             Double pesoDouble = parsePeso(peso);
@@ -443,7 +457,7 @@ public class PedidoController {
                 }
             }
 
-            log.info("🆕 Creando nuevo pedido para cliente: {}", pedido.getCliente().getNombre());
+            log.info("🆕 Creando nuevo pedido para cliente: {},archivos {}", pedido.getCliente().getNombre(),files);
             guardarNuevoPedido(pedido, flash);
 
             status.setComplete();
@@ -658,32 +672,38 @@ private boolean validarTipoMime(String contentType, String fileName) {
 }
 
 
-
     /**
-     * Eliminar los pedido que interesen
      *
      * @param id
      * @param flash
      * @return
      */
     @GetMapping("/eliminar/{id}")
-    public String eliminar(@PathVariable(value = "id") Long id, RedirectAttributes flash) {
+    public String darDeBajaPedido(@PathVariable("id") Long id, RedirectAttributes flash) {
+    log.info("Baja pedido {}", id);
+        Optional<Pedido> optionalPedido = Optional.ofNullable(pedidoService.findOne(id));
 
-        Pedido pedido = clienteService.findPedidoById(id);
-        if (pedido != null) {
-            // Eliminar todos los archivos adjuntos asociados al pedido
-            //  for (ArchivoAdjunto archivoAdjunto : pedido.getArchivos()) {
-            // Aquí podrías llamar a algún servicio o método para eliminar el archivo adjunto de la base de datos
-            //archivoAdjuntoService.eliminarArchivoAdjunto(archivoAdjunto);            }
-
-            // Eliminar el pedido
-            clienteService.deletePedido(id);
-
-            flash.addFlashAttribute("success", "Pedido eliminado con éxito!");
-            return "redirect:/ver/" + pedido.getCliente().getId();
+        if (optionalPedido.isEmpty()) {
+            flash.addFlashAttribute("error", "El pedido no existe.");
+            return REDIRECTLISTAR;
         }
-        flash.addFlashAttribute(ERROR, "El pedido no existe en la base de datos, no se pudo eliminar!");
-        return REDIRECTLISTAR;
+
+        Pedido pedido = optionalPedido.get();
+
+        try {
+            // Solo marcamos como inactivo (no borramos nada)
+            pedido.darDeBaja();
+            pedidoService.save(pedido);  // Guardamos el cambio
+
+            flash.addFlashAttribute("success", "Pedido dado de baja correctamente.");
+
+            Long idCliente = pedido.getCliente() != null ? pedido.getCliente().getId() : null;
+            return idCliente != null ? "redirect:/pedidos/listarPedidos"  : REDIRECTLISTAR;
+
+        } catch (Exception e) {
+            flash.addFlashAttribute("error", "Error al dar de baja el pedido.");
+            return REDIRECTLISTAR;
+        }
     }
 
 
@@ -698,16 +718,40 @@ private boolean validarTipoMime(String contentType, String fileName) {
      */
     //todo añadir los nuevos campos metal,pieza,tipo
     @PostMapping("/buscar")
-    public String buscar(@RequestParam(name = "page", defaultValue = "0") int page, @RequestParam(name = "cliente", defaultValue = "") int id, @RequestParam(name = "estado", defaultValue = "") String estado, @RequestParam(name = "tipoPedido", defaultValue = "") String tipoPedido, @RequestParam(name = "grupo", defaultValue = "") String grupo, @RequestParam(name = "pieza", defaultValue = "") String pieza, @RequestParam(name = "tipo", defaultValue = "") String tipo, @RequestParam(name = "ref", defaultValue = "") String ref, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta, Pageable pageable, Model model) {
+    public String buscar(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "cliente", defaultValue = "") int id,
+            @RequestParam(name = "estado", defaultValue = "") String estado,
+            @RequestParam(name = "tipoPedido", defaultValue = "") String tipoPedido,
+            @RequestParam(name = "grupo", defaultValue = "") String grupo,
+            @RequestParam(name = "pieza", defaultValue = "") String pieza,
+            @RequestParam(name = "tipo", defaultValue = "") String tipo,
+            @RequestParam(name = "ref", defaultValue = "") String ref,
+            @RequestParam(name = "activo", defaultValue = "true") String activoStr,  // Recibimos como String
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
+            Pageable pageable,
+            Model model) {
 
 
         // Si no se proporciona fecha, usa null
         Date fechaDesdeDate = (fechaDesde != null) ? Date.from(fechaDesde.atStartOfDay(ZoneId.systemDefault()).toInstant()) : null;
         Date fechaHastaDate = (fechaHasta != null) ? Date.from(fechaHasta.atStartOfDay(ZoneId.systemDefault()).toInstant()) : null;
 
+        Boolean activoFiltro = null;  // null = no filtrar → mostrar todos
+
+        if (activoStr != null && !activoStr.isEmpty()) {
+            if ("true".equalsIgnoreCase(activoStr)) {
+                activoFiltro = true;
+            } else if ("false".equalsIgnoreCase(activoStr)) {
+                activoFiltro = false;
+            }
+            // Si es cualquier otro valor o vacío → queda null
+        }
+
         // Paginación de las búsquedas totales
         Pageable pageRequest = PageRequest.of(page, 6);
-        Page<Pedido> pedido = pedidoService.buscarPedidos(id, tipoPedido, estado, grupo, pieza, tipo, ref, fechaDesdeDate, fechaHastaDate, pageRequest);
+        Page<Pedido> pedido = pedidoService.buscarPedidos(id, tipoPedido, estado, grupo, pieza, tipo, ref, fechaDesdeDate, fechaHastaDate, activoFiltro,pageRequest);
         PageRender<Pedido> pageRender = new PageRender<>("listarPedidos", pedido);
 
         // Agregar la lista de imágenes de los pedidos
@@ -791,7 +835,19 @@ private boolean validarTipoMime(String contentType, String fileName) {
 
 
     @PostMapping("/buscarFoto")
-    public String buscarFoto(@RequestParam(name = "page", defaultValue = "0") int page, @RequestParam(required = false) Integer id, @RequestParam(required = false) String servicios, @RequestParam(required = false) String estado, @RequestParam(required = false) String grupo, @RequestParam(required = false) String pieza, @RequestParam(required = false) String tipo, @RequestParam(required = false) String ref, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta, Pageable pageable, Model model) throws JsonProcessingException {
+    public String buscarFoto(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(required = false) Integer id,
+            @RequestParam(required = false) String servicios,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String grupo,
+            @RequestParam(required = false) String pieza,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) String ref,
+            @RequestParam(name = "activo", defaultValue = "") String activoStr,  // Recibimos como String
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
+            Pageable pageable, Model model) throws JsonProcessingException {
 
         log.info("Buscar foto cliente id{}", id);
         // Conversión de fechas
@@ -800,7 +856,7 @@ private boolean validarTipoMime(String contentType, String fileName) {
 
         // Búsqueda paginada
         Pageable pageRequest = PageRequest.of(page, Integer.MAX_VALUE);
-        Page<Pedido> pedido = pedidoService.buscarPedidos(id, servicios, estado, grupo, pieza, tipo, ref, fechaDesdeDate, fechaHastaDate, pageRequest);
+        Page<Pedido> pedido = pedidoService.buscarPedidos(id, servicios, estado, grupo, pieza, tipo, ref, fechaDesdeDate, fechaHastaDate, Boolean.valueOf(activoStr), pageRequest);
         PageRender<Pedido> pageRender = new PageRender<>("listarPedidos", pedido);
 
         // Mapear imágenes de pedidos

@@ -302,6 +302,19 @@
                                 <input type="date" id="fechaHasta" name="fechaHasta" class="form-control"
                                        th:value="${fechaHasta}">
                             </div>
+                            <div class="col-md-3" th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                                <label for="activo" class="form-label">Ver pedidos:</label>
+                                <select class="form-control" id="activo" name="activo">
+                                    <option value="true" selected>Activos</option>
+                                    <option value="false">Dados de baja</option>
+                                </select>
+                            </div>
+
+                            <!-- Para usuarios normales: solo ven activos, sin opción de cambiar -->
+                            <div class="col-md-3" th:unless="${#authorization.expression('hasRole(''ADMIN'')')}">
+                                <label class="form-label">Ver pedidos:</label>
+                                <div class="form-control-plaintext">Activos</div>
+                            </div>
                             <!-- Botones Buscar y Limpiar en la misma fila con espaciado y icono funcional -->
                             <div class="col-md-12 d-flex justify-content-end mt-2">
                                 <button type="submit" class="btn btn-primary" style="margin-right: 1cm;">
@@ -311,8 +324,6 @@
                                     <i class="fas fa-undo"></i> Limpiar
                                 </button>
                             </div>
-
-
 
                         </form>
 
@@ -393,7 +404,9 @@
                                 console.warn("No se encontraron pedidos en listarPedidos");
                                 return [];
                             }
+
                         }
+
                     },
                     "columns": [
                         { "data": "ref", "title": "N° Referencia" },
@@ -443,23 +456,59 @@
                         {
                             "data": "npedido",
                             "title": "Acciones",
-                            "render": function(data) {
+                            "orderable": false,
+                            "searchable": false,
+                            "render": function(data, type, row) {
+                                let ref = row.ref || 'sin ref';
+                                let cliente = row.cliente || '';
+                                let npedido = row.npedido || data;
+                                let activo = row.activo;
+
+                                // DEPURACIÓN: Abre F12 → Console y mira qué valor tiene activo
+                                console.log(`Pedido ${npedido} - valor activo recibido: ${activo} (tipo: ${typeof activo})`);
+
+                                // CONDICIÓN INVERTIDA (prueba esta)
+// Condición que trata undefined o null como "activo = true"
+                                let isActivo = (activo !== false && activo !== "false");
+                                // Botón Editar
+                                let botonEditar = isActivo ?
+                                    `<a href="/pedidos/formEditar/${npedido}" class="btn btn-warning btn-sm" title="Editar pedido">
+                <i class="fas fa-pencil-alt"></i>
+            </a>` :
+                                    `<button class="btn btn-secondary btn-sm" disabled title="No se puede editar un pedido dado de baja">
+                <i class="fas fa-pencil-alt"></i>
+            </button>`;
+
+                                // Botón estado
+                                let botonEstado = isActivo ?
+                                    `<a href="/pedidos/eliminar/${npedido}"
+               class="btn btn-danger btn-sm"
+               title="Dar de baja el pedido"
+               onclick="return confirm('¿Estás seguro de dar de baja el pedido?\\n\\nReferencia: ${ref}\\nCliente: ${cliente}\\nNúmero: ${npedido}\\n\\nEsta acción es reversible.')">
+                <i class="fas fa-ban"></i> Dar de baja
+            </a>` :
+                                    `<a href="/pedidos/reactivar/${npedido}"
+               class="btn btn-success btn-sm"
+               title="Reactivar el pedido"
+               onclick="return confirm('¿Estás seguro de reactivar el pedido?\\n\\nReferencia: ${ref}\\nCliente: ${cliente}\\nNúmero: ${npedido}')">
+                <i class="fas fa-check-circle"></i> Reactivar
+            </a>`;
+
                                 return `
-            <a href="/pedidos/ver/${data}" class="btn btn-info btn-sm" title="Ver pedido">
+            <a href="/pedidos/ver/${npedido}" class="btn btn-info btn-sm" title="Ver pedido">
                 <i class="fas fa-eye"></i>
             </a>
-            <a href="/pedidos/formEditar/${data}" class="btn btn-warning btn-sm" title="Editar pedido">
-                <i class="fas fa-pencil-alt"></i>
-            </a>
+            ${botonEditar}
+            ${botonEstado}
         `;
                             }
                         }
-
 
                     ],
                     "language": {
                         "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
                     },
+                    /*añadir en la version pro un modal para el boton dar de baja*/
                     //la cabezer se mueve tambien con el scroll
                     paging: true,
                     searching: true,
