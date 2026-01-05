@@ -6,6 +6,7 @@ import com.bolsadeideas.springboot.app.models.entity.Cliente;
 import com.bolsadeideas.springboot.app.models.entity.Pedido;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,8 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static antlr.build.ANTLR.root;
 
 @Service
 public class PedidoServiceImpl implements PedidoService {
@@ -84,6 +87,7 @@ public class PedidoServiceImpl implements PedidoService {
 
 	public Page<Pedido> buscarPedidos(Integer id, String tipoPedido, String estado, String grupo,
 									  String pieza, String tipo, String ref, Date fechaDesde, Date fechaHasta,
+									  Boolean activoFiltro,
 									  Pageable pageable) {
 
 		CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -120,7 +124,11 @@ public class PedidoServiceImpl implements PedidoService {
 		if (fechaHasta != null) {
 			predicates.add(cb.lessThanOrEqualTo(pedido.get("fechaEntrega"), fechaHasta));
 		}
-
+		// Solo añade el filtro si activoFiltro no es null
+		if (activoFiltro != null) {
+			predicates.add(cb.equal(pedido.get("activo"), activoFiltro));
+		}
+// Si activoFiltro == null → NO añade nada → devuelve todos (activos + inactivos)
 		cq.where(predicates.toArray(new Predicate[0]));
 
 		// Añadir ordenación según pageable.getSort()
@@ -173,7 +181,9 @@ public class PedidoServiceImpl implements PedidoService {
 		if (fechaHasta != null) {
 			countPredicates.add(cb.lessThanOrEqualTo(countRoot.get("fechaEntrega"), fechaHasta));
 		}
-
+		if (activoFiltro != null) {
+			countPredicates.add(cb.and(cb.equal(pedido.get("activo"), activoFiltro)));
+		}
 		countQuery.select(cb.count(countRoot));
 		countQuery.where(countPredicates.toArray(new Predicate[0]));
 		Long totalRegistros = entityManager.createQuery(countQuery).getSingleResult();

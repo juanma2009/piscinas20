@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.annotation.Generated;
 import java.time.LocalDate;
@@ -105,6 +106,28 @@ public Map<String, Object> listar(@RequestParam(name = "page", defaultValue = "0
     return response;  // Devolver en formato JSON esperado por DataTables
 }
 
+    @GetMapping("/reactivar/{id}")
+    public String reactivar(@PathVariable Long id, RedirectAttributes flash) {
+        Optional<Pedido> optional = Optional.ofNullable(pedidoService.findOne(id));
+
+        if (optional.isEmpty()) {
+            flash.addFlashAttribute("error", "El pedido no existe.");
+            return "redirect:/pedidos";
+        }
+        Pedido pedido = optional.get();
+
+        if (pedido.isActivo()) {
+            flash.addFlashAttribute("info", "El pedido ya está activo.");
+        } else {
+            pedido.setActivo(true);  // ← Lo reactivamos
+            pedidoService.save(pedido);
+            flash.addFlashAttribute("success", "¡Pedido reactivado con éxito!");
+        }
+
+        // Redirigimos al detalle del cliente o lista general
+        Long idCliente = pedido.getCliente() != null ? pedido.getCliente().getId() : null;
+        return  "/pedidos/pedidolistar";
+    }
 
 
     @RequestMapping(value = {"/listarPedidosClientes"}, method = RequestMethod.GET)
@@ -155,6 +178,7 @@ public Map<String, Object> listar(@RequestParam(name = "page", defaultValue = "0
             @RequestParam(name = "pieza", defaultValue = "") String pieza,
             @RequestParam(name = "tipo", defaultValue = "") String tipo,
             @RequestParam(name = "ref", defaultValue = "") String ref,
+            @RequestParam(name = "activo", defaultValue = "") String activoStr,  // Recibimos como String
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
             Pageable pageable) {
@@ -163,8 +187,12 @@ public Map<String, Object> listar(@RequestParam(name = "page", defaultValue = "0
         Date fechaHastaDate = (fechaHasta != null) ? Date.from(fechaHasta.atStartOfDay(ZoneId.systemDefault()).toInstant()) : null;
 
         Pageable pageRequest = PageRequest.of(page, 6);
-        Page<Pedido> pedidos = pedidoService.buscarPedidos(id, tipoPedido, estado, grupo, pieza,tipo,ref, fechaDesdeDate, fechaHastaDate, pageRequest);
-
+        Page<Pedido> pedidos = pedidoService.buscarPedidos(id, tipoPedido, estado, grupo, pieza,tipo,ref, fechaDesdeDate, fechaHastaDate, Boolean.valueOf(activoStr), pageRequest);
+        // Convertimos el parámetro "activo" a Boolean (null = no filtrar)
+        Boolean activo = null;
+        if (!activoStr.isEmpty()) {
+            activo = "true".equalsIgnoreCase(activoStr) || "1".equals(activoStr);
+        }
         List<Map<String, Object>> pedidosData = pedidos.getContent().stream().map(p -> {
             Map<String, Object> pedidoData = new HashMap<>();
             pedidoData.put("npedido", p.getNpedido());
@@ -177,7 +205,8 @@ public Map<String, Object> listar(@RequestParam(name = "page", defaultValue = "0
             pedidoData.put("tipo", p.getTipo());
             pedidoData.put("ref", p.getRef());
             pedidoData.put("cobrado", p.getCobrado());
-            return pedidoData;
+            pedidoData.put("activo", p.isActivo()); // ← Booleano correcto (true/false)
+             return pedidoData;
         }).collect(Collectors.toList());
 
         Map<String, Object> response = new HashMap<>();

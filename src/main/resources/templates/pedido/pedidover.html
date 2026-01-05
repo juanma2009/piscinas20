@@ -456,9 +456,9 @@
                         <a th:href="@{/pedidos/listarPedidos}" class=" btn btn-outline-primary">
                             <i class="fas fa-list"></i> Pedidos
                         </a>
-<a th:href="@{/pedidos/form/{npedido}(npedido=${pedido.npedido})}" class="btn btn-primary">
-        <i class="fas fa-edit"></i> Editar
-    </a>
+                        <a th:href="@{'/pedidos/formEditar/' + ${pedido.npedido}}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
                         <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary">
                             <i class="fas fa-images"></i> Galería
                         </a>
