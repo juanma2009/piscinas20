@@ -671,6 +671,28 @@ private boolean validarTipoMime(String contentType, String fileName) {
     return esValidoPorMime || esValidoPorExtension;
 }
 
+    @GetMapping("/reactivar/{id}")
+    public String reactivar(@PathVariable Long id, RedirectAttributes flash) {
+        Optional<Pedido> optional = Optional.ofNullable(pedidoService.findOne(id));
+
+        if (optional.isEmpty()) {
+            flash.addFlashAttribute("error", "El pedido no existe.");
+            return REDIRECTLISTAR;
+        }
+        Pedido pedido = optional.get();
+
+        if (pedido.isActivo()) {
+            flash.addFlashAttribute("info", "El pedido ya está activo.");
+        } else {
+            pedido.setActivo(true);  // ← Lo reactivamos
+            pedidoService.save(pedido);
+            flash.addFlashAttribute("success", "¡Pedido reactivado con éxito!");
+        }
+
+        // Redirigimos al detalle del cliente o lista general
+        Long idCliente = pedido.getCliente() != null ? pedido.getCliente().getId() : null;
+        return idCliente != null ? "redirect:/pedidos/listarPedidos"  : REDIRECTLISTAR;
+    }
 
     /**
      *
