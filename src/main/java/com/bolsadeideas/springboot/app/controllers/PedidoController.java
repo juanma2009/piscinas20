@@ -9,10 +9,6 @@ import com.bolsadeideas.springboot.app.models.service.redis.RedisTestService;
 import com.bolsadeideas.springboot.app.util.paginator.PageRender;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
-import com.google.api.services.drive.Drive;
 import lombok.extern.log4j.Log4j2;
 import net.sf.jasperreports.engine.*;
 import org.apache.commons.io.IOUtils;
@@ -37,16 +33,13 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.Principal;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
@@ -87,6 +80,12 @@ public class PedidoController {
 
     @Autowired
     private StringRedisTemplate redisTemplate;
+
+    @Autowired
+    private GoogleDriveApiService googleDriveApiService;
+
+    @Autowired
+    private ArchivoSubidaService archivoSubidaService;
 
     @ModelAttribute("fotosTemporales")
     public List<String> inicializarFotosTemporales() {
@@ -1142,8 +1141,6 @@ private boolean validarTipoMime(String contentType, String fileName) {
         }
     }
 
-    @Autowired
-    private GoogleDriveApiService googleDriveApiService;
 
     /*
     Se utiliza para guardar los archivos en cloudinary y bd de google
@@ -1153,227 +1150,38 @@ private boolean validarTipoMime(String contentType, String fileName) {
             @PathVariable Long npedido,
             @RequestParam(name = "files", required = false) MultipartFile[] files,
             @RequestParam(name = "googleDriveFileIds", required = false) String[] googleDriveFileIds,
-            @RequestParam(name = "googleDriveToken", required = false) String googleDriveToken, // lo puedes dejar por compatibilidad
-            RedirectAttributes flash,
-            HttpServletRequest request,
-            Principal principal
-        ) {
-        try {
-            log.info("🔵 ========== INICIO subirArchivos ==========");
-            log.info("📍 Endpoint: /pedidos/subir-archivos/{}", npedido);
-            log.info("📊 Archivos locales: {}, FileIds Google Drive: {}",
-                files != null ? files.length : 0,
-                googleDriveFileIds != null ? googleDriveFileIds.length : 0);
+            @RequestParam(name = "googleDriveToken", required = false) String googleDriveToken,
+            String principal) {
 
-            Pedido pedido = pedidoService.findOne(npedido);
-            if (pedido == null) {
-                log.warn("❌ Pedido {} no encontrado", npedido);
-                return ResponseEntity.status(404).body(Map.of(
-                    "error", "Pedido no encontrado",
-                    "npedido", npedido
-                ));
-            }
+        String userId = principal != null ? principal : null;
 
-            if ((files == null || files.length == 0) && (googleDriveFileIds == null || googleDriveFileIds.length == 0)) {
-                log.info("✅ No hay archivos para procesar");
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "info", "No hay archivos para procesar",
-                    "archivosSubidos", 0
-                ));
-            }
+        int procesados = archivoSubidaService.procesarArchivos(npedido, files, googleDriveFileIds, googleDriveToken, userId);
 
-            int archivosProcesados = 0;
-            StringBuilder errores = new StringBuilder();
-
-            log.info("⚡ Procesando archivos...");
-            log.info("🔐 googleDriveToken recibido? {}", (googleDriveToken != null && !googleDriveToken.isBlank()));
-            log.info("🔐 googleDriveToken length: {}", (googleDriveToken != null ? googleDriveToken.length() : null));
-            if (files != null && files.length > 0) {
-                for (MultipartFile foto : files) {
-                    String nombreOriginal = foto.getOriginalFilename();
-                    String contentType = foto.getContentType();
-
-                    log.info("🔍 Validando archivo local: {} ({} bytes, MIME: {})", nombreOriginal, foto.getSize(), contentType);
-
-                    if (foto.isEmpty()) {
-                        log.warn("❌ Archivo vacío: {}", nombreOriginal);
-                        errores.append("• Archivo vacío: ").append(nombreOriginal).append("\n");
-                        continue;
-                    }
-
-                    if (!validarTipoMime(contentType, nombreOriginal)) {
-                        log.warn("❌ Tipo MIME inválido: {}", contentType);
-                        errores.append("• Tipo de archivo no soportado: ").append(nombreOriginal).append("\n");
-                        continue;
-                    }
-
-                    try {
-                        byte[] imageBytes = foto.getBytes();
-                        if (imageBytes.length == 0) {
-                            errores.append("• Archivo sin contenido: ").append(nombreOriginal).append("\n");
-                            continue;
-                        }
-
-                        String fileName = "pedido_" + npedido + "_" + System.currentTimeMillis();
-                        String redisKey = "file_pending_" + npedido + "_" + fileName;
-                        String imageBase64 = Base64.getEncoder().encodeToString(imageBytes);
-                        redisTemplate.opsForValue().set(redisKey, imageBase64);
-                        redisTemplate.expire(redisKey, Duration.ofHours(24));
-
-                        String mensaje = npedido + ";" + nombreOriginal + ";" + fileName;
-                        redisQueueProducer.sendMessage(mensaje);
-
-                        archivosProcesados++;
-                        log.info("✅ Archivo local encolado: {}", nombreOriginal);
-
-                    } catch (Exception e) {
-                        log.error("❌ Error procesando archivo: {}", nombreOriginal, e);
-                        errores.append("• Error al procesar: ").append(nombreOriginal).append("\n");
-                    }
-                }
-            }
-
-            if (googleDriveFileIds != null && googleDriveFileIds.length > 0) {
-                boolean hasFrontToken = (googleDriveToken != null && !googleDriveToken.isBlank());
-                log.info("🔗 Procesando {} archivo(s) de Google Drive (token frontend? {})", googleDriveFileIds.length, hasFrontToken);
-
-                if (!hasFrontToken && (principal == null || principal.getName() == null)) {
-                    errores.append("• Usuario no autenticado en la app (principal null)\n");
-                } else {
-                    String userId = hasFrontToken ? null : principal.getName();
-
-                    for (String fileId : googleDriveFileIds) {
-                        if (fileId == null || fileId.trim().isEmpty()) continue;
-
-                        try {
-                            log.info("📥 Descargando y subiendo directamente a Cloudinary desde Drive: {}", fileId);
-
-                            String cloudinaryUrl;
-
-                            if (hasFrontToken) {
-                                // Flujo antiguo: token del frontend
-                                cloudinaryUrl = downloadAndUploadToCloudinaryFromDrive(fileId, googleDriveToken, npedido);
-                            } else {
-                                // Flujo nuevo: backend gestiona el token
-                                cloudinaryUrl = googleDriveApiService.downloadAndUploadToCloudinary(userId, fileId, npedido);
-                            }
-
-                            if (cloudinaryUrl == null || cloudinaryUrl.isEmpty()) {
-                                log.warn("⚠️ Subida vacía/devuelta null para fileId: {}", fileId);
-                                errores.append("• Archivo vacío desde Drive: ").append(fileId).append("\n");
-                                continue;
-                            }
-
-                            ArchivoAdjunto adjunto = new ArchivoAdjunto(npedido, "Google Drive - " + fileId, cloudinaryUrl);
-                            archivoAdjuntoService.guardar(adjunto);
-
-                            archivosProcesados++;
-                            log.info("✅ Drive → Cloudinary OK (streaming directo): {} → {}", fileId, cloudinaryUrl);
-
-                        } catch (RuntimeException e) {
-                            log.error("❌ Error Drive fileId={} msg={}", fileId, e.getMessage());
-                            errores.append("• Error Drive (").append(fileId).append("): ").append(e.getMessage()).append("\n");
-                        } catch (Exception e) {
-                            log.error("❌ Error procesando Drive fileId={}", fileId, e);
-                            errores.append("• Error procesando Drive (").append(fileId).append("): ").append(e.getMessage()).append("\n");
-                        }
-                    }
-                }
-            }
-
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", archivosProcesados > 0);
-            response.put("archivosSubidos", archivosProcesados);
-            response.put("npedido", npedido);
-
-            if (archivosProcesados > 0) {
-                log.info("✅ {} elemento(s) procesado(s)", archivosProcesados);
-                response.put("info", "✓ " + archivosProcesados + " elemento(s) procesado(s)");
-            }
-
-            if (errores.length() > 0) {
-                log.warn("⚠️ Errores encontrados:\n{}", errores.toString());
-                response.put("warnings", errores.toString());
-            }
-
-            log.info("🎬 FIN subirArchivos");
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            log.error("❌ ERROR en subirArchivos: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of(
-                "error", "Error al subir archivos",
-                "message", e.getMessage()
-            ));
-        }
+        return ResponseEntity.ok(Map.of(
+                "success", procesados > 0,
+                "archivosSubidos", procesados,
+                "npedido", npedido
+        ));
     }
 
 
-    /*
-    private byte[] descargarDesdeGoogleDriveAPI(String fileId, String accessToken) {
-        java.net.HttpURLConnection connection = null;
-        try {
-            log.info("📥 Iniciando descarga de Google Drive - FileID: {}", fileId);
-            
-            if (accessToken == null || accessToken.trim().isEmpty()) {
-                log.error("❌ Token de acceso vacío o nulo");
-                return null;
-            }
-            
-            String apiUrl = "https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media";
-            URL url = new URL(apiUrl);
-            connection = (java.net.HttpURLConnection) url.openConnection();
-            
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Authorization", "Bearer " + accessToken);
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0");
-            connection.setConnectTimeout(15000);
-            connection.setReadTimeout(15000);
-            
-            int responseCode = connection.getResponseCode();
-            log.debug("📊 HTTP Response: {}", responseCode);
-            
-            if (responseCode == 200) {
-                InputStream inputStream = connection.getInputStream();
-                byte[] bytes = IOUtils.toByteArray(inputStream);
-                inputStream.close();
-                
-                log.info("✅ Descargado desde Drive: {} ({} bytes)", fileId, bytes.length);
-                return bytes;
-            } else if (responseCode == 401) {
-                log.error("❌ Token inválido o expirado (401) - Usuario debe re-autenticarse");
-                throw new RuntimeException("GDRIVE_401_TOKEN_EXPIRED");
-            } else if (responseCode == 403) {
-                log.error("❌ Permiso denegado (403) - Usuario no tiene acceso al archivo");
-                throw new RuntimeException("GDRIVE_403_ACCESS_DENIED");
-            } else if (responseCode == 404) {
-                log.error("❌ Archivo no encontrado en Drive (404)");
-                throw new RuntimeException("GDRIVE_404_NOT_FOUND");
-            } else {
-                log.error("❌ Error HTTP {}: {}", responseCode, connection.getResponseMessage());
-                throw new RuntimeException("GDRIVE_HTTP_ERROR_" + responseCode);
-            }
-            
-        } catch (RuntimeException e) {
-            log.error("❌ Error de Google Drive: {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            log.error("❌ Error descargando desde Google Drive: {}", e.getMessage(), e);
-            return null;
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
-    }
-*/
+    /**
+     * Descarga un archivo de Google Drive en streaming y lo sube directamente a Cloudinary.
+     * Evita cargar el archivo completo en memoria (no usa byte[]).
+     * Incluye medición de tiempos para depuración.
+     *
+     * @param fileId      ID del archivo en Google Drive
+     * @param accessToken Token OAuth2 válido (Bearer)
+     * @param npedido     Número de pedido para organizar en Cloudinary
+     * @return URL segura del archivo subido a Cloudinary
+     * @throws IOException Si hay error de red, autenticación o subida
+     */
     private String downloadAndUploadToCloudinaryFromDrive(String fileId, String accessToken, Long npedido) throws IOException {
+        long startTime = System.currentTimeMillis();
         log.info("📥 Iniciando descarga optimizada de Google Drive → Cloudinary - FileID: {}", fileId);
 
         if (accessToken == null || accessToken.trim().isEmpty()) {
-            throw new RuntimeException("Token de acceso vacío");
+            throw new IllegalArgumentException("Token de acceso vacío o nulo");
         }
 
         String apiUrl = "https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media";
@@ -1383,37 +1191,56 @@ private boolean validarTipoMime(String contentType, String fileName) {
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Authorization", "Bearer " + accessToken);
         connection.setRequestProperty("User-Agent", "Mozilla/5.0");
-        connection.setConnectTimeout(15000);
-        connection.setReadTimeout(60000); // Más tiempo para archivos grandes
+        connection.setConnectTimeout(20_000);   // 20 segundos para conexión (aumentado para handshake lento)
+        connection.setReadTimeout(90_000);      // 1.5 minutos lectura (para archivos grandes)
 
         try {
+            long connectStart = System.currentTimeMillis();
             int responseCode = connection.getResponseCode();
-            if (responseCode != 200) {
+            long connectEnd = System.currentTimeMillis();
+
+            log.debug("Tiempo de conexión + respuesta HTTP: {} ms - Código: {}",
+                    (connectEnd - connectStart), responseCode);
+
+            if (responseCode != HttpURLConnection.HTTP_OK) {
                 handleDriveError(responseCode, fileId);
             }
 
-            // Obtenemos el nombre original del archivo desde los headers (mejor que inventarlo)
+            // Obtener nombre original del archivo desde headers (mejor que timestamp)
             String disposition = connection.getHeaderField("Content-Disposition");
             String fileName = "gdrive_" + npedido + "_" + System.currentTimeMillis();
+
             if (disposition != null && disposition.contains("filename=")) {
-                fileName = disposition.split("filename=")[1].replace("\"", "");
-                fileName = "gdrive_" + npedido + "_" + fileName;
+                String originalName = disposition.split("filename=")[1]
+                        .replaceAll("\"", "")
+                        .replaceAll("[^a-zA-Z0-9._-]", "_"); // Sanitizar
+                fileName = "gdrive_" + npedido + "_" + originalName;
             }
 
             log.info("🚀 Subiendo directamente a Cloudinary en streaming: {}", fileName);
 
-            // ¡STREAMING DIRECTO! Sin byte[]
+            // STREAMING DIRECTO: Drive → Cloudinary sin memoria intermedia
+            long uploadStart = System.currentTimeMillis();
             try (InputStream driveStream = connection.getInputStream()) {
                 String cloudinaryUrl = cloudinaryService.uploadImage(driveStream, npedido, fileName);
-                log.info("✅ Drive → Cloudinary OK (streaming): {} bytes → {}", connection.getContentLength(), cloudinaryUrl);
+
+                long uploadEnd = System.currentTimeMillis();
+                log.info("✅ Drive → Cloudinary OK (streaming): {} bytes → {} (tiempo: {} ms)",
+                        connection.getContentLengthLong(), cloudinaryUrl, (uploadEnd - uploadStart));
+
                 return cloudinaryUrl;
             }
 
         } finally {
             connection.disconnect();
+            long totalTime = System.currentTimeMillis() - startTime;
+            log.info("⏱️ Tiempo total descarga + subida para FileID {}: {} segundos", fileId, totalTime / 1000.0);
         }
     }
 
+    /**
+     * Manejo de errores HTTP comunes de Google Drive.
+     */
     private void handleDriveError(int responseCode, String fileId) throws RuntimeException {
         switch (responseCode) {
             case 401 -> throw new RuntimeException("GDRIVE_401_TOKEN_EXPIRED");
