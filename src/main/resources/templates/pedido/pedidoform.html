@@ -441,6 +441,12 @@
                         <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary">
                             <i class="fas fa-list"></i> <span>Pedidos</span>
                         </a>
+                        <!-- Ejemplo: botón "Ver pedido" solo visible en modo edición -->
+                        <a th:if="${pedido.npedido != null}"
+                           th:href="@{/pedidos/ver/{npedido}(npedido=${pedido.npedido})}"
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-eye"></i><span>Ver detalles</span>
+                        </a>
                         <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary">
                             <i class="fas fa-images"></i> <span>Galería</span>
                         </a>
