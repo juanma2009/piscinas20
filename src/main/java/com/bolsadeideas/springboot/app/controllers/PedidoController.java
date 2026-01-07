@@ -46,6 +46,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.Principal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
@@ -338,16 +339,23 @@ public class PedidoController {
         }
     }
 
-    private void guardarNuevoPedido(Pedido pedido, RedirectAttributes flash) {
+    private Pedido guardarNuevoPedido(Pedido pedido, RedirectAttributes flash) {
         try {
-            log.info("💾 Guardando nuevo pedido - npedido: {}, cliente: {}", pedido.getNpedido(), pedido.getCliente().getNombre());
-            pedidoService.save(pedido);
-            log.info("✅ Pedido guardado exitosamente - npedido: {}", pedido.getNpedido());
-            flash.addFlashAttribute("info", "Pedido guardado con éxito");
+            log.info("💾 Guardando nuevo pedido para cliente: {}", pedido.getCliente().getNombre());
+
+            // Guardamos y obtenemos la entidad gestionada con el ID generado
+            Pedido pedidoGuardado = pedidoService.save(pedido);
+
+            log.info("✅ Pedido creado con éxito - npedido generado: {}", pedidoGuardado.getNpedido());
+
+            flash.addFlashAttribute("info", "Pedido creado con éxito");
+
+            return pedidoGuardado;  // ← DEVOLVEMOS LA ENTIDAD CON ID
+
         } catch (Exception e) {
-            log.error("❌ ERROR al guardar el pedido: {}", e.getMessage(), e);
+            log.error("❌ ERROR al guardar nuevo pedido: {}", e.getMessage(), e);
             flash.addFlashAttribute("error", "Error al guardar el pedido: " + e.getMessage());
-            throw new RuntimeException("Error al guardar el pedido: " + e.getMessage(), e);
+            throw new RuntimeException("Error al guardar el pedido", e);
         }
     }
 
@@ -373,132 +381,126 @@ public class PedidoController {
             RedirectAttributes flash, SessionStatus status,
             @RequestParam(name = "fileNamesJSON", required = false) String fileNamesJSON,
             @RequestParam(name = "files", required = false) MultipartFile[] files,
-            @RequestParam(name = "npedido", required = false) Long npedido
-
+            @RequestParam(name = "googleDriveFileIds", required = false) String[] googleDriveFileIds,
+            @RequestParam(name = "googleDriveToken", required = false) String googleDriveToken,
+            @RequestParam(name = "npedido", required = false) Long npedido,
+            Principal principal  // ← Usuario autenticado
     ) {
         try {
             log.info("🔵 INICIO - Guardando pedido (SOLO DATOS DEL FORMULARIO, SIN ARCHIVOS)");
             log.info("   Cliente: {} {}", pedido.getCliente() != null ? pedido.getCliente().getNombre() : "NULL", pedido.getCliente() != null ? pedido.getCliente().getId() : "");
-            log.info("   Parámetros recibidos:");
-            log.info("     - observacion: {}", observacion != null ? observacion.substring(0, Math.min(50, observacion.length())) : "NULL");
-            log.info("     - estado: {}", estado);
-            log.info("     - tipoPedido: {}", tipoPedido);
-            log.info("     - tipo: {}", tipo);
-            log.info("     - grupo: {}", grupo);
-            log.info("     - pieza: {}", pieza);
-            log.info("     - peso: {}", peso);
-            log.info("     - horas: {}", horas);
-            log.info("     - cobrado: {}", cobrado);
-            log.info("     - empleado: {}", empleado);
-            log.info("     - ref: {}", ref);
-            log.info("ℹ️ Archivos recibidos (solo referencia): {}", files != null ? files.length : 0);
-            if (files != null && files.length > 0) {
-                log.info("   Nota: Los {} archivo(s) se subirán en una petición SEPARADA después de crear/actualizar el pedido", files.length);
-            }
-        } catch (Exception e) {
-            log.warn("⚠️ Error al loguear información inicial", e);
-        }
 
-        try {
+            log.info("ℹ️ Archivos locales: {}, Archivos Google Drive: {}",
+                    files != null ? files.length : 0,
+                    googleDriveFileIds != null ? googleDriveFileIds.length : 0);
+
             if (result.hasErrors()) {
-                log.warn("⚠️ Errores de validación en el formulario del pedido");
-                java.util.List<String> errores = result.getFieldErrors().stream()
-                    .map(e -> e.getField() + ": " + e.getDefaultMessage())
-                    .collect(java.util.stream.Collectors.toList());
+                List<String> errores = result.getFieldErrors().stream()
+                        .map(e -> e.getField() + ": " + e.getDefaultMessage())
+                        .collect(Collectors.toList());
                 log.error("   Errores encontrados: {}", errores);
                 return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Existen errores en el formulario",
-                    "details", errores
+                        "error", "Existen errores en el formulario",
+                        "details", errores
                 ));
             }
 
-           npedido = pedido.getNpedido();
-            log.info("📊 Parseando parámetros...");
-            
+            // Parseo de parámetros (tu código existente)
             Double pesoDouble = parsePeso(peso);
             Double cobradoDouble = parseCobrado(cobrado);
             String horasSaneadas = parseHoras(horas);
             sanitizeClienteNombre(pedido);
-            
-            log.info("📊 Parámetros parseados:");
-            log.info("   - peso: {} -> {}", peso, pesoDouble);
-            log.info("   - cobrado: {} -> {}", cobrado, cobradoDouble);
-            log.info("   - horas: {} -> {}", horas, horasSaneadas);
 
             boolean esActualizacion = npedido != null && npedido > 0;
-            log.info("📊 ¿Es actualización? {} (npedido: {})", esActualizacion, npedido);
 
             if (esActualizacion) {
                 Pedido pedidoExistente = pedidoService.findOne(npedido);
                 if (pedidoExistente != null) {
-                    log.info("🔄 Actualizando pedido existente: {}", npedido);
-                    actualizarPedidoExistente(pedidoExistente, observacion, estado, tipoPedido, grupo, pieza,tipo,
-                            pesoDouble, horasSaneadas, cobradoDouble, fechaEntrega,
-                            fechaFinalizado, empleado, ref, flash);
+                    actualizarPedidoExistente(pedidoExistente, observacion, estado, tipoPedido, grupo, pieza, tipo,
+                            pesoDouble, horasSaneadas, cobradoDouble, fechaEntrega, fechaFinalizado, empleado, ref, flash);
 
                     status.setComplete();
-                    log.info("✅ Pedido actualizado correctamente");
-                    
+
                     Map<String, Object> response = new HashMap<>();
                     response.put("success", true);
                     response.put("info", "Pedido actualizado con éxito");
                     response.put("npedido", pedidoExistente.getNpedido());
                     response.put("clienteId", pedidoExistente.getCliente().getId());
-                    response.put("tieneArchivos", files != null && files.length > 0);
-                    
-                    if (files != null && files.length > 0) {
-                        log.info("📁 {} archivo(s) pendientes de subir asincronamente para pedido {}", files.length, npedido);
-                        response.put("archivosASubir", files.length);
-                    }
-                    
+                    response.put("tieneArchivos", files != null && files.length > 0 || googleDriveFileIds != null && googleDriveFileIds.length > 0);
+
                     return ResponseEntity.ok(response);
-                } else {
-                    log.warn("⚠️ Pedido con npedido={} no encontrado. Se creará uno nuevo.", npedido);
                 }
             }
 
-            log.info("🆕 Creando nuevo pedido para cliente: {},archivos {}", pedido.getCliente().getNombre(),files);
-            guardarNuevoPedido(pedido, flash);
+            // === CREACIÓN DE NUEVO PEDIDO ===
+            log.info("🆕 Creando nuevo pedido para cliente: {}", pedido.getCliente().getNombre());
+
+            Pedido pedidoGuardado = guardarNuevoPedido(pedido, flash);
+            Long npedidoGenerado = pedidoGuardado.getNpedido();
+
+            if (npedidoGenerado == null) {
+                log.error("❌ CRÍTICO: npedido es null después de guardar!");
+                throw new RuntimeException("Error interno: no se pudo generar el número de pedido");
+            }
 
             status.setComplete();
-            log.info("✅ Pedido {} creado correctamente (SIN ARCHIVOS)", pedido.getNpedido());
 
+            // === RESPUESTA INMEDIATA AL USUARIO ===
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("info", "Pedido creado con éxito");
-            response.put("npedido", pedido.getNpedido());
-            response.put("clienteId", pedido.getCliente().getId());
+            response.put("info", "Pedido creado con éxito. Los archivos se están procesando en segundo plano...");
+            response.put("npedido", npedidoGenerado);
+            response.put("clienteId", pedidoGuardado.getCliente().getId());
             response.put("isNew", true);
-            response.put("tieneArchivos", files != null && files.length > 0);
-            
-            if (files != null && files.length > 0) {
-                log.info("📁 {} archivo(s) pendientes de subir asincronamente para pedido {}", files.length, pedido.getNpedido());
-                response.put("archivosASubir", files.length);
+
+            // Detectamos si hay archivos (locales o Drive)
+            boolean hayArchivos = (files != null && files.length > 0) ||
+                    (googleDriveFileIds != null && googleDriveFileIds.length > 0);
+
+            response.put("tieneArchivos", hayArchivos);
+
+            if (hayArchivos) {
+                // Obtenemos el userId del usuario autenticado
+                String userId = (principal != null && principal.getName() != null)
+                        ? principal.getName()
+                        : "anonymous";
+
+                // Serializamos los IDs de Google Drive
+                String googleDriveIdsSerializados = googleDriveFileIds != null
+                        ? String.join(",", googleDriveFileIds)
+                        : "";
+
+                // Formato de la tarea: npedido|userId|googleDriveIds|googleDriveToken
+                String tarea = npedidoGenerado + "|" +
+                        userId + "|" +
+                        googleDriveIdsSerializados + "|" +
+                        (googleDriveToken != null ? googleDriveToken : "");
+
+                // Encolamos en Redis
+                redisTemplate.opsForList().leftPush("cola:procesar-archivos", tarea);
+
+                log.info("📤 Tarea encolada en Redis para pedido {} - Usuario: {} - Drive files: {}",
+                        npedidoGenerado, userId, googleDriveFileIds != null ? googleDriveFileIds.length : 0);
+
+                response.put("archivosASubir",
+                        (files != null ? files.length : 0) +
+                                (googleDriveFileIds != null ? googleDriveFileIds.length : 0));
             }
-            
+
+            log.info("✅ Respuesta enviada al frontend para pedido {}", npedidoGenerado);
             return ResponseEntity.ok(response);
+
         } catch (Exception e) {
             log.error("❌ ERROR CRÍTICO en guardar pedido: {}", e.getMessage());
             log.error("   Tipo de excepción: {}", e.getClass().getName());
-            log.error("   Causa: {}", e.getCause() != null ? e.getCause().getMessage() : "Sin causa");
             log.error("   Stack trace:", e);
-            
+
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Error al guardar el pedido");
             errorResponse.put("message", e.getMessage());
             errorResponse.put("type", e.getClass().getSimpleName());
-            errorResponse.put("fullType", e.getClass().getName());
-            errorResponse.put("timestamp", new java.util.Date());
-            
-            if (e.getCause() != null) {
-                errorResponse.put("cause", e.getCause().getMessage());
-            }
-            
-            StackTraceElement[] stackTraceElements = e.getStackTrace();
-            if (stackTraceElements.length > 0) {
-                errorResponse.put("failedAt", stackTraceElements[0].getClassName() + "." + stackTraceElements[0].getMethodName() + " línea " + stackTraceElements[0].getLineNumber());
-            }
-            
+            errorResponse.put("timestamp", new Date());
+
             return ResponseEntity.status(500).body(errorResponse);
         }
     }
@@ -1117,7 +1119,7 @@ private boolean validarTipoMime(String contentType, String fileName) {
                 return ResponseEntity.badRequest().body(Map.of("error", "No URLs provided"));
             }
             
-            java.util.List<String> urls = (java.util.List<String>) urlsObj;
+            List<String> urls = (List<String>) urlsObj;
             int guardados = 0;
             
             for (String url : urls) {
@@ -1143,6 +1145,9 @@ private boolean validarTipoMime(String contentType, String fileName) {
     @Autowired
     private GoogleDriveApiService googleDriveApiService;
 
+    /*
+    Se utiliza para guardar los archivos en cloudinary y bd de google
+     */
     @PostMapping("/subir-archivos/{npedido}")
     public ResponseEntity<?> subirArchivos(
             @PathVariable Long npedido,
@@ -1212,9 +1217,9 @@ private boolean validarTipoMime(String contentType, String fileName) {
 
                         String fileName = "pedido_" + npedido + "_" + System.currentTimeMillis();
                         String redisKey = "file_pending_" + npedido + "_" + fileName;
-                        String imageBase64 = java.util.Base64.getEncoder().encodeToString(imageBytes);
+                        String imageBase64 = Base64.getEncoder().encodeToString(imageBytes);
                         redisTemplate.opsForValue().set(redisKey, imageBase64);
-                        redisTemplate.expire(redisKey, java.time.Duration.ofHours(24));
+                        redisTemplate.expire(redisKey, Duration.ofHours(24));
 
                         String mensaje = npedido + ";" + nombreOriginal + ";" + fileName;
                         redisQueueProducer.sendMessage(mensaje);
@@ -1231,8 +1236,7 @@ private boolean validarTipoMime(String contentType, String fileName) {
 
             if (googleDriveFileIds != null && googleDriveFileIds.length > 0) {
                 boolean hasFrontToken = (googleDriveToken != null && !googleDriveToken.isBlank());
-                log.info("🔗 Procesando {} archivo(s) de Google Drive (token frontend? {})",
-                        googleDriveFileIds.length, hasFrontToken);
+                log.info("🔗 Procesando {} archivo(s) de Google Drive (token frontend? {})", googleDriveFileIds.length, hasFrontToken);
 
                 if (!hasFrontToken && (principal == null || principal.getName() == null)) {
                     errores.append("• Usuario no autenticado en la app (principal null)\n");
@@ -1243,31 +1247,29 @@ private boolean validarTipoMime(String contentType, String fileName) {
                         if (fileId == null || fileId.trim().isEmpty()) continue;
 
                         try {
-                            log.info("📥 Descargando archivo de Drive: {}", fileId);
+                            log.info("📥 Descargando y subiendo directamente a Cloudinary desde Drive: {}", fileId);
 
-                            byte[] imageBytes;
+                            String cloudinaryUrl;
+
                             if (hasFrontToken) {
-                                // flujo antiguo: token venía del frontend
-                                imageBytes = descargarDesdeGoogleDriveAPI(fileId, googleDriveToken);
+                                // Flujo antiguo: token del frontend
+                                cloudinaryUrl = downloadAndUploadToCloudinaryFromDrive(fileId, googleDriveToken, npedido);
                             } else {
-                                // flujo nuevo: backend gestiona refresh_token
-                                imageBytes = googleDriveApiService.downloadFileBytes(userId, fileId);
+                                // Flujo nuevo: backend gestiona el token
+                                cloudinaryUrl = googleDriveApiService.downloadAndUploadToCloudinary(userId, fileId, npedido);
                             }
 
-                            if (imageBytes == null || imageBytes.length == 0) {
-                                log.warn("⚠️ Descarga vacía para fileId: {}", fileId);
+                            if (cloudinaryUrl == null || cloudinaryUrl.isEmpty()) {
+                                log.warn("⚠️ Subida vacía/devuelta null para fileId: {}", fileId);
                                 errores.append("• Archivo vacío desde Drive: ").append(fileId).append("\n");
                                 continue;
                             }
 
-                            String fileName = "gdrive_" + npedido + "_" + System.currentTimeMillis();
-                            String url = cloudinaryService.uploadImage(imageBytes, npedido, fileName);
-
-                            ArchivoAdjunto adjunto = new ArchivoAdjunto(npedido, "Google Drive - " + fileId, url);
+                            ArchivoAdjunto adjunto = new ArchivoAdjunto(npedido, "Google Drive - " + fileId, cloudinaryUrl);
                             archivoAdjuntoService.guardar(adjunto);
 
                             archivosProcesados++;
-                            log.info("✅ Drive -> Cloudinary OK: {} -> {}", fileId, url);
+                            log.info("✅ Drive → Cloudinary OK (streaming directo): {} → {}", fileId, cloudinaryUrl);
 
                         } catch (RuntimeException e) {
                             log.error("❌ Error Drive fileId={} msg={}", fileId, e.getMessage());
@@ -1308,6 +1310,8 @@ private boolean validarTipoMime(String contentType, String fileName) {
         }
     }
 
+
+    /*
     private byte[] descargarDesdeGoogleDriveAPI(String fileId, String accessToken) {
         java.net.HttpURLConnection connection = null;
         try {
@@ -1364,5 +1368,58 @@ private boolean validarTipoMime(String contentType, String fileName) {
             }
         }
     }
+*/
+    private String downloadAndUploadToCloudinaryFromDrive(String fileId, String accessToken, Long npedido) throws IOException {
+        log.info("📥 Iniciando descarga optimizada de Google Drive → Cloudinary - FileID: {}", fileId);
 
+        if (accessToken == null || accessToken.trim().isEmpty()) {
+            throw new RuntimeException("Token de acceso vacío");
+        }
+
+        String apiUrl = "https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media";
+        URL url = new URL(apiUrl);
+
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Authorization", "Bearer " + accessToken);
+        connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+        connection.setConnectTimeout(15000);
+        connection.setReadTimeout(60000); // Más tiempo para archivos grandes
+
+        try {
+            int responseCode = connection.getResponseCode();
+            if (responseCode != 200) {
+                handleDriveError(responseCode, fileId);
+            }
+
+            // Obtenemos el nombre original del archivo desde los headers (mejor que inventarlo)
+            String disposition = connection.getHeaderField("Content-Disposition");
+            String fileName = "gdrive_" + npedido + "_" + System.currentTimeMillis();
+            if (disposition != null && disposition.contains("filename=")) {
+                fileName = disposition.split("filename=")[1].replace("\"", "");
+                fileName = "gdrive_" + npedido + "_" + fileName;
+            }
+
+            log.info("🚀 Subiendo directamente a Cloudinary en streaming: {}", fileName);
+
+            // ¡STREAMING DIRECTO! Sin byte[]
+            try (InputStream driveStream = connection.getInputStream()) {
+                String cloudinaryUrl = cloudinaryService.uploadImage(driveStream, npedido, fileName);
+                log.info("✅ Drive → Cloudinary OK (streaming): {} bytes → {}", connection.getContentLength(), cloudinaryUrl);
+                return cloudinaryUrl;
+            }
+
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private void handleDriveError(int responseCode, String fileId) throws RuntimeException {
+        switch (responseCode) {
+            case 401 -> throw new RuntimeException("GDRIVE_401_TOKEN_EXPIRED");
+            case 403 -> throw new RuntimeException("GDRIVE_403_ACCESS_DENIED");
+            case 404 -> throw new RuntimeException("GDRIVE_404_NOT_FOUND");
+            default -> throw new RuntimeException("GDRIVE_HTTP_ERROR_" + responseCode);
+        }
+    }
 }

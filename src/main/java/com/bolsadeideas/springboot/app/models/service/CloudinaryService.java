@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -45,54 +47,74 @@ public class CloudinaryService {
         this.redisTemplate = redisTemplate;
     }
 
+
     /**
-     * Método para subir una imagen a Cloudinary y almacenar su URL en el caché de Redis.
-     *
-     * @param imageBytes Los bytes de la imagen.
-     * @param npedido El número del pedido.
-     * @param fileName El nombre del archivo para Cloudinary.
-     * @return La URL de la imagen subida a Cloudinary.
+     * Sube una imagen a Cloudinary usando byte[] (flujo antiguo).
      */
     public String uploadImage(byte[] imageBytes, Long npedido, String fileName) throws IOException {
         if (imageBytes == null || imageBytes.length == 0) {
             throw new IllegalArgumentException("Los bytes de la imagen no pueden ser nulos o vacíos");
         }
 
+        try (InputStream inputStream = new ByteArrayInputStream(imageBytes)) {
+            return uploadImageFromStream(inputStream, npedido, fileName);
+        }
+    }
+
+    /**
+     * Sube una imagen a Cloudinary usando InputStream (streaming directo - MÁS RÁPIDO y eficiente).
+     * Usado para descargas directas desde Google Drive sin cargar en memoria.
+     */
+    public String uploadImage(InputStream inputStream, Long npedido, String fileName) throws IOException {
+        if (inputStream == null) {
+            throw new IllegalArgumentException("El InputStream no puede ser nulo");
+        }
+
+        return uploadImageFromStream(inputStream, npedido, fileName);
+    }
+
+    /**
+     * Método común para ambos flujos: sube usando streaming.
+     * Usa uploadLarge para archivos > 10MB.
+     */
+    private String uploadImageFromStream(InputStream inputStream, Long npedido, String fileName) throws IOException {
         try {
-            log.info("📤 Iniciando upload a Cloudinary: fileName={}, size={} bytes", fileName, imageBytes.length);
-            
-            // Subir la imagen a Cloudinary con el publicId generado
+            log.info("📤 Iniciando upload a Cloudinary (streaming): fileName={}, pedido={}", fileName, npedido);
+
             Map<String, Object> uploadParams = new HashMap<>();
             uploadParams.put("public_id", fileName);
             uploadParams.put("folder", "pedidos/" + npedido);
-            
-            log.debug("   Parámetros: {}", uploadParams);
-            
-            Map uploadResult = cloudinary.uploader().upload(imageBytes, uploadParams);
-            
+            uploadParams.put("overwrite", true);
+            uploadParams.put("resource_type", "auto");  // Detecta imagen, pdf, etc.
+
+            log.debug("   Parámetros Cloudinary: {}", uploadParams);
+
+            // uploadLarge es obligatorio para archivos > 10MB y recomendado para streaming
+            Map uploadResult = cloudinary.uploader().uploadLarge(inputStream, uploadParams);
+
             log.debug("   Respuesta Cloudinary: {}", uploadResult);
-            
+
             Object errorObj = uploadResult.get("error");
             if (errorObj != null) {
                 String errorMsg = errorObj.toString();
                 log.error("❌ Error de Cloudinary: {}", errorMsg);
                 throw new IOException("Cloudinary error: " + errorMsg);
             }
-            
+
             String imageUrl = (String) uploadResult.get("secure_url");
-            
+
             if (imageUrl == null || imageUrl.isEmpty()) {
                 log.error("❌ Cloudinary no retornó secure_url");
-                log.error("   Respuesta: {}", uploadResult);
+                log.error("   Respuesta completa: {}", uploadResult);
                 throw new IOException("Cloudinary no retornó URL segura");
             }
 
-            // Almacenar la URL en Redis con el publicId
+            // Cache en Redis (opcional, pero útil)
             redisTemplate.opsForValue().set(fileName, imageUrl);
 
-            log.info("✅ Imagen subida a Cloudinary: {} -> {}", fileName, imageUrl);
+            log.info("✅ Imagen subida correctamente a Cloudinary: {} → {}", fileName, imageUrl);
             return imageUrl;
-            
+
         } catch (IOException e) {
             log.error("❌ Error de IO al subir a Cloudinary: {}", e.getMessage(), e);
             throw e;
