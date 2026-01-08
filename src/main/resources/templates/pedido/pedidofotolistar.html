@@ -371,6 +371,13 @@
                             <input type="date" id="fechaHasta" name="fechaHasta" class="form-control"
                                    th:value="${fechaHasta}">
                         </div>
+                        <div class="col-md-3" th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                            <label for="activo" class="form-label">Ver pedidos:</label>
+                            <select class="form-control" id="activo" name="activo">
+                                <option value="true" selected>Activos</option>
+                                <option value="false">Dados de baja</option>
+                            </select>
+                        </div>
 
                         <!-- Botones Buscar y Limpiar en la misma fila con espaciado y icono funcional -->
                         <div class="col-md-12 d-flex justify-content-end mt-2">

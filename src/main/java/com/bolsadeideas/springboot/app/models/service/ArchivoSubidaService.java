@@ -3,6 +3,7 @@ package com.bolsadeideas.springboot.app.models.service;
 import com.bolsadeideas.springboot.app.models.entity.ArchivoAdjunto;
 import com.bolsadeideas.springboot.app.models.entity.Pedido;
 import com.bolsadeideas.springboot.app.models.service.redis.RedisQueueProducer;
+import com.cloudinary.utils.ObjectUtils;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.net.URL;
 import java.security.Principal;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.Map;
 
 @Log4j2
 @Service
@@ -25,7 +27,6 @@ public class ArchivoSubidaService {
     private final CloudinaryService cloudinaryService;
     private final GoogleDriveApiService googleDriveApiService;
     private final RedisTemplate<String, String> redisTemplate;
-    private final RedisQueueProducer redisQueueProducer;
 
     public ArchivoSubidaService(PedidoService pedidoService,
                                 ArchivoAdjuntoService archivoAdjuntoService,
@@ -38,7 +39,6 @@ public class ArchivoSubidaService {
         this.cloudinaryService = cloudinaryService;
         this.googleDriveApiService = googleDriveApiService;
         this.redisTemplate = redisTemplate;
-        this.redisQueueProducer = redisQueueProducer;
     }
 
     /**
@@ -55,9 +55,9 @@ public class ArchivoSubidaService {
     public int procesarArchivos(Long npedido, MultipartFile[] files, String[] googleDriveFileIds,
                                 String googleDriveToken, String userId) {
 
-        log.info("🔵 ========== INICIO procesarArchivos (reutilizable) ==========");
+        log.info("🔵 ========== INICIO procesarArchivos ==========");
         log.info("📍 Pedido: {}", npedido);
-        log.info("📊 Archivos locales: {}, FileIds Google Drive: {}",
+        log.info("📊 Archivos locales: {}, Google Drive: {}",
                 files != null ? files.length : 0,
                 googleDriveFileIds != null ? googleDriveFileIds.length : 0);
 
@@ -75,151 +75,128 @@ public class ArchivoSubidaService {
         int archivosProcesados = 0;
         StringBuilder errores = new StringBuilder();
 
-        log.info("⚡ Procesando archivos...");
-        log.info("🔐 googleDriveToken recibido? {}", (googleDriveToken != null && !googleDriveToken.isBlank()));
-
         // ========= ARCHIVOS LOCALES =========
         if (files != null && files.length > 0) {
-            for (MultipartFile foto : files) {
-                String nombreOriginal = foto.getOriginalFilename();
-                String contentType = foto.getContentType();
-
-                log.info("🔍 Validando archivo local: {} ({} bytes, MIME: {})", nombreOriginal, foto.getSize(), contentType);
-
-                if (foto.isEmpty()) {
-                    log.warn("❌ Archivo vacío: {}", nombreOriginal);
-                    errores.append("• Archivo vacío: ").append(nombreOriginal).append("\n");
-                    continue;
-                }
-
-                if (!validarTipoMime(contentType, nombreOriginal)) {
-                    log.warn("❌ Tipo MIME inválido: {}", contentType);
-                    errores.append("• Tipo de archivo no soportado: ").append(nombreOriginal).append("\n");
-                    continue;
-                }
-
-                try {
-                    byte[] imageBytes = foto.getBytes();
-                    if (imageBytes.length == 0) {
-                        errores.append("• Archivo sin contenido: ").append(nombreOriginal).append("\n");
-                        continue;
-                    }
-
-                    String fileName = "pedido_" + npedido + "_" + System.currentTimeMillis();
-                    String redisKey = "file_pending_" + npedido + "_" + fileName;
-                    String imageBase64 = Base64.getEncoder().encodeToString(imageBytes);
-                    redisTemplate.opsForValue().set(redisKey, imageBase64);
-                    redisTemplate.expire(redisKey, Duration.ofHours(24));
-
-                    String mensaje = npedido + ";" + nombreOriginal + ";" + fileName;
-                    redisQueueProducer.sendMessage(mensaje);
-
-                    archivosProcesados++;
-                    log.info("✅ Archivo local encolado: {}", nombreOriginal);
-
-                } catch (Exception e) {
-                    log.error("❌ Error procesando archivo local: {}", nombreOriginal, e);
-                    errores.append("• Error al procesar: ").append(nombreOriginal).append("\n");
-                }
-            }
+            archivosProcesados += procesarArchivosLocales(npedido, files, errores);
         }
 
-        // ========= ARCHIVOS DE GOOGLE DRIVE =========
+        // ========= ARCHIVOS GOOGLE DRIVE =========
         if (googleDriveFileIds != null && googleDriveFileIds.length > 0) {
-            boolean hasFrontToken = (googleDriveToken != null && !googleDriveToken.isBlank());
-            log.info("🔗 Procesando {} archivo(s) de Google Drive (token frontend? {})", googleDriveFileIds.length, hasFrontToken);
-
-            if (!hasFrontToken && userId == null) {
-                errores.append("• Usuario no autenticado para acceso backend a Drive\n");
-            } else {
-                for (String fileId : googleDriveFileIds) {
-                    if (fileId == null || fileId.trim().isEmpty()) continue;
-
-                    try {
-                        log.info("📥 Descargando y subiendo directamente a Cloudinary desde Drive: {}", fileId);
-
-                        String cloudinaryUrl;
-
-                        if (hasFrontToken) {
-                            // Flujo antiguo: token del frontend
-                            cloudinaryUrl = downloadAndUploadToCloudinaryFromDrive(fileId, googleDriveToken, npedido);
-                        } else {
-                            // Flujo nuevo: backend gestiona el token
-                            cloudinaryUrl = googleDriveApiService.downloadAndUploadToCloudinary(userId, fileId, npedido);
-                        }
-
-                        if (cloudinaryUrl == null || cloudinaryUrl.isEmpty()) {
-                            log.warn("⚠️ Subida vacía/devuelta null para fileId: {}", fileId);
-                            errores.append("• Archivo vacío desde Drive: ").append(fileId).append("\n");
-                            continue;
-                        }
-
-                        // ← AÑADE AQUÍ EL CACHE EN REDIS
-                        String fileNameCache = "gdrive_" + npedido + "_" + fileId;  // Clave única y predecible (mejor que timestamp)
-                        redisTemplate.opsForValue().set(fileNameCache, cloudinaryUrl);
-                        redisTemplate.expire(fileNameCache, Duration.ofDays(30));  // 30 días de cache
-
-                        log.info("📦 URL de archivo Drive cacheada en Redis con clave: {}", fileNameCache);
-
-                        ArchivoAdjunto adjunto = new ArchivoAdjunto(npedido, "Google Drive - " + fileId, cloudinaryUrl);
-                        archivoAdjuntoService.guardar(adjunto);
-
-                        archivosProcesados++;
-                        log.info("✅ Drive → Cloudinary OK (streaming directo): {} → {}", fileId, cloudinaryUrl);
-
-                    } catch (RuntimeException e) {
-                        log.error("❌ Error Drive fileId={} msg={}", fileId, e.getMessage());
-                        errores.append("• Error Drive (").append(fileId).append("): ").append(e.getMessage()).append("\n");
-                    } catch (Exception e) {
-                        log.error("❌ Error procesando Drive fileId={}", fileId, e);
-                        errores.append("• Error procesando Drive (").append(fileId).append("): ").append(e.getMessage()).append("\n");
-                    }
-                }
-            }
+            archivosProcesados += procesarArchivosGoogleDrive(npedido, googleDriveFileIds, googleDriveToken, userId, errores);
         }
 
-        // ========= RESUMEN FINAL (logs) =========
+        // ========= RESUMEN =========
         if (archivosProcesados > 0) {
             log.info("✅ {} elemento(s) procesado(s) para pedido {}", archivosProcesados, npedido);
         }
-
         if (errores.length() > 0) {
-            log.warn("⚠️ Errores encontrados durante procesamiento:\n{}", errores.toString());
+            log.warn("⚠️ Errores durante procesamiento:\n{}", errores.toString());
         }
 
         log.info("🎬 FIN procesarArchivos para pedido {}", npedido);
         return archivosProcesados;
     }
 
+    // ==================== ARCHIVOS LOCALES ====================
+    private int procesarArchivosLocales(Long npedido, MultipartFile[] files, StringBuilder errores) {
+        int procesados = 0;
 
-    private boolean validarTipoMime(String contentType, String fileName) {
-        if (contentType == null) {
-            contentType = "";
-        }
+        for (MultipartFile foto : files) {
+            String nombreOriginal = foto.getOriginalFilename();
+            String contentType = foto.getContentType();
 
-        // Tipos MIME válidos
-        String[] tiposValidos = {"image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp"};
-        boolean esValidoPorMime = false;
+            log.info("🔍 Validando archivo local: {} ({} bytes, MIME: {})", nombreOriginal, foto.getSize(), contentType);
 
-        for (String tipo : tiposValidos) {
-            if (contentType.contains(tipo)) {
-                esValidoPorMime = true;
-                break;
+            if (foto.isEmpty()) {
+                errores.append("• Archivo vacío: ").append(nombreOriginal).append("\n");
+                continue;
+            }
+
+            if (!validarTipoMime(contentType, nombreOriginal)) {
+                errores.append("• Tipo de archivo no soportado: ").append(nombreOriginal).append("\n");
+                continue;
+            }
+
+            try (InputStream localStream = foto.getInputStream()) {
+                // Nombre para Cloudinary (puedes usar el original o uno generado)
+                String fileNameParaCloudinary = "pedido_" + npedido + "_" + System.currentTimeMillis() +
+                        (nombreOriginal != null ? "_" + nombreOriginal : "");
+
+                // ¡Mismo método que usas para Drive! Streaming directo
+                String cloudinaryUrl = cloudinaryService.uploadImage(localStream, npedido, fileNameParaCloudinary);
+
+                if (cloudinaryUrl == null || cloudinaryUrl.isEmpty()) {
+                    throw new RuntimeException("Cloudinary devolvió URL vacía");
+                }
+
+                // Cache y guardado en BD (común)
+                String cacheKey = "local_" + npedido + "_" + fileNameParaCloudinary.replaceAll("[^a-zA-Z0-9_-]", "_");
+                cachearYGuardarAdjunto(npedido, nombreOriginal, cloudinaryUrl, cacheKey);
+
+                procesados++;
+                log.info("✅ Archivo local → Cloudinary OK: {} → {}", nombreOriginal, cloudinaryUrl);
+
+            } catch (Exception e) {
+                log.error("❌ Error subiendo archivo local a Cloudinary: {}", nombreOriginal, e);
+                errores.append("• Error al procesar: ").append(nombreOriginal).append("\n");
             }
         }
 
-        // Validar también por extensión del archivo (importante para Google Drive)
-        String extension = fileName != null ? fileName.toLowerCase() : "";
-        boolean esValidoPorExtension = extension.matches(".*\\.(jpg|jpeg|png|gif|webp|bmp)$");
+        return procesados;
+    }
 
-        // Si Google Drive no envía MIME type, validar por extensión
-        if (contentType.isEmpty() || contentType.equals("application/octet-stream")) {
-            log.info("📌 Archivo sin MIME type o tipo genérico. Validando por extensión: {}", extension);
-            return esValidoPorExtension;
+    // ==================== GOOGLE DRIVE (casi sin cambios) ====================
+    private int procesarArchivosGoogleDrive(Long npedido, String[] googleDriveFileIds,
+                                            String googleDriveToken, String userId, StringBuilder errores) {
+        int procesados = 0;
+        boolean hasFrontToken = (googleDriveToken != null && !googleDriveToken.isBlank());
+
+        log.info("🔗 Procesando {} archivo(s) de Google Drive (token frontend? {})", googleDriveFileIds.length, hasFrontToken);
+
+        if (!hasFrontToken && userId == null) {
+            errores.append("• Usuario no autenticado para acceso backend a Drive\n");
+            return 0;
         }
 
-        return esValidoPorMime || esValidoPorExtension;
+        for (String fileId : googleDriveFileIds) {
+            if (fileId == null || fileId.trim().isEmpty()) continue;
+
+            try {
+                String cloudinaryUrl = hasFrontToken
+                        ? downloadAndUploadToCloudinaryFromDrive(fileId, googleDriveToken, npedido)
+                        : googleDriveApiService.downloadAndUploadToCloudinary(userId, fileId, npedido);
+
+                if (cloudinaryUrl == null || cloudinaryUrl.isEmpty()) {
+                    errores.append("• Archivo vacío desde Drive: ").append(fileId).append("\n");
+                    continue;
+                }
+
+                String cacheKey = "gdrive_" + npedido + "_" + fileId;
+                String nombreDisplay = "Google Drive - " + fileId;
+
+                cachearYGuardarAdjunto(npedido, nombreDisplay, cloudinaryUrl, cacheKey);
+
+                procesados++;
+                log.info("✅ Drive → Cloudinary OK: {} → {}", fileId, cloudinaryUrl);
+
+            } catch (Exception e) {
+                log.error("❌ Error procesando Drive fileId={}", fileId, e);
+                errores.append("• Error procesando Drive (").append(fileId).append("): ").append(e.getMessage()).append("\n");
+            }
+        }
+
+        return procesados;
     }
+
+    // ==================== COMÚN: CACHE + BD ====================
+    private void cachearYGuardarAdjunto(Long npedido, String nombreDisplay, String cloudinaryUrl, String cacheKey) {
+        redisTemplate.opsForValue().set(cacheKey, cloudinaryUrl, Duration.ofDays(30));
+        log.info("📦 URL cacheada en Redis (30 días) con clave: {}", cacheKey);
+
+        ArchivoAdjunto adjunto = new ArchivoAdjunto(npedido, nombreDisplay, cloudinaryUrl);
+        archivoAdjuntoService.guardar(adjunto);
+    }
+
 
     /**
      * Descarga un archivo de Google Drive en streaming y lo sube directamente a Cloudinary.
@@ -304,5 +281,34 @@ public class ArchivoSubidaService {
             case 404 -> throw new RuntimeException("GDRIVE_404_NOT_FOUND");
             default -> throw new RuntimeException("GDRIVE_HTTP_ERROR_" + responseCode);
         }
+    }
+
+    private boolean validarTipoMime(String contentType, String fileName) {
+        if (contentType == null) {
+            contentType = "";
+        }
+
+        // Tipos MIME válidos
+        String[] tiposValidos = {"image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp"};
+        boolean esValidoPorMime = false;
+
+        for (String tipo : tiposValidos) {
+            if (contentType.contains(tipo)) {
+                esValidoPorMime = true;
+                break;
+            }
+        }
+
+        // Validar también por extensión del archivo (importante para Google Drive)
+        String extension = fileName != null ? fileName.toLowerCase() : "";
+        boolean esValidoPorExtension = extension.matches(".*\\.(jpg|jpeg|png|gif|webp|bmp)$");
+
+        // Si Google Drive no envía MIME type, validar por extensión
+        if (contentType.isEmpty() || contentType.equals("application/octet-stream")) {
+            log.info("📌 Archivo sin MIME type o tipo genérico. Validando por extensión: {}", extension);
+            return esValidoPorExtension;
+        }
+
+        return esValidoPorMime || esValidoPorExtension;
     }
 }
