@@ -227,7 +227,7 @@ public class ClienteServiceImpl implements IClienteService {
     @Override
     public JasperPrint generateJasperPrints(String cliente, String tipo) throws IOException, JRException {
 
-        org.springframework.core.io.Resource resourceFoto = resourceLoader.getResource("classpath:static/jasperReport/logo.png");
+        org.springframework.core.io.Resource resourceFoto = resourceLoader.getResource("classpath:static/jasperReport/logoTallerJoyeria.png");
         InputStream logoEmpresa = resourceFoto.getInputStream();
 
         //obtener el listado de pedidos con parametros de estado y cliente
