@@ -1,32 +1,35 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.utraq.net.nz/thymeleaf/layout">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <!-- 1) jQuery primero -->
+    <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <!-- 2) jQuery UI (si lo usas) -->
+    <!-- jQuery UI (si lo usas) -->
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 
-    <!-- 3) Bootstrap DESPUÉS -->
-    <script src="/ruta/bootstrap.bundle.min.js"></script>
-    <style th:replace="admin/shared/style"></style>
+    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <style th:replace="admin/shared/style"></style>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 
-    <!-- CSS DataTables + Responsive -->
-    <link rel="stylesheet"
-          href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
-    <link rel="stylesheet"
-          href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+    <!-- DataTables CSS + Responsive -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
 
     <style>
-        body {
-            margin: 0; /* Elimina el margen predeterminado del cuerpo */
-            padding: 0; /* Elimina el relleno predeterminado del cuerpo */
-
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            height: auto;
         }
 
         .content-wrapper {
@@ -34,302 +37,45 @@
             background-size: cover;
             background-repeat: no-repeat;
             background-position: center;
-            height: 110vh; /* Ajusta la altura al 100% del viewport */
-            overflow: hidden; /* Oculta el desplazamiento vertical */
-        }
-        /* ============================
-    1) ESTILOS GENERALES
-    ============================ */
-        html, body {
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;   /* Evita scroll horizontal */
-            overflow-y: auto;     /* Permite desplazamiento vertical */
-            height: auto;
-        }
-
-        /* Asegurar que el content-wrapper tenga scroll si lo necesita */
-        .content-wrapper {
             min-height: 100vh;
-            overflow-y: auto !important;
             overflow-x: hidden;
+            overflow-y: auto;
         }
 
+        .content-wrapper > .container-fluid {
+            padding-left: .5rem;
+            padding-right: .5rem;
+        }
+        @media (min-width: 768px) {
+            .content-wrapper > .container-fluid {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+        }
 
-        /* ============================
-           2) OCULTAR SIDEBAR EN MÓVILES
-           Incluye Xiaomi 12T Pro en adelante
-           ============================ */
         @media (max-width: 768px) {
-            .main-sidebar,
-            .left-side,
-            .sidebar {
+            .main-sidebar, .left-side, .sidebar {
                 display: none !important;
             }
-
             .content-wrapper {
                 margin-left: 0 !important;
             }
-
-            html, body {
-                overflow-y: auto !important;
-                height: auto !important;
-            }
         }
-
-
-        /* ============================
-           3) AJUSTE PARA MÓVILES PEQUEÑOS
-           (Xiaomi, POCO, Redmi, iPhone SE, etc.)
-           ============================ */
-        @media (max-width: 480px) {
-            html, body {
-                overflow-y: auto !important;
-                height: auto !important;
-            }
-
-            .content-wrapper {
-                padding-bottom: 40px; /* Evita cortes con el teclado */
-            }
-        }
-        /* Botones del listado (Galería / Clientes / Nuevo Cliente / Mostrar Filtros)
-     adaptados a móvil */
-        @media (max-width: 768px) {
-
-            /* El grupo de botones se convierte en un flex que envuelve */
-            .btn-group.btn-group-toggle {
-                display: flex !important;
-                flex-wrap: wrap !important;
-                width: 100% !important;
-                justify-content: center; /* opcional: centra los botones */
-            }
-
-            /* Cada botón ocupa aproximadamente la mitad del ancho */
-            .btn-group.btn-group-toggle .btn {
-                flex: 1 1 100%;
-                margin-bottom: 8px;
-                margin-right: 4px;
-                margin-left: 4px;
-                text-align: center;
-            }
-        }
-        /* ===========================
-           ESTILOS ESPECIALES PARA MÓVILES
-           =========================== */
-
-        /* Todo contenido debe poder hacer scroll */
-        @media (max-width: 768px) {
-
-            /* Habilitar scroll general */
-            html, body {
-                overflow-y: auto !important;
-                overflow-x: hidden !important;
-                height: auto !important;
-            }
-
-            /* Ocultar el menú lateral en móviles */
-            .main-sidebar,
-            .left-side,
-            .sidebar {
-                display: none !important;
-            }
-
-            /* El contenido ocupa toda la pantalla */
-            .content-wrapper {
-                margin-left: 0 !important;
-                min-height: 100vh !important;
-                overflow-y: auto !important;
-            }
-
-            /* Ajuste de los botones: que se adapten a la pantalla */
-            .btn-group .btn,
-            .btn,
-            a.btn {
-                width: 100%;
-                margin-bottom: 8px;
-                display: block;
-                text-align: center;
-            }
-
-            /* Filtros (formulario de búsqueda) más grandes en móvil */
-            #formBusqueda {
-                max-height: 1200px !important;     /* espacio suficiente */
-                overflow-y: auto !important;       /* scroll interno si se supera la altura */
-            }
-
-            /* Evitar que el grid de imágenes se corte */
-            #photo-container {
-                max-height: none !important;
-                overflow-y: visible !important;
-            }
-        }
-
-        /* Ajustes SOLO para pantallas móviles */
-        @media (max-width: 768px) {
-            /* Ocultar el botón de 'Clientes' en pantallas pequeñas */
-            body #tablaClientes .btn-group .btn:nth-child(3),
-            body #tablaClientes .btn-group .btn:nth-child(2) {
-                display: none !important; /* Oculta el botón de 'Clientes' */
-            }
-
-            /* Mostrar solo los botones de 'Pedidos' y 'Galería' */
-            body #tablaClientes .btn-group .btn:nth-child(1)
-             {
-                display: inline-block !important; /* Asegura que se vean los botones de 'Pedidos' y 'Galería' */
-            }
-        }
-
-        /* Ajustes generales para los botones */
-        body #tablaClientes .acciones-container .btn-group {
-            display: flex !important;
-            flex-direction: row !important;  /* Los botones deben estar en una línea horizontal */
-            justify-content: center !important;
-            gap: 5px !important;
-            flex-wrap: nowrap !important;  /* Evita que los botones se apilen */
-        }
-
-        /* Ajustes para el tamaño y espaciado de los botones */
-        body #tablaClientes .acciones-container .btn-group .btn {
-            padding: 6px 12px !important;  /* Ajusta el tamaño del padding */
-            font-size: 14px !important;    /* Ajusta el tamaño de la fuente */
-            min-width: auto !important;    /* Evita que el botón se colapse */
-        }
-
-        /* Ajustes para pantallas pequeñas (móviles) */
-        @media (max-width: 768px) {
-            /* Asegura que los botones estén en una sola línea horizontal */
-            body #tablaClientes .acciones-container .btn-group {
-                flex-direction: row !important;  /* En pantallas pequeñas, los botones deben estar en una fila */
-                justify-content: center !important;
-                gap: 5px !important; /* Espacio entre botones */
-            }
-
-            body #tablaClientes .acciones-container .btn-group .btn {
-                width: auto !important;  /* Ajusta el tamaño de los botones */
-                padding: 4px 8px !important;  /* Ajusta el padding */
-                font-size: 12px !important;   /* Tamaño de fuente más pequeño para móviles */
-            }
-
-            /* Reducir el tamaño de las filas de la tabla */
-            body #tablaClientes thead th,
-            body #tablaClientes tbody td {
-                padding: 6px 4px !important;  /* Reducir padding en pantallas móviles */
-                font-size: 12px !important;   /* Ajustar tamaño de texto */
-            }
-        }
-
-      /*tabls datatable
-
-
-
     </style>
 </head>
-<script>
-    $(document).on("click", "a.ajax-link", function (e) {
-        e.preventDefault(); // Cancela el cambio de página completo
-
-        const url = $(this).attr("href");
-
-        // Mostrar un pequeño spinner en el área de contenido
-        $("#mainContent").html(
-            '<div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-3x"></i><br>Cargando...</div>'
-        );
-
-        // Cargar solo el fragmento del contenido
-        $("#mainContent").load(url + " #contentFragment", function(response, status, xhr) {
-            if (status === "error") {
-                $("#mainContent").html("<div class='alert alert-danger'>Error al cargar esta sección.</div>");
-            }
-        });
-    });
-
-    $(document).ready(function () {
-        iniciarTablaClientes();
-    });
-
-    function iniciarTablaClientes() {
-        const $tabla = $('#tablaClientes');
-
-        if ($tabla.length === 0) return;
-
-        if ($.fn.DataTable.isDataTable($tabla)) {
-            $tabla.DataTable().clear().destroy();
-        }
-
-        const esMovil = window.matchMedia("(max-width: 768px)").matches;
-
-        if (!esMovil) {
-            // ============================
-            // 🖥 CONFIGURACIÓN DE ESCRITORIO
-            // ============================
-            $tabla.DataTable({
-                language: {
-                    lengthMenu: "Mostrar _MENU_ registros por página",
-                    zeroRecords: "No se encontraron resultados",
-                    info: "Mostrando página _PAGE_ de _PAGES_",
-                    infoEmpty: "No hay registros disponibles",
-                    infoFiltered: "(filtrado de _MAX_ registros totales)",
-                    search: "Buscar:",
-                    paginate: {
-                        first: "Primero",
-                        last: "Último",
-                        next: "Siguiente",
-                        previous: "Anterior"
-                    }
-                },
-                paging: true,
-                searching: true,
-                ordering: true,
-                lengthMenu: [5, 10, 15, 25],
-                pageLength: 5,
-                scrollY: "50vh",
-                scrollCollapse: true,
-                responsive: true,
-                fixedHeader: true,
-                scrollX: false
-            });
-        } else {
-            // ============================
-            // 📱 CONFIGURACIÓN PARA MÓVILES
-            // ============================
-            $tabla.DataTable({
-                language: {
-                    url: "//cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json"
-                },
-                paging: true,
-                pageLength: 5,
-                searching: true,
-                ordering: false,
-                responsive: true,
-                scrollX: true,
-                scrollY: "45vh",
-                scrollCollapse: true,
-                columnDefs: [
-                    { targets: "col-hide-mobile", visible: false } // 🔥 oculta estas columnas internamente en DT
-                ]
-            });
-        }
-    }
-
-
-
-
-
-
-</script>
 
 <body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
+
     <!-- Header -->
     <div th:replace="admin/shared/header"></div>
 
     <!-- Sidebar -->
     <div th:replace="admin/shared/left_side"></div>
 
-    <!-- Content Wrapper. Contains page content -->
+    <!-- Content Wrapper -->
     <div class="content-wrapper">
         <div class="container-fluid">
-           <!-- Capa de superposición semi-transparente -->
             <div id="mainContent" class="content">
                 <div id="contentFragment" layout:fragment="content">
                     <!-- Aquí va tu contenido -->
@@ -337,19 +83,44 @@
             </div>
         </div>
     </div>
-    <!-- /.content-wrapper -->
 
-    <!-- Footer Scripts -->
-    <div layout:fragment="script">
-        <!-- Aquí puedes agregar scripts adicionales -->
-    </div>
+    <!-- Footer scripts slot -->
+    <div layout:fragment="script"></div>
 
-    <!-- Additional Scripts -->
+    <!-- Scripts comunes -->
     <div th:replace="admin/shared/file_script"></div>
 </div>
 
-<!-- Popper.js (requerido por Bootstrap) -->
+<!-- Popper (si lo necesitas y no lo trae file_script) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-<!-- Bootstrap JS ya se carga en file_script.html -->
+
+<!-- ✅ JS del layout (UNA sola vez) -->
+<script>
+    // Navegación AJAX
+    $(document).on("click", "a.ajax-link", function (e) {
+        e.preventDefault();
+        const url = $(this).attr("href");
+
+        $("#mainContent").html(
+            '<div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-3x"></i><br>Cargando...</div>'
+        );
+
+        $("#mainContent").load(url + " #contentFragment", function (response, status) {
+            if (status === "error") {
+                $("#mainContent").html("<div class='alert alert-danger'>Error al cargar esta sección.</div>");
+                return;
+            }
+            // ✅ re-init automático SOLO para tablas "auto"
+            if (window.initAutoDataTables) window.initAutoDataTables("#mainContent");
+        });
+    });
+
+    // Carga normal
+    $(function () {
+        if (window.initAutoDataTables) window.initAutoDataTables(document);
+    });
+</script>
+
+
 </body>
 </html>
