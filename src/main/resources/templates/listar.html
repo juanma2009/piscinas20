@@ -1,417 +1,246 @@
-
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
 	  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
 	  layout:decorate="admin/admin_layout.html">
+
 <head>
-		<!-- jQuery (necesario para DataTables) -->
-		<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-	<link rel="stylesheet" th:href="@{/css/style.css}">
+	<meta charset="utf-8"/>
+	<title>Listado de Clientes</title>
 
-		<!-- DataTables JS -->
-		<script src="https://cdn.jsdelivr.net/npm/datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+	<!-- Solo CSS propio (jQuery/Bootstrap/DataTables ya vienen del layout) -->
+	<link rel="stylesheet" th:href="@{/css/table.css}"/>
 
-	<!-- DataTables CSS -->
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-dt@1.10.20/css/jquery.dataTables.min.css">
-	<meta charset="utf-8" />
-	<title>Spring Boot + JPA + Datatables</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
-	<link rel="stylesheet" href="../css/table.css">
-	<!--  Bootstrap  -->
-	<link rel="stylesheet" href="cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js">
-	<link rel="stylesheet" href="cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
-	<!-- Plugin Leaflet.awesome-markers  -->
-	<link rel="stylesheet" href="../dist/leaflet.awesome-markers.css">
-	<link rel="stylesheet" href="../css/table.css">
-	<!-- CSS AdminLTE y FontAwesome -->
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
-	<!--  Bootstrap  -->
-	<link rel="stylesheet"
-		  href="cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js">
-	<!-- Plugin Leaflet.awesome-markers  -->
-	<link rel="stylesheet" href="../dist/leaflet.awesome-markers.css">
-
-	<!--  Bootstrap  -->
-	<link rel="stylesheet"
-		  href="cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js">
-<style>
-	.card-header.bg-white {
-		background-color: white !important;
-	}
-
-	.card-header bg-primary text-white {
-		width: 100%;
-		height: 100px;
-		border-radius: 10px 10px 0 0;
-	}
-	/* Establecer un padding y margen general para todas las secciones internas */
-	.container-fluid,
-	.card,
-	.card-body,
-	.card-header,
-	section.content-header {
-		padding: 1rem;
-		margin-bottom: 1rem;
-	}
-
-	/* Asegura que las tarjetas no queden pegadas entre sí o a los bordes */
-	.card {
-		border-radius: 10px;
-		box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-	}
-
-	/* Control uniforme para las tablas */
-	.table {
-		margin-bottom: 1rem;
-	}
-
-	/* Espaciado entre botones */
-	.btn-group .btn {
-		margin-right: 0.5rem;
-	}
-
-	/* Botones pequeños con padding uniforme */
-	.btn-sm {
-		padding: 0.4rem 0.75rem;
-	}
-
-	.card-header {
-		background: linear-gradient(135deg, #0062cc, #004085); /* Gradiente de azul */
-		color: white;
-		padding: 15px;
-		font-weight: bold;
-		text-transform: uppercase; /* Texto en mayúsculas */
-		font-size: 1.25rem; /* Aumentar el tamaño de la fuente */
-		border-radius: 8px 8px 0 0; /* Bordes redondeados */
-		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra ligera */
-		transition: background-color 0.3s ease, box-shadow 0.3s ease;
-	}
-
-	.card-header:hover {
-		background-color: #0056b3; /* Tono más oscuro de azul */
-		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
-	}
-
-	body {
-			width: 100vw;
-			min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
-			overflow-x: hidden;
-			background-color: #f9f9f9; /* opcional: fondo más suave */
+	<style>
+		.card{
+			border-radius:10px;
+			box-shadow:0 2px 6px rgba(0,0,0,.08);
+			overflow:hidden;
 		}
-	body {
-		width: 100vw;
-		min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
-		overflow-x: hidden;
-		background-color: #f9f9f9; /* opcional: fondo más suave */
-	}
-	html, body {
-		height: 100%; /* Asegura que el contenido cubra toda la pantalla */
-		margin: 0; /* Elimina márgenes por defecto */
-		padding: 0; /* Elimina el padding por defecto */
-		overflow: hidden; /* Oculta el scroll si no es necesario */
-	}
-	/* Hace la tabla responsiva */
-	.table-responsive {
-		width: 100%;
-		overflow-x: auto;  /* Permite scroll horizontal si es necesario */
-		-webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en móviles */
-	}
-
-	/* Ajuste general de la tabla */
-	.table td, .table th {
-		white-space: nowrap; /* Evita que el contenido de las celdas se corte */
-		font-size: 14px;
-		padding: 8px;
-	}
-	 Estilos base (ya definidos para escritorio)
-	.table-responsive {
-		width: 100%;
-		overflow-x: auto;
-		-webkit-overflow-scrolling: touch;
-	}
-
-	.table td,
-	.table th {
-		white-space: nowrap;
-		font-size: 14px;
-		padding: 8px;
-	}
-
-	@media screen and (min-width: 1268px) {
-
-		html, body {
-			overflow-x: hidden;
-			width: 100%;
-			margin: 0;
-			padding: 0;
+		.card-header{
+			background: linear-gradient(135deg, #0062cc, #004085);
+			color:#fff;
+			font-weight:700;
+			text-transform:uppercase;
+			padding:15px;
 		}
 
-		.container-fluid {
-			width: 100%;
-			max-width: 100vw;
-			padding: 0;
-			margin: 0 auto;
-			overflow-x: hidden;
+		/* Igual que pedidos */
+		.toolbar{
+			display:flex;
+			flex-wrap:wrap;
+			gap:.5rem;
+			align-items:center;
+			padding: .75rem 1rem 0 1rem;
+			margin-bottom:0;
 		}
 
-		/* Contenedor scrollable de la tabla */
-		.dataTables_scrollBody {
-			width: 100% !important;
-			max-width: 100% !important;
-			height: 290px; /* 🔹 Altura fija de la tabla visible */
 
-			overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
-			overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
-			display: block;
+		/* pegar "Show entries" a los botones */
+		#tablaClientes_wrapper .row:first-child{
+			margin-top:0 !important;
+			padding-top:0 !important;
 		}
 
-		/* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
-		.dataTables_scrollBody table {
-			width: 100% !important;
-			max-width: 100%;
-			min-width: auto !important;
-			table-layout: auto;
-
+		#tablaClientes_wrapper .dataTables_length label,
+		#tablaClientes_wrapper .dataTables_filter label{
+			margin-bottom:0 !important;
 		}
-		.dataTables_scrollBody
-
-		th, td {
-			padding: 10px;
-			white-space: nowrap;
-		}
-	}
-
-
-	/* Ajustes para pantallas pequeñas (móviles) */
-	@media (max-width: 768px) {
-
-	/* Ajustes generales para la tabla */
-	body #tablaClientes {
-		width: 100% !important;
-		table-layout: fixed !important;  /* Asegura que la tabla tenga un ancho fijo */
-	}
-
-	/* Ajuste de la tabla para pantallas más pequeñas */
-	@media (max-width: 768px) {
-		/* Ajustar la tabla para móviles */
-		body #tablaClientes {
-			width: 100% !important; /* Asegura que la tabla ocupe todo el ancho disponible */
-			table-layout: fixed !important;  /* Ajuste fijo de las celdas */
-		}
-
-		/* Reducción de tamaño de la tabla */
-		body #tablaClientes td, body #tablaClientes th {
-			padding: 6px 4px !important;  /* Reducir padding en pantallas móviles */
-			font-size: 12px !important;   /* Ajustar tamaño de texto */
-		}
-	}
-
-</style>
+	</style>
 </head>
-<body>
+
 <div layout:fragment="content">
-	<div class="container container-fluid">
+	<div class="container-fluid px-2 px-md-3">
 		<section class="content-header">
-				<div class="card">
-					<div class="card-header bg-primary text-white">
-						<i class="fas fa-users mr-2"></i> Listado de Clientes
+			<div class="card">
+
+				<div class="card-header">
+					<i class="fas fa-users mr-2"></i> Listado de Clientes
+				</div>
+
+				<div class="toolbar">
+					<a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
+						<i class="fas fa-list mr-1"></i> Pedidos
+					</a>
+					<a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary btn-sm">
+						<i class="fas fa-images mr-1"></i> Galería
+					</a>
+					<a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
+						<i class="fas fa-user-plus mr-1"></i> Nuevo Cliente
+					</a>
+				</div>
+
+				<div class="card-body">
+					<table class="table table-striped table-bordered datatable w-100"
+						   data-dt="auto"
+						   data-dt-hide-mobile="2,3,4">
+
+
+					<thead class="table-dark text-center align-middle">
+							<tr>
+
+								<th>Detalles</th>
+								<th>Nombre</th>
+								<th class="col-hide-mobile">Email</th>
+								<th class="col-hide-mobile">Teléfono</th>
+								<th class="col-hide-mobile">Dirección</th>
+								<th>Acciones</th>
+							</tr>
+							</thead>
+
+							<!-- ✅ MANTENIDO: datos salen del model (NO AJAX) -->
+							<tbody>
+							<tr th:each="cliente : ${clientes}">
+
+								<td><a class="btn btn-outline-primary btn-sm"
+									   th:href="@{/ver/} + ${cliente.id}"
+									   title="Ver Detalles">
+									<i class="fas fa-eye"></i>
+								</a></td>
+								<td th:text="${cliente.nombre} + ' ' + ${cliente.apellido}"></td>
+								<td th:text="${cliente.email}"></td>
+								<td th:text="${cliente.telefono}"></td>
+								<td th:text="${cliente.direccion}"></td>
+
+								<td class="text-center">
+									<div class="btn-group gap-1 flex-wrap" role="group" aria-label="Acciones Cliente">
+										<a class="btn btn-outline-success btn-sm"
+										   th:href="@{'/pedidos/form/' + ${cliente.id}}"
+										   title="Nuevo Pedido">
+											<i class="fas fa-plus-circle"></i>
+										</a>
+
+										<a class="btn btn-outline-secondary btn-sm albaran-modal-btn"
+										   data-toggle="modal" data-target="#albaranesModal"
+										   th:data-cliente-id="${cliente.id}" title="Ver Facturas">
+											<i class="fas fa-file-invoice"></i>
+										</a>
+
+										<a class="btn btn-outline-primary btn-sm"
+										   th:href="@{/form/} + ${cliente.id}" title="Editar Cliente">
+											<i class="fas fa-edit"></i>
+										</a>
+									</div>
+								</td>
+							</tr>
+							</tbody>
+						</table>
 					</div>
 
-						<div class="row justify-content-between align-items-center">
-							<div class="col-md-8">
-								<div class="btn-group btn-group-toggle">
-									<a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary">
-										<i class="fas fa-list"></i> Pedidos
-									</a>
-									<a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary">
-										<i class="fas fa-images"></i> Galería
-									</a>
+				</div><!-- /card-body -->
+			</div><!-- /card -->
+		</section>
+	</div>
+</div>
 
+<!-- Modal -->
+<div class="modal fade" id="albaranesModal" tabindex="-1" role="dialog" aria-labelledby="albaranesModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="albaranesModalLabel">Pedidos Finalizados</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
 
-									<a th:href="@{/form}" class="btn btn-outline-primary">
-										<i class="fas fa-user-plus"></i> Nuevo Cliente
-									</a>
-								</div>
-							</div>
-						</div>
+			<div class="modal-body">
+				<p class="text-muted mb-0">Cargando...</p>
+			</div>
 
-<!--					<div class="card-header">-->
-<!--						<div class="row justify-content-between align-items-center">-->
-<!--							<div class="col-md-8">-->
-<!--								&lt;!&ndash; Botones visibles en pantallas grandes &ndash;&gt;-->
-<!--								<div class="btn-group btn-group-toggle">-->
-<!--									<a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary ">-->
-<!--										<i class="fas fa-list"></i> Pedidos-->
-<!--									</a>-->
-<!--									<a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary ">-->
-<!--										<i class="fas fa-images"></i> Galería-->
-<!--									</a>-->
-<!--									<a th:href="@{/listar}" class="btn btn-outline-primary ">-->
-<!--										<i class="fas fa-users"></i> Clientes-->
-<!--									</a>-->
-<!--									<a th:href="@{/form}" class="btn btn-outline-success ">-->
-<!--										<i class="fas fa-user-plus"></i> Crear Cliente-->
-<!--									</a>-->
-<!--								</div>-->
-<!--							</div>-->
-<!--						</div>-->
-<!--					</div>-->
-
-
-				<div class="container-fluid mt-3">
-					<table id="tablaClientes" class="table table-striped table-bordered display nowrap mt-2  ">
-						<thead class="thead-dark text-center align-middle">
-						<tr>
-							<th>Detalles</th>
-							<th>Nombre</th>
-							<th class="col-hide-mobile" >Email</th>
-							<th class="col-hide-mobile" >Teléfono</th>
-							<th class="col-hide-mobile" >Dirección</th>
-							<th>Acciones</th>
-						</tr>
-						</thead>
-						<tbody>
-						<tr th:each="cliente : ${clientes}">
-							<td class="text-center">
-								<a class="btn btn-outline-primary btn-sm"
-								   th:href="@{/ver/} + ${cliente.id}"
-								   title="Ver Detalles">
-
-								</a>
-							</td>
-							<td th:text="${cliente.nombre} + ' ' + ${cliente.apellido}"></td>
-							<td th:text="${cliente.email}"></td>
-							<td th:text="${cliente.telefono}"></td>
-							<td th:text="${cliente.direccion}"></td>
-							<td class="text-center">
-								<div class="btn-group gap-1 flex-wrap" role="group" aria-label="Acciones Cliente">
-									<a class="btn btn-outline-success btn-sm" th:href="@{'/pedidos/form/' + ${cliente.id}}" title="Nuevo Pedido">
-										<i class="fas fa-plus-circle"></i>
-									</a>
-									<a class="btn btn-outline-secondary btn-sm albaran-modal-btn"
-									   data-toggle="modal" data-target="#albaranesModal"
-									   th:data-cliente-id="${cliente.id}" title="Ver Facturas">
-										<i class="fas fa-file-invoice"></i>
-									</a>
-									<a class="btn btn-outline-primary btn-sm" th:href="@{/form/} + ${cliente.id}" title="Editar Cliente">
-										<i class="fas fa-edit"></i>
-									</a>
-								</div>
-							</td>
-						</tr>
-						</tbody>
-					</table>
-				</div>
-				</div>
-
-	<!-- Modal -->
-	<div class="modal fade" id="albaranesModal" tabindex="-1" role="dialog" aria-labelledby="albaranesModalLabel" aria-hidden="true">
-		<div class="modal-dialog" role="document">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="albaranesModalLabel">Pedidos Finalizados</h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
-				</div>
-				<div class="modal-body">
-					<!-- Aquí puedes colocar la lista de albaranes finalizados -->
-					<!-- Por ejemplo, una tabla -->
-					<table class="table">
-						<!-- Contenido de la tabla -->
-					</table>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-				</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
 			</div>
 		</div>
 	</div>
-			<script>
+</div>
 
+<div layout:fragment="script">
+	<script>
+		$(document).ready(function () {
 
-				$(document).ready(function () {
-					console.log('ready');
-					$('.albaran-modal-btn').click(function () {
-						var clienteId = $(this).data('cliente-id');
-						$.ajax({
-							type: "GET",
-							url: "/api/pedido/listarPedidos/" + clienteId, // Reemplaza con la ruta correcta de tu servidor
-							success: function (response) {
-								tableModal(response);
-								console.log(response); // Solo para depuración
-							},
-							error: function (xhr, status, error) {
-								console.error(xhr.responseText, status, error); // Solo para depuración
-							}
-						});
-					});
+			// ✅ IMPORTANTE: evitar inicialización doble
+			// Si el layout ya inicializa #tablaClientes, esto evita reventarlo.
+			if (!$.fn.DataTable.isDataTable('#tablaClientes')) {
+				const esMovil = window.matchMedia("(max-width: 768px)").matches;
+
+				$('#tablaClientes').DataTable({
+					language: { url: "//cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json" },
+					paging: true,
+					searching: true,
+					ordering: !esMovil,
+					lengthMenu: [5, 10, 15, 25],
+					pageLength: 5,
+					scrollY: esMovil ? null : "300px",
+					scrollCollapse: true,
+					responsive: true,
+					autoWidth: false,
+
+					// ✅ En vez de targets por clase (a veces falla), usa índices seguros:
+					// 0 Detalles, 1 Nombre, 2 Email, 3 Tel, 4 Dir, 5 Acciones
+					columnDefs: esMovil ? [
+						{ targets: [], visible: false }
+					] : []
 				});
+			}
 
-				function tableModal(response) {
-					if (response.length === 0) {
-						$('#albaranesModal .modal-body').html('<p>No existen pedidos finalizados para este cliente.</p>');
-					} else {
-						let tableHtml = `
-            <table class="table table-bordered table-striped">
-                <thead class="thead-dark">
-                    <tr>
-                        <th>ID</th>
-                        <th>Fecha</th>
-                        <th>Total</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
+			// ✅ Modal facturas (esto sí es AJAX, solo para el modal)
+			$('.albaran-modal-btn').click(function () {
+				var clienteId = $(this).data('cliente-id');
 
-						response.forEach(pedido => {
-							tableHtml += `
-                <tr>
-                    <td>${pedido.id}</td>
-                    <td>${pedido.fecha}</td>
-                    <td>${pedido.total}</td>
-                    <td>${pedido.estado}</td>
-                    <td>
-                        <a href="/pedidos/ver/${pedido.id}" class="btn btn-sm btn-outline-primary" title="Ver Pedido">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                    </td>
-                </tr>
-            `;
-						});
-
-						tableHtml += `
-                </tbody>
-            </table>
-        `;
-
-						$('#albaranesModal .modal-body').html(tableHtml);
+				$.ajax({
+					type: "GET",
+					url: "/api/pedido/listarPedidos/" + clienteId,
+					success: function (response) {
+						tableModal(response);
+					},
+					error: function (xhr, status, error) {
+						console.error(xhr.responseText, status, error);
+						$('#albaranesModal .modal-body').html('<div class="alert alert-danger">Error cargando pedidos.</div>');
 					}
+				});
+			});
+
+			function tableModal(response) {
+				if (!response || response.length === 0) {
+					$('#albaranesModal .modal-body').html('<p>No existen pedidos finalizados para este cliente.</p>');
+					return;
 				}
 
-			</script>
+				let tableHtml = `
+                    <table class="table table-bordered table-striped">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
 
-		</section>
-			</div> <!-- card-body -->
-		</div> <!-- card -->
-	</div> <!-- container-fluid -->
- </div> <!-- scroll-container -->
-</div> <!-- content -->
-</script>
+				response.forEach(pedido => {
+					tableHtml += `
+                        <tr>
+                            <td>${pedido.id ?? ""}</td>
+                            <td>${pedido.fecha ?? ""}</td>
+                            <td>${pedido.total ?? ""}</td>
+                            <td>${pedido.estado ?? ""}</td>
+                            <td>
+                                <a href="/pedidos/ver/${pedido.id}" class="btn btn-sm btn-outline-primary" title="Ver Pedido">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    `;
+				});
+
+				tableHtml += `</tbody></table>`;
+				$('#albaranesModal .modal-body').html(tableHtml);
+			}
+		});
+	</script>
 </div>
-<!-- container-fluid -->
-</div> <!-- layout:fragment -->
-</body>
 
 </html>
-
-

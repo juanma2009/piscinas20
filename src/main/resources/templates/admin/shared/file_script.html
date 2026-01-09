@@ -1,27 +1,94 @@
-<!-- jQuery (DEBE cargarse PRIMERO) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Bootstrap JS (bundle incluye Popper) -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
-<!-- jQuery UI (ANTES que Bootstrap) -->
-<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<!-- DataTables (MISMA versión que el CSS del head) -->
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
 
-<!-- Bootstrap (DESPUÉS de jQuery) -->
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<!-- DataTables Responsive (ya tienes su CSS en head) -->
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 
-<!-- DataTables -->
-<script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
-
-<!-- Summernote (editor de texto que depende de jQuery + Bootstrap) -->
+<!-- Summernote (depende de Bootstrap 4 + jQuery) -->
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
 
+<!-- AdminLTE -->
+<script src="/admin/dist/js/adminlte.js"></script>
+
+<!-- Tus scripts -->
 <script src="/admin/dist/js/preubamodal.js"></script>
 <script src="/admin/dist/js/carruselPedido.js"></script>
-<link rel="stylesheet" th:href="@{/css/style.css}">
 
-<!-- controla el menu de los depliegues-->
-<script src="/admin/dist/js/adminlte.js"></script>
+<!-- Solo si los necesitas realmente -->
 <script src="/admin/dist/js/pages/dashboard.js"></script>
 <script src="/admin/dist/js/demo.js"></script>
+
 <!-- Slick Carousel -->
-<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.css"/>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
+<script>
+    (function () {
+        if (!$.fn.dataTable) return;
+
+        // Defaults globales (base)
+        $.extend(true, $.fn.dataTable.defaults, {
+            language: { url: "//cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json" },
+            paging: true,
+            searching: true,
+            lengthMenu: [5, 10, 15, 25],
+            pageLength: 5,
+            scrollX: true,
+            scrollCollapse: true,
+            fixedHeader: false,
+            autoWidth: false
+        });
+
+        window.initAutoDataTables = function (root) {
+            const $root = root ? $(root) : $(document);
+
+            $root.find("table.datatable[data-dt='auto']").each(function () {
+                if ($.fn.dataTable.isDataTable(this)) return;
+
+                const $t = $(this);
+                const esMovil = window.matchMedia("(max-width: 1560px)").matches;
+
+                let columnDefs = [];
+
+                // ✅ Ocultar columnas SOLO en móvil si se indica
+                const hide = $t.attr("data-dt-hide-mobile"); // ej "2,3,4"
+                if (esMovil && hide) {
+                    const idx = hide.split(",").map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+                    if (idx.length) columnDefs.push({ targets: idx, visible: false });
+                }
+
+                // ✅ Columna control (desplegable) SOLO si la defines tú con data-dt-control
+                const controlAttr = $t.attr("data-dt-control"); // ej: "0"
+                let responsiveOpt = esMovil ? true : false; // 👈 en escritorio NO responsive
+
+                if (esMovil && controlAttr !== undefined) {
+                    const target = parseInt(controlAttr, 10);
+                    const t = isNaN(target) ? 0 : target;
+
+                    responsiveOpt = { details: { type: "column", target: t } };
+
+                    columnDefs.push({
+                        targets: t,
+                        className: "dtr-control",
+                        orderable: false,
+                        searchable: false,
+                        width: "1%"
+                    });
+                }
+
+                $t.DataTable({
+                    ordering: !esMovil,
+                    scrollY: esMovil ? "45vh" : "300px",
+                    responsive: responsiveOpt,     // ✅ móvil sí / escritorio no
+                    columnDefs,
+                    initComplete: function () {
+                        $t.addClass("dt-ready");
+                        this.api().columns.adjust();
+                    }
+                });
+            });
+        };
+    })();
+</script>
