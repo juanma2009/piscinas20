@@ -7,9 +7,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="_csrf" th:content="${_csrf.token}">
   <meta name="_csrf_header" th:content="${_csrf.headerName}">
+
   <title>Galería de Imágenes</title>
 
-  <!-- (Si tu layout YA carga jQuery/Bootstrap/AdminLTE, quita duplicados de aquí) -->
+  <!-- (Si tu layout YA carga jQuery/Bootstrap/AdminLTE, quita duplicados) -->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
@@ -24,10 +25,12 @@
   </script>
 
   <style>
-    /* ✅ IMPORTANTE: permitir scroll vertical (antes lo estabas bloqueando con overflow:hidden) */
-    html, body{
+    /* ✅ MUY IMPORTANTE: permitir scroll vertical (antes lo bloqueabas con overflow:hidden) */
+    html, body {
       height: auto !important;
       overflow: auto !important;
+      margin: 0;
+      padding: 0;
     }
     body{
       min-height: 100vh;
@@ -35,7 +38,7 @@
       background-color: #f9f9f9;
     }
 
-    /* ✅ ancho como Pedidos */
+    /* ✅ Ancho como Pedidos */
     .container-fluid{
       padding-left: .5rem;
       padding-right: .5rem;
@@ -55,10 +58,9 @@
       font-weight:700;
       text-transform:uppercase;
       padding:15px;
-      border-radius: 10px 10px 0 0;
     }
 
-    /* ✅ Toolbar igual que Pedidos (botones pequeños, juntos, responsive) */
+    /* ✅ Toolbar igual que Pedidos */
     .toolbar{
       display:flex;
       flex-wrap:wrap;
@@ -74,11 +76,8 @@
       line-height:1.2 !important;
     }
     @media (max-width: 768px){
-      .toolbar{ gap:.35rem; }
       .toolbar .btn{
-        flex:0 0 auto;
-        padding:.2rem .45rem !important;
-        font-size:.82rem !important;
+        width: auto!important;
       }
     }
     @media (max-width: 420px){
@@ -88,23 +87,30 @@
       }
     }
 
-    /* ✅ Filtros: toggle con altura real como Pedidos */
+    /* ✅ Filtros: (tu idea original) */
     #formBusqueda{
       overflow:hidden;
-      max-height:0;
       transition:max-height .3s ease-in-out;
       margin-top:.75rem;
+      max-height: 0; /* se ajusta por JS según resultados */
     }
 
-    /* ✅ Grid galería */
+    /* ✅ Botones buscar/limpiar: espacio abajo */
+    .form-actions{
+      margin-top:.5rem;
+      margin-bottom: 1rem; /* 👈 espacio hacia abajo */
+      gap:.5rem;
+    }
+
+    /* ✅ Galería grid */
     .grid-view{ margin-top: 1rem; }
 
     #photo-container{
       display:grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 15px;
-      max-height: 350px;      /* como lo tenías */
-      overflow-y: auto;       /* scroll interno si hay muchas fotos */
+      max-height: 350px;
+      overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
 
@@ -124,13 +130,6 @@
       transition: transform .2s ease;
     }
     .pedido-card img:hover{ transform: scale(1.03); }
-
-    /* ✅ Botones buscar/limpiar: espacio abajo (como pediste) */
-    .form-actions{
-      margin-top:.5rem;
-      margin-bottom: 1rem; /* 👈 espacio hacia abajo */
-      gap:.5rem;
-    }
   </style>
 </head>
 
@@ -138,8 +137,8 @@
 <div layout:fragment="content">
   <div class="container-fluid px-2 px-md-3">
     <section class="content-header">
-      <div class="card">
 
+      <div class="card">
         <div class="card-header">
           <i class="fas fa-images mr-2"></i> Galería de Imágenes
         </div>
@@ -162,7 +161,9 @@
 
         <div class="card-body">
 
+          <!-- ✅ BUSCAR: submit normal (server-side) como lo tenías -->
           <form id="formBusqueda" method="post" th:action="@{'/pedidos/buscarFoto'}" class="row">
+
             <div class="col-12 col-md-6 col-lg-3 mb-2">
               <label for="cliente" class="form-label">Cliente</label>
               <select id="cliente" name="id" class="form-control">
@@ -255,7 +256,7 @@
               </select>
             </div>
 
-            <!-- ✅ botones con espacio abajo -->
+            <!-- ✅ botones -->
             <div class="col-12 d-flex justify-content-end form-actions">
               <button type="submit" class="btn btn-primary btn-sm">
                 <i class="fas fa-search mr-1"></i> Buscar
@@ -266,8 +267,10 @@
             </div>
           </form>
 
-          <!-- RESULTADOS -->
+          <!-- ================= RESULTADOS SERVER-SIDE ================= -->
           <div th:if="${busquedaRealizada == true}">
+
+            <!-- Flag para saber si hay resultados (igual que tu original) -->
             <div id="estado-busqueda"
                  th:attr="data-resultados=${pedido != null and !pedido.isEmpty()}"></div>
 
@@ -293,55 +296,17 @@
             </div>
           </div>
 
-        </div><!-- /card-body -->
-      </div><!-- /card -->
+        </div>
+      </div>
+
     </section>
   </div>
 </div>
 
-<!-- ✅ scripts -->
+<!-- ✅ SCRIPTS -->
 <div layout:fragment="scripts">
   <script>
-    // ✅ Toggle filtros (robusto, igual que Pedidos)
-    $(document).on("click", "#toggleBusqueda", function (e) {
-      e.preventDefault();
-
-      const $form = $("#formBusqueda");
-      const $btn  = $("#toggleBusqueda");
-      if (!$form.length) return;
-
-      if ($form.data("open") === undefined) {
-        $form.css("max-height", "0px").data("open", false);
-        $btn.text("Mostrar Filtros");
-      }
-
-      const abierto = $form.data("open") === true;
-
-      if (!abierto) {
-        $form.css("max-height", $form[0].scrollHeight + "px");
-        $form.data("open", true);
-        $btn.text("Ocultar Filtros");
-
-        // ✅ opcional: limpiar grid al abrir filtros
-        const photoContainer = document.getElementById("photo-container");
-        const photoPagination = document.getElementById("photo-pagination");
-        if (photoContainer) photoContainer.innerHTML = "";
-        if (photoPagination) photoPagination.innerHTML = "";
-      } else {
-        $form.css("max-height", "0px");
-        $form.data("open", false);
-        $btn.text("Mostrar Filtros");
-      }
-    });
-
-    // ✅ estado inicial
-    $(function () {
-      const $form = $("#formBusqueda");
-      if ($form.length) $form.css("max-height", "0px").data("open", false);
-      $("#toggleBusqueda").text("Mostrar Filtros");
-    });
-
-    // ✅ AJAX pieza -> tipo
+    // ========= 1) AJAX pieza -> tipo (igual) =========
     $(document).on("change", "#pieza", function () {
       const pieza = this.value;
       const $tipo = $("#tipo");
@@ -350,13 +315,72 @@
         url: "/api/pedido/tipoPorPieza",
         method: "GET",
         dataType: "json"
-      }).done(data => {
+      })
+      .done(data => {
         $tipo.empty().append('<option value="" disabled selected>Seleccione un tipo</option>');
         (data[pieza] || []).forEach(t => $tipo.append(`<option value="${t}">${t}</option>`));
+      })
+      .fail((xhr, s, e) => console.error("Error AJAX tipoPorPieza", s, e, xhr.responseText));
+    });
+
+    // ========= 2) Mostrar/ocultar filtros al cargar (TU LÓGICA) =========
+    document.addEventListener("DOMContentLoaded", function () {
+      const formBusqueda = document.getElementById("formBusqueda");
+      const btnToggle    = document.getElementById("toggleBusqueda");
+      const estadoBusqueda = document.getElementById("estado-busqueda");
+
+      if (!formBusqueda || !btnToggle) return;
+
+      formBusqueda.style.overflow = "hidden";
+      formBusqueda.style.transition = "max-height 0.3s ease-in-out";
+
+      // Si existe el flag, aplicamos tu comportamiento:
+      // - si hay resultados => ocultar filtros
+      // - si NO hay resultados => mostrar filtros
+      if (estadoBusqueda) {
+        const hayResultados = estadoBusqueda.dataset.resultados === "true";
+
+        if (hayResultados) {
+          formBusqueda.style.maxHeight = "0px";
+          btnToggle.textContent = "Mostrar Filtros";
+          $(formBusqueda).data("open", false);
+        } else {
+          formBusqueda.style.maxHeight = formBusqueda.scrollHeight + "px";
+          btnToggle.textContent = "Ocultar Filtros";
+          $(formBusqueda).data("open", true);
+        }
+      } else {
+        // Si NO hay flag (sin búsqueda todavía), dejamos el formulario ABIERTO por defecto
+        formBusqueda.style.maxHeight = formBusqueda.scrollHeight + "px";
+        btnToggle.textContent = "Ocultar Filtros";
+        $(formBusqueda).data("open", true);
+      }
+
+      // Toggle del botón (igual que tu original + robusto)
+      btnToggle.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        const abierto = $(formBusqueda).data("open") === true;
+
+        if (!abierto) {
+          formBusqueda.style.maxHeight = formBusqueda.scrollHeight + "px";
+          btnToggle.textContent = "Ocultar Filtros";
+          $(formBusqueda).data("open", true);
+
+          // ✅ BORRAR el contenedor de fotos al mostrar los filtros (como tu original)
+          const photoContainer = document.getElementById("photo-container");
+          const photoPagination = document.getElementById("photo-pagination");
+          if (photoContainer) photoContainer.innerHTML = "";
+          if (photoPagination) photoPagination.innerHTML = "";
+        } else {
+          formBusqueda.style.maxHeight = "0px";
+          btnToggle.textContent = "Mostrar Filtros";
+          $(formBusqueda).data("open", false);
+        }
       });
     });
 
-    // ✅ botón limpiar (mantiene selects como querías)
+    // ========= 3) Botón Limpiar (igual, sin romper submit) =========
     $(document).on("click", "#btnReset", function () {
       const form = document.getElementById("formBusqueda");
       if (!form) return;
@@ -365,15 +389,24 @@
       setTimeout(() => {
         $("#tipo").empty().append('<option value="" disabled selected>Seleccione una pieza primero</option>');
         $("#pieza").val("");
+        $("#cliente").val("");
+        $("#servicios").val("");
+        $("#estado").val("");
+        $("#grupo").val("");
+        $("#ref").val("");
+        $("#fechaDesde").val("");
+        $("#fechaHasta").val("");
       }, 50);
     });
 
-    // ✅ paginación (tu lógica original)
+    // ========= 4) Paginación para resultados server-side (tu lógica) =========
     function setupPagination() {
       const itemsPerPage = 10;
       const photos = document.querySelectorAll(".photo-item");
       const pagination = document.getElementById("photo-pagination");
       let currentPage = 1;
+
+      if (!pagination || photos.length === 0) return;
 
       function showPage(page) {
         const start = (page - 1) * itemsPerPage;
@@ -385,8 +418,6 @@
 
       function buildPagination() {
         const totalPages = Math.ceil(photos.length / itemsPerPage);
-        if (!pagination) return;
-
         pagination.innerHTML = "";
         for (let i = 1; i <= totalPages; i++) {
           let li = document.createElement("li");
@@ -395,7 +426,7 @@
           a.className = "page-link";
           a.href = "#";
           a.textContent = i;
-          a.addEventListener("click", function(e) {
+          a.addEventListener("click", function (e) {
             e.preventDefault();
             currentPage = i;
             showPage(currentPage);
@@ -406,16 +437,73 @@
         }
       }
 
-      if (photos.length > 0) {
-        showPage(currentPage);
-        buildPagination();
-      }
+      showPage(currentPage);
+      buildPagination();
     }
 
     document.addEventListener("DOMContentLoaded", function () {
-      if (document.querySelector(".grid-view")) {
-        setupPagination();
+      if (document.querySelector(".grid-view")) setupPagination();
+    });
+
+    // ========= 5) Infinite scroll (solo si NO hay resultados server-side) =========
+    $(document).ready(function () {
+      const estado = document.getElementById("estado-busqueda");
+      const hayResultadosServer = estado && estado.dataset.resultados === "true";
+
+      // Si ya hay resultados renderizados por servidor, NO cargamos por AJAX.
+      if (hayResultadosServer) return;
+
+      const $container = $("#photo-container");
+      if (!$container.length) return;
+
+      let currentPage = 1;
+      let isLoading = false;
+      let noMorePhotos = false;
+
+      function loadPhotos(page) {
+        if (isLoading || noMorePhotos) return;
+        isLoading = true;
+
+        $.ajax({
+          url: "/api/pedido/listarFotos",
+          type: "GET",
+          data: { page: page },
+          success: function (response) {
+            if (response && response.length > 0) {
+              response.forEach(function (photo) {
+                const img = (photo.imageUrl ? photo.imageUrl : "/images/spring.png");
+                const html = `
+                  <div class="pedido-card photo-item">
+                    <a href="/pedidos/ver/${photo.npedido}">
+                      <img src="${img}" alt="Imagen del Pedido">
+                    </a>
+                  </div>`;
+                $container.append(html);
+              });
+              currentPage++;
+              isLoading = false;
+            } else {
+              noMorePhotos = true;
+              isLoading = false;
+            }
+          },
+          error: function (err) {
+            console.error("Error al cargar las fotos:", err);
+            isLoading = false;
+          }
+        });
       }
+
+      // cargar primera página
+      loadPhotos(currentPage);
+
+      // scroll dentro del contenedor
+      $container.on("scroll", function () {
+        const el = this;
+        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) {
+          loadPhotos(currentPage);
+        }
+      });
     });
   </script>
 </div>
