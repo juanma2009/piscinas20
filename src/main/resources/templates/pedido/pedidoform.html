@@ -189,31 +189,24 @@
             margin-left: 5px;
         }
 
-        .card-header.bg-white {
-            background-color: white !important;
-        }
 
-        .card-header bg-primary text-white {
-            width: 100%;
-            height: 100px;
-            border-radius: 10px 10px 0 0;
-        }
 
         /* Establecer un padding y margen general para todas las secciones internas */
-        .container-fluid,
-        .card,
-        .card-body,
-        .card-header,
-        section.content-header {
+
+        .card{
+            border-radius:10px;
+            box-shadow:0 2px 6px rgba(0,0,0,.08);
+            overflow:hidden;
             padding: 1rem;
-            margin-bottom: 1rem;
+        }
+        .card-header{
+            background: linear-gradient(135deg, #0062cc, #004085);
+            color:#fff;
+            font-weight:700;
+            text-transform:uppercase;
+            padding:15px;
         }
 
-        /* Asegura que las tarjetas no queden pegadas entre sí o a los bordes */
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
 
         /* Control uniforme para las tablas */
         .table {
@@ -230,36 +223,7 @@
             padding: 0.4rem 0.75rem;
         }
 
-        .card-header {
-            background: linear-gradient(135deg, #0062cc, #004085); /* Gradiente de azul */
-            color: white;
-            padding: 15px;
-            font-weight: bold;
-            text-transform: uppercase; /* Texto en mayúsculas */
-            font-size: 1.25rem; /* Aumentar el tamaño de la fuente */
-            border-radius: 8px 8px 0 0; /* Bordes redondeados */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra ligera */
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
-        }
 
-        .card-header:hover {
-            background-color: #0056b3; /* Tono más oscuro de azul */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
-        }
-
-        body {
-            width: 100vw;
-            min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
-            overflow-x: hidden;
-            background-color: #f9f9f9; /* opcional: fondo más suave */
-        }
-
-        html, body {
-            height: 100%; /* Asegura que el contenido cubra toda la pantalla */
-            margin: 0; /* Elimina márgenes por defecto */
-            padding: 0; /* Elimina el padding por defecto */
-            overflow: auto; /* Permite scroll para Google Picker y otros diálogos */
-        }
 
         /* Hace la tabla responsiva */
         .table-responsive {
@@ -296,12 +260,17 @@
                 padding: 0;
             }
 
-            .container-fluid {
-                width: 100%;
-                max-width: 100vw;
-                padding: 0;
-                margin: 0 auto;
-                overflow-x: hidden;
+            .card{
+                border-radius:10px;
+                box-shadow:0 2px 6px rgba(0,0,0,.08);
+                overflow:hidden;
+            }
+            .card-header{
+                background: linear-gradient(135deg, #0062cc, #004085);
+                color:#fff;
+                font-weight:700;
+                text-transform:uppercase;
+                padding:15px;
             }
 
             .tab-content {
@@ -421,6 +390,14 @@
             }
 
         }
+        /* ✅ Toolbar responsive */
+        .toolbar{
+            display:flex;
+            flex-wrap:wrap;
+            gap:.5rem;
+            align-items:center;
+            padding: .75rem 1rem 0 1rem;
+        }
     </style>
 </head>
 
@@ -435,31 +412,31 @@
                 <div th:text="${titulo}"></div> <!-- Título de la tarjeta -->
             </div>
             <!-- Botones de navegación -->
-            <div class="row justify-content-between align-items-center">
-                <div class="col-md-8">
-                    <div class="btn-group btn-group-toggle">
-                        <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary">
+
+                <div class="toolbar">
+
+                        <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-list"></i> <span>Pedidos</span>
                         </a>
                         <!-- Ejemplo: botón "Ver pedido" solo visible en modo edición -->
                         <a th:if="${pedido.npedido != null}"
                            th:href="@{/pedidos/ver/{npedido}(npedido=${pedido.npedido})}"
-                           class="btn btn-outline-primary">
+                           class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-eye"></i><span>Ver detalles</span>
                         </a>
-                        <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary">
+                        <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-images"></i> <span>Galería</span>
                         </a>
-                        <a th:href="@{/listar}" class="btn btn-outline-primary">
+                        <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-user"></i> <span>Clientes</span>
                         </a>
-                        <a th:href="@{/form}" class="btn btn-outline-primary">
+                        <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-user-plus"></i> <span>Nuevo Cliente</span>
                         </a>
 
                     </div>
-                </div>
-            </div>
+
+
             <div></div>
             <div class="container-fluid mt-3">
                 <form id="pedidoForm" th:action="@{/pedidos/form/}" enctype="multipart/form-data" th:object="${pedido}"
