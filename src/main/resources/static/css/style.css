@@ -138,3 +138,12 @@ table.datatable td a.btn:last-child,
 table.datatable td button.btn:last-child {
     margin-right: 0;
 }
+
+/* ✅ Toolbar responsive */
+.toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:.5rem;
+    align-items:center;
+    padding: .75rem 1rem 0 1rem;
+}

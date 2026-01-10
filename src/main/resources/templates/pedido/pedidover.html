@@ -18,74 +18,75 @@
     <meta name="_csrf" th:content="${_csrf.token}" />
     <meta name="_csrf_header" th:content="${_csrf.headerName}" />
     <style>
-        .card-header.bg-white {
-            background-color: white !important;
+
+        .card{
+            border-radius:10px;
+            box-shadow:0 2px 6px rgba(0,0,0,.08);
+            overflow:hidden;
+        }
+        .card-header{
+            background: linear-gradient(135deg, #0062cc, #004085);
+            color:#fff;
+            font-weight:700;
+            text-transform:uppercase;
+            padding:15px;
         }
 
-        .card-header bg-primary text-white {
-            width: 100%;
-            height: 100px;
-            border-radius: 10px 10px 0 0;
-        }
-        /* Establecer un padding y margen general para todas las secciones internas */
-        .container-fluid,
-        .card,
-        .card-body,
-        .card-header,
-        section.content-header {
-            padding: 1rem;
-            margin-bottom: 1rem;
+        /* ✅ Toolbar responsive */
+        .toolbar{
+            display:flex;
+            flex-wrap:wrap;
+            gap:.5rem;
+            align-items:center;
+            padding: .75rem 1rem 0 1rem;
         }
 
-        /* Asegura que las tarjetas no queden pegadas entre sí o a los bordes */
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+
+        /* ✅ Filtros: toggle con altura real */
+        #formBusqueda{
+            overflow:hidden;
+            max-height:0;
+            transition:max-height .3s ease-in-out;
+            margin-top:.75rem;
         }
 
-        /* Control uniforme para las tablas */
-        .table {
-            margin-bottom: 1rem;
+        /* ✅ Tabla: dentro de márgenes + scroll si hace falta */
+        .table-responsive{
+            width:100%;
+            overflow-x:auto;
+            -webkit-overflow-scrolling:touch;
+        }
+        .dataTables_wrapper{
+            width:100%;
+            overflow-x:auto;
         }
 
-        /* Espaciado entre botones */
+        table.dataTable{ width:100% !important; }
+
+        .table td, .table th{
+            white-space:nowrap;
+            font-size:14px;
+            padding:8px;
+
+
+             /* Espaciado entre botones */
         .btn-group .btn {
             margin-right: 0.5rem;
         }
 
-        /* Botones pequeños con padding uniforme */
-        .btn-sm {
-            padding: 0.4rem 0.75rem;
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, #0062cc, #004085); /* Gradiente de azul */
-            color: white;
-            padding: 15px;
-            font-weight: bold;
-            text-transform: uppercase; /* Texto en mayúsculas */
-            font-size: 1.25rem; /* Aumentar el tamaño de la fuente */
-            border-radius: 8px 8px 0 0; /* Bordes redondeados */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra ligera */
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
-        }
 
         .card-header:hover {
             background-color: #0056b3; /* Tono más oscuro de azul */
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
         }
 
-        body {
-            width: 100vw;
-            min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
-            overflow-x: hidden;
-            background-color: #f9f9f9; /* opcional: fondo más suave */
+
         }
         html, body {
-            height: 100%; /* Asegura que el contenido cubra toda la pantalla */
+
             margin: 0; /* Elimina márgenes por defecto */
             padding: 0; /* Elimina el padding por defecto */
-            overflow: hidden; /* Oculta el scroll si no es necesario */
+
         }
         .nav-tabs .nav-link.active {
             color: #007bff !important; /* azul Bootstrap */
@@ -97,33 +98,17 @@
         @media screen and (min-width: 1268px) {
 
             html, body {
-                overflow-x: hidden;
+
                 width: 100%;
                 margin: 0;
                 padding: 0;
             }
 
-            .container-fluid {
-                width: 100%;
-                max-width: 100vw;
-                padding: 0;
-                margin: 0 auto;
-                overflow-x: hidden;
-            }
+
             .tab-content {
                 margin-top: 20px;
             }
 
-            /* Contenedor scrollable de la tabla */
-            .dataTables_scrollBody {
-                width: 100% !important;
-                max-width: 100% !important;
-                height: 290px; /* 🔹 Altura fija de la tabla visible */
-
-                overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
-                overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
-                display: block;
-            }
 
             /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
             .dataTables_scrollBody table {
@@ -134,13 +119,7 @@
 
             }
 
-            .dataTables_scrollBody {
 
-                th, td {
-                    padding: 10px;
-                    white-space: nowrap;
-                }
-            }
         }
 
         /* Estilos para el carrusel ORIGINAL con mejoras */
@@ -451,26 +430,26 @@
             </div>
             <!-- Botones de navegación -->
             <div class="row justify-content-between align-items-center">
-                <div class="col-md-8">
-                    <div class="btn-group btn-group-toggle">
-                        <a th:href="@{/pedidos/listarPedidos}" class=" btn btn-outline-primary">
+                <div class="toolbar">
+
+                        <a th:href="@{/pedidos/listarPedidos}" class=" btn btn-outline-primary btn-sm ">
                             <i class="fas fa-list"></i> Pedidos
                         </a>
-                        <a th:href="@{'/pedidos/formEditar/' + ${pedido.npedido}}" class="btn btn-outline-primary">
+                        <a th:href="@{'/pedidos/formEditar/' + ${pedido.npedido}}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-edit"></i> Editar
                         </a>
-                        <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary">
+                        <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-images"></i> Galería
                         </a>
-                        <a th:href="@{/listar}" class="btn btn-outline-primary">
+                        <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-user"></i> Clientes
                         </a>
 
-                        <a th:href="@{/form}" class="btn btn-outline-primary">
+                        <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-user-plus"></i> Nuevo Cliente
                         </a>
                         <div></div>
-                    </div>
+
                 </div>
             </div>
 
@@ -493,27 +472,27 @@
                         <ul class="list-group my-2">
                             <li class="list-group-item">
                                 <div class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-6 col-md-4">
                                         <strong>Cliente:</strong>
                                         <div th:text="${pedido.cliente.nombre}+${pedido.cliente.apellido}"></div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-6 col-md-4">
                                         <strong>Nº Cliente</strong>
                                         <div th:text="${pedido.cliente.id}"></div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-6 col-md-4">
                                         <strong>Nº Pedido</strong>
                                         <div th:text="${pedido.npedido}"></div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-6 col-md-4">
                                         <strong>Referencia:</strong>
                                         <div th:text="${pedido.ref}"></div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-6 col-md-4">
                                         <strong>Empleado:</strong>
                                         <div th:text="${pedido.empleado}"></div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-6 col-md-4">
                                         <strong>Estado del Pedido:</strong>
                                         <div th:text="${pedido.estado}"></div>
                                     </div>
@@ -521,15 +500,15 @@
                             </li>
                             <li class="list-group-item">
                                 <div class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-6 col-md-4">
                                         <strong>Fecha de Registro:</strong>
                                         <div th:text="${#dates.format(pedido.dfecha, 'dd/MM/yyyy')}"></div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-6 col-md-4">
                                         <strong>Fecha de Entrega:</strong>
                                         <div th:text="${#dates.format(pedido.fechaEntrega, 'dd/MM/yyyy')}"></div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-6 col-md-4">
                                         <strong>Fecha de Finalizdo:</strong>
                                         <div th:text="${#dates.format(pedido.fechaFinalizado, 'dd/MM/yyyy')}"></div>
                                     </div>
@@ -537,11 +516,11 @@
                             </li>
                             <li class="list-group-item">
                                 <div class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-6 col-md-4">
                                         <strong>Horas:</strong>
                                         <div th:text="${pedido.horas}"></div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-6 col-md-4">
                                         <strong>Cobrado:</strong>
                                         <div th:text="${pedido.cobrado}"></div>
                                     </div>
@@ -563,13 +542,13 @@
                     <!-- Detalles Técnicos -->
                     <div class="tab-pane fade" id="detalles" role="tabpanel" aria-labelledby="detalles-tab">
                         <div class="row my-2">
-                            <div class="col-md-4">
+                            <div class="col-6 col-md-4">
                                 <div class="list-group-item">
                                     <strong>Tipo de Servicio:</strong>
                                     <div th:text="${pedido.tipoPedido}"></div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-6 col-md-4">
                                 <div class="list-group-item">
                                     <strong>Peso:</strong>
                                     <div th:text="${pedido.peso}"></div>
@@ -578,19 +557,19 @@
                         </div>
 
                         <div class="row my-2">
-                            <div class="col-md-4">
+                            <div class="col-6 col-md-4">
                                 <div class="list-group-item">
                                     <strong>Metal:</strong>
                                     <div th:text="${pedido.grupo}"></div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-6 col-md-4">
                                 <div class="list-group-item">
                                     <strong>Tipo de Pieza:</strong>
                                     <div th:text="${pedido.pieza}"></div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-6 col-md-4">
                                 <div class="list-group-item">
                                     <strong>Tipo de Joya:</strong>
                                     <div th:text="${pedido.tipo}"></div>
