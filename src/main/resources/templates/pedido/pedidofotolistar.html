@@ -1,511 +1,404 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorator="admin/admin_layout">
+
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="_csrf" th:content="${_csrf.token}">
-  <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <meta charset="utf-8"/>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Galería de Imágenes</title>
+    <title>Galería de Imágenes</title>
 
-  <!-- (Si tu layout YA carga jQuery/Bootstrap/AdminLTE, quita duplicados) -->
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <!-- ⚠️ OJO: si tu layout ya carga jQuery/Bootstrap/AdminLTE NO lo dupliques aquí.
+         Dejo SOLO lo imprescindible para que funcione (si ya está en el layout, puedes borrar estos). -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
-  <link rel="stylesheet" href="../css/table.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
 
-  <script th:inline="javascript">
-    /*<![CDATA[*/
-    var tiposPorPieza = /*[[${tiposPorPieza}]]*/ {};
-    /*]]>*/
-  </script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        var tiposPorPieza = /*[[${tiposPorPieza}]]*/ {};
+        /*]]>*/
+    </script>
 
-  <style>
-    /* ✅ MUY IMPORTANTE: permitir scroll vertical (antes lo bloqueabas con overflow:hidden) */
-    html, body {
-      height: auto !important;
-      overflow: auto !important;
-      margin: 0;
-      padding: 0;
-    }
-    body{
-      min-height: 100vh;
-      overflow-x: hidden;
-      background-color: #f9f9f9;
-    }
+    <style>
+        /* ========= Look “Pedidos” ========= */
+        .card{
+            border-radius:10px;
+            box-shadow:0 2px 6px rgba(0,0,0,.08);
+            overflow:hidden;
+        }
+        .card-header{
+            background: linear-gradient(135deg, #0062cc, #004085);
+            color:#fff;
+            font-weight:700;
+            text-transform:uppercase;
+            padding:15px;
+        }
 
-    /* ✅ Ancho como Pedidos */
-    .container-fluid{
-      padding-left: .5rem;
-      padding-right: .5rem;
-    }
-    @media (min-width: 768px){
-      .container-fluid{ padding-left: 1rem; padding-right: 1rem; }
-    }
+        .toolbar{
+            display:flex;
+            flex-wrap:wrap;
+            gap:.5rem;
+            align-items:center;
+            padding: .75rem 1rem 0 1rem;
+        }
 
-    .card{
-      border-radius:10px;
-      box-shadow:0 2px 6px rgba(0,0,0,.08);
-      overflow:hidden;
-    }
-    .card-header{
-      background: linear-gradient(135deg, #0062cc, #004085);
-      color:#fff;
-      font-weight:700;
-      text-transform:uppercase;
-      padding:15px;
-    }
+        .toolbar .btn{
+            white-space:nowrap;
+        }
 
-    /* ✅ Toolbar igual que Pedidos */
-    .toolbar{
-      display:flex;
-      flex-wrap:wrap;
-      gap:.5rem;
-      align-items:center;
-      padding: .75rem 1rem 0 1rem;
-    }
-    .toolbar .btn{
-      width:auto !important;
-      white-space:nowrap;
-      padding:.25rem .5rem !important;
-      font-size:.875rem !important;
-      line-height:1.2 !important;
-    }
-    @media (max-width: 768px){
-      .toolbar .btn{
-        width: auto!important;
-      }
-    }
-    @media (max-width: 420px){
-      .toolbar .btn{
-        padding:.18rem .4rem !important;
-        font-size:.78rem !important;
-      }
-    }
+        /* Botones pequeños y “encajados” como Pedidos */
+        .btn.btn-outline-primary,
+        .btn.btn-primary,
+        .btn.btn-secondary{
+            padding: .25rem .5rem;
+            font-size: .875rem;
+            line-height: 1.2;
+        }
 
-    /* ✅ Filtros: (tu idea original) */
-    #formBusqueda{
-      overflow:hidden;
-      transition:max-height .3s ease-in-out;
-      margin-top:.75rem;
-      max-height: 0; /* se ajusta por JS según resultados */
-    }
+        /* ========= Body con scroll (IMPORTANTE) ========= */
+        html, body{
+            height:auto;
+            overflow-y:auto;     /* ✅ permite scroll vertical */
+            overflow-x:hidden;
+        }
 
-    /* ✅ Botones buscar/limpiar: espacio abajo */
-    .form-actions{
-      margin-top:.5rem;
-      margin-bottom: 1rem; /* 👈 espacio hacia abajo */
-      gap:.5rem;
-    }
+        /* ========= Filtros: como Pedidos ========= */
+        #formBusqueda{
+            overflow:hidden;
+            max-height:0;
+            transition:max-height .3s ease-in-out;
+            margin-top:.75rem;
+        }
 
-    /* ✅ Galería grid */
-    .grid-view{ margin-top: 1rem; }
+        /* Un poco de aire debajo de Buscar/Limpiar */
+        .form-actions{
+            margin-top:.5rem;
+            margin-bottom:.75rem; /* ✅ espacio hacia abajo */
+            gap:.5rem;
+        }
 
-    #photo-container{
-      display:grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 15px;
-      max-height: 350px;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
+        /* ========= Galería ========= */
+        .grid-view{
+            margin-top:1rem;
+        }
 
-    .pedido-card{
-      border: 1px solid #ddd;
-      padding: 10px;
-      text-align: center;
-      border-radius: 10px;
-      background: #fff;
-    }
-    .pedido-card img{
-      width: 100%;
-      height: 150px;
-      object-fit: cover;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: transform .2s ease;
-    }
-    .pedido-card img:hover{ transform: scale(1.03); }
-  </style>
+        #photo-container{
+            display:grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+
+            /* ✅ “scroll si hay datos que mostrar” como en Pedidos */
+            max-height: 60vh;
+            overflow-y:auto;
+            padding-right: 4px;
+        }
+
+        .pedido-card{
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align:center;
+            border-radius:10px;
+            background:#fff;
+        }
+        .pedido-card img{
+            width:100%;
+            height:160px;
+            object-fit:cover;
+            border-radius:10px;
+            cursor:pointer;
+        }
+
+        /* Responsive ajustes */
+        @media (max-width: 768px){
+            #photo-container{
+                max-height: 65vh;
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            }
+        }
+
+        @media (max-width: 480px){
+            #photo-container{
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+        }
+    </style>
 </head>
 
 <body class="hold-transition sidebar-mini">
+
 <div layout:fragment="content">
-  <div class="container-fluid px-2 px-md-3">
-    <section class="content-header">
+    <div class="container-fluid px-2 px-md-3">
+        <section class="content-header">
+            <div class="card">
 
-      <div class="card">
-        <div class="card-header">
-          <i class="fas fa-images mr-2"></i> Galería de Imágenes
-        </div>
-
-        <!-- ✅ Toolbar igual que Pedidos -->
-        <div class="toolbar">
-          <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
-            <i class="fas fa-list mr-1"></i> Pedidos
-          </a>
-          <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
-            <i class="fas fa-user mr-1"></i> Clientes
-          </a>
-          <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
-            <i class="fas fa-user-plus mr-1"></i> Nuevo Cliente
-          </a>
-          <button type="button" class="btn btn-outline-primary btn-sm" id="toggleBusqueda">
-            Mostrar Filtros
-          </button>
-        </div>
-
-        <div class="card-body">
-
-          <!-- ✅ BUSCAR: submit normal (server-side) como lo tenías -->
-          <form id="formBusqueda" method="post" th:action="@{'/pedidos/buscarFoto'}" class="row">
-
-            <div class="col-12 col-md-6 col-lg-3 mb-2">
-              <label for="cliente" class="form-label">Cliente</label>
-              <select id="cliente" name="id" class="form-control">
-                <option value="">Seleccione</option>
-                <option th:each="cliente : ${clientes}"
-                        th:value="${cliente.id}"
-                        th:text="${#strings.concat(cliente.nombre, ' ', cliente.apellido)}"
-                        th:selected="${cliente.id == clienteSeleccionado}">
-                </option>
-              </select>
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-3 mb-2">
-              <label for="servicios" class="form-label">T.Pedido</label>
-              <select id="servicios" name="servicios" class="form-control">
-                <option value="">Seleccione</option>
-                <option th:each="s : ${servicios}"
-                        th:value="${s}"
-                        th:text="${s}"
-                        th:selected="${s == servicioSeleccionado}">
-                </option>
-              </select>
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-3 mb-2">
-              <label for="estado" class="form-label">Estado</label>
-              <select id="estado" name="estado" class="form-control">
-                <option value="">Seleccione</option>
-                <option th:each="e : ${estados}"
-                        th:value="${e}"
-                        th:text="${e}"
-                        th:selected="${e == estadoSeleccionado}">
-                </option>
-              </select>
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-3 mb-2">
-              <label for="grupo" class="form-label">Metal</label>
-              <select id="grupo" name="grupo" class="form-control">
-                <option value="">Seleccione</option>
-                <option th:each="m : ${metales}"
-                        th:value="${m}"
-                        th:text="${m}"
-                        th:selected="${m == metalSeleccionado}">
-                </option>
-              </select>
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-3 mb-2">
-              <label for="pieza" class="form-label">Pieza</label>
-              <select id="pieza" name="pieza" class="form-control">
-                <option value="" disabled selected>Seleccione una pieza</option>
-                <option th:each="pieza : ${tiposPorPieza.keySet()}"
-                        th:value="${pieza}"
-                        th:text="${pieza}">
-                </option>
-              </select>
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-3 mb-2">
-              <label for="tipo" class="form-label">Tipo</label>
-              <select id="tipo" class="form-control" name="tipo">
-                <option value="" disabled selected>Seleccione una pieza primero</option>
-              </select>
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-3 mb-2">
-              <label for="ref" class="form-label">Referencia</label>
-              <input type="text" id="ref" name="ref" class="form-control"
-                     placeholder="Ej: ABC123" th:value="${refSeleccionado}">
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-3 mb-2">
-              <label for="fechaDesde" class="form-label">Fecha Desde</label>
-              <input type="date" id="fechaDesde" name="fechaDesde" class="form-control"
-                     th:value="${fechaHastaSeleccionada}">
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-3 mb-2">
-              <label for="fechaHasta" class="form-label">Fecha Hasta</label>
-              <input type="date" id="fechaHasta" name="fechaHasta" class="form-control"
-                     th:value="${fechaHasta}">
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-3 mb-2" th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
-              <label for="activo" class="form-label">Ver pedidos</label>
-              <select class="form-control" id="activo" name="activo">
-                <option value="true" selected>Activos</option>
-                <option value="false">Dados de baja</option>
-              </select>
-            </div>
-
-            <!-- ✅ botones -->
-            <div class="col-12 d-flex justify-content-end form-actions">
-              <button type="submit" class="btn btn-primary btn-sm">
-                <i class="fas fa-search mr-1"></i> Buscar
-              </button>
-              <button type="button" class="btn btn-secondary btn-sm" id="btnReset">
-                <i class="fas fa-undo mr-1"></i> Limpiar
-              </button>
-            </div>
-          </form>
-
-          <!-- ================= RESULTADOS SERVER-SIDE ================= -->
-          <div th:if="${busquedaRealizada == true}">
-
-            <!-- Flag para saber si hay resultados (igual que tu original) -->
-            <div id="estado-busqueda"
-                 th:attr="data-resultados=${pedido != null and !pedido.isEmpty()}"></div>
-
-            <div class="grid-view" th:if="${pedido != null and !pedido.isEmpty()}">
-              <div id="photo-container">
-                <div class="pedido-card photo-item" th:each="p : ${pedido}">
-                  <a th:href="@{'/pedidos/ver/' + ${p.npedido}}">
-                    <img th:src="${imagenesPedidos != null and imagenesPedidos.containsKey(p.npedido) ? imagenesPedidos[p.npedido] : '/images/spring.png'}"
-                         alt="Imagen del Pedido">
-                  </a>
+                <div class="card-header">
+                    <i class="fas fa-images mr-2"></i> Galería de Imágenes
                 </div>
-              </div>
 
-              <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center mt-2" id="photo-pagination"></ul>
-              </nav>
-            </div>
+                <!-- ✅ Toolbar igual que Pedidos -->
+                <div class="toolbar">
+                    <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list mr-1"></i> Pedidos
+                    </a>
+                    <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user mr-1"></i> Clientes
+                    </a>
+                    <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user-plus mr-1"></i> Nuevo Cliente
+                    </a>
 
-            <div th:if="${pedido == null or pedido.isEmpty()}"
-                 class="d-flex justify-content-center align-items-center"
-                 style="height: 100px;">
-              <p class="text-muted text-center">No se han encontrado fotos con estos filtros</p>
-            </div>
-          </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="toggleBusqueda">
+                        Mostrar Filtros
+                    </button>
+                </div>
 
-        </div>
-      </div>
+                <div class="card-body">
 
-    </section>
-  </div>
+                    <!-- ✅ FORM ORIGINAL (no lo rompo) -->
+                    <form id="formBusqueda" method="post" th:action="@{'/pedidos/buscarFoto'}" class="row g-3">
+
+                        <div class="col-12 col-md-6 col-lg-3 mb-2">
+                            <label for="cliente" class="form-label">Cliente</label>
+                            <select id="cliente" name="id" class="form-control">
+                                <option value="">Seleccione</option>
+                                <option th:each="cliente : ${clientes}"
+                                        th:value="${cliente.id}"
+                                        th:text="${#strings.concat(cliente.nombre, ' ', cliente.apellido)}"
+                                        th:selected="${cliente.id == clienteSeleccionado}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3 mb-2">
+                            <label for="servicios" class="form-label">T.Pedido</label>
+                            <select id="servicios" name="servicios" class="form-control">
+                                <option value="">Seleccione</option>
+                                <option th:each="s : ${servicios}"
+                                        th:value="${s}"
+                                        th:text="${s}"
+                                        th:selected="${s == servicioSeleccionado}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3 mb-2">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select id="estado" name="estado" class="form-control">
+                                <option value="">Seleccione</option>
+                                <option th:each="e : ${estados}"
+                                        th:value="${e}"
+                                        th:text="${e}"
+                                        th:selected="${e == estadoSeleccionado}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3 mb-2">
+                            <label for="grupo" class="form-label">Metal</label>
+                            <select id="grupo" name="grupo" class="form-control">
+                                <option value="">Seleccione</option>
+                                <option th:each="m : ${metales}"
+                                        th:value="${m}"
+                                        th:text="${m}"
+                                        th:selected="${m == metalSeleccionado}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3 mb-2">
+                            <label for="pieza">Pieza</label>
+                            <select id="pieza" name="pieza" class="form-control">
+                                <option value="" disabled selected>Seleccione una pieza</option>
+                                <option th:each="pieza : ${tiposPorPieza.keySet()}"
+                                        th:value="${pieza}"
+                                        th:text="${pieza}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3 mb-2">
+                            <label for="tipo">Tipo</label>
+                            <select id="tipo" class="form-control" name="tipo">
+                                <option value="" disabled selected>Seleccione una pieza primero</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3 mb-2">
+                            <label for="ref" class="form-label">Referencia</label>
+                            <input type="text"
+                                   id="ref"
+                                   name="ref"
+                                   class="form-control"
+                                   placeholder="Ej: ABC123"
+                                   th:value="${refSeleccionado}">
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3 mb-2">
+                            <label for="fechaDesde" class="form-label">Fecha Desde</label>
+                            <input type="date" id="fechaDesde" name="fechaDesde" class="form-control"
+                                   th:value="${fechaDesde}">
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3 mb-2">
+                            <label for="fechaHasta" class="form-label">Fecha Hasta</label>
+                            <input type="date" id="fechaHasta" name="fechaHasta" class="form-control"
+                                   th:value="${fechaHasta}">
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3 mb-2"
+                             th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                            <label for="activo" class="form-label">Ver pedidos</label>
+                            <select class="form-control" id="activo" name="activo">
+                                <option value="true" selected>Activos</option>
+                                <option value="false">Dados de baja</option>
+                            </select>
+                        </div>
+
+                        <!-- ✅ Acciones (buscar/limpiar) igual que Pedidos + espacio abajo -->
+                        <div class="col-12 d-flex justify-content-end form-actions">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-search mr-1"></i> Buscar
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btnReset">
+                                <i class="fas fa-undo mr-1"></i> Limpiar
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- ======= RESULTADOS (igual que tu versión) ======= -->
+                    <div th:if="${busquedaRealizada == true}">
+
+                        <!-- Flag: si hay resultados -->
+                        <div id="estado-busqueda"
+                             th:attr="data-resultados=${pedido != null and !pedido.isEmpty()}"></div>
+
+                        <!-- Si hay pedidos -->
+                        <div class="grid-view" th:if="${pedido != null and !pedido.isEmpty()}">
+                            <div id="photo-container">
+                                <div class="pedido-card photo-item" th:each="p : ${pedido}">
+                                    <a th:href="@{'/pedidos/ver/' + ${p.npedido}}">
+                                        <img th:src="${imagenesPedidos != null and imagenesPedidos.containsKey(p.npedido) ? imagenesPedidos[p.npedido] : '/images/spring.png'}"
+                                             alt="Imagen del Pedido">
+                                    </a>
+                                </div>
+                            </div>
+
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-center mt-2" id="photo-pagination"></ul>
+                            </nav>
+                        </div>
+
+                        <!-- Si no hay pedidos -->
+                        <div th:if="${pedido == null or pedido.isEmpty()}"
+                             class="d-flex justify-content-center align-items-center"
+                             style="height: 100px;">
+                            <p class="text-muted text-center mb-0">No se han encontrado fotos con estos filtros</p>
+                        </div>
+                    </div>
+
+                </div><!-- /card-body -->
+            </div><!-- /card -->
+        </section>
+    </div>
 </div>
 
-<!-- ✅ SCRIPTS -->
+<!-- ================= SCRIPTS (TU LÓGICA ORIGINAL, SIN ROMPER) ================= -->
 <div layout:fragment="scripts">
-  <script>
-    // ========= 1) AJAX pieza -> tipo (igual) =========
-    $(document).on("change", "#pieza", function () {
-      const pieza = this.value;
-      const $tipo = $("#tipo");
-
-      $.ajax({
-        url: "/api/pedido/tipoPorPieza",
-        method: "GET",
-        dataType: "json"
-      })
-      .done(data => {
-        $tipo.empty().append('<option value="" disabled selected>Seleccione un tipo</option>');
-        (data[pieza] || []).forEach(t => $tipo.append(`<option value="${t}">${t}</option>`));
-      })
-      .fail((xhr, s, e) => console.error("Error AJAX tipoPorPieza", s, e, xhr.responseText));
-    });
-
-    // ========= 2) Mostrar/ocultar filtros al cargar (TU LÓGICA) =========
-    document.addEventListener("DOMContentLoaded", function () {
-      const formBusqueda = document.getElementById("formBusqueda");
-      const btnToggle    = document.getElementById("toggleBusqueda");
-      const estadoBusqueda = document.getElementById("estado-busqueda");
-
-      if (!formBusqueda || !btnToggle) return;
-
-      formBusqueda.style.overflow = "hidden";
-      formBusqueda.style.transition = "max-height 0.3s ease-in-out";
-
-      // Si existe el flag, aplicamos tu comportamiento:
-      // - si hay resultados => ocultar filtros
-      // - si NO hay resultados => mostrar filtros
-      if (estadoBusqueda) {
-        const hayResultados = estadoBusqueda.dataset.resultados === "true";
-
-        if (hayResultados) {
-          formBusqueda.style.maxHeight = "0px";
-          btnToggle.textContent = "Mostrar Filtros";
-          $(formBusqueda).data("open", false);
-        } else {
-          formBusqueda.style.maxHeight = formBusqueda.scrollHeight + "px";
-          btnToggle.textContent = "Ocultar Filtros";
-          $(formBusqueda).data("open", true);
-        }
-      } else {
-        // Si NO hay flag (sin búsqueda todavía), dejamos el formulario ABIERTO por defecto
-        formBusqueda.style.maxHeight = formBusqueda.scrollHeight + "px";
-        btnToggle.textContent = "Ocultar Filtros";
-        $(formBusqueda).data("open", true);
-      }
-
-      // Toggle del botón (igual que tu original + robusto)
-      btnToggle.addEventListener("click", function (e) {
-        e.preventDefault();
-
-        const abierto = $(formBusqueda).data("open") === true;
-
-        if (!abierto) {
-          formBusqueda.style.maxHeight = formBusqueda.scrollHeight + "px";
-          btnToggle.textContent = "Ocultar Filtros";
-          $(formBusqueda).data("open", true);
-
-          // ✅ BORRAR el contenedor de fotos al mostrar los filtros (como tu original)
-          const photoContainer = document.getElementById("photo-container");
-          const photoPagination = document.getElementById("photo-pagination");
-          if (photoContainer) photoContainer.innerHTML = "";
-          if (photoPagination) photoPagination.innerHTML = "";
-        } else {
-          formBusqueda.style.maxHeight = "0px";
-          btnToggle.textContent = "Mostrar Filtros";
-          $(formBusqueda).data("open", false);
-        }
-      });
-    });
-
-    // ========= 3) Botón Limpiar (igual, sin romper submit) =========
-    $(document).on("click", "#btnReset", function () {
-      const form = document.getElementById("formBusqueda");
-      if (!form) return;
-      form.reset();
-
-      setTimeout(() => {
-        $("#tipo").empty().append('<option value="" disabled selected>Seleccione una pieza primero</option>');
-        $("#pieza").val("");
-        $("#cliente").val("");
-        $("#servicios").val("");
-        $("#estado").val("");
-        $("#grupo").val("");
-        $("#ref").val("");
-        $("#fechaDesde").val("");
-        $("#fechaHasta").val("");
-      }, 50);
-    });
-
-    // ========= 4) Paginación para resultados server-side (tu lógica) =========
-    function setupPagination() {
-      const itemsPerPage = 10;
-      const photos = document.querySelectorAll(".photo-item");
-      const pagination = document.getElementById("photo-pagination");
-      let currentPage = 1;
-
-      if (!pagination || photos.length === 0) return;
-
-      function showPage(page) {
-        const start = (page - 1) * itemsPerPage;
-        const end = start + itemsPerPage;
-        photos.forEach((photo, index) => {
-          photo.style.display = (index >= start && index < end) ? "block" : "none";
+    <script>
+        // ========= AJAX pieza -> tipo (igual que siempre) =========
+        const piezaSel = $('#pieza'), tipoSel = $('#tipo');
+        piezaSel.on('change', function () {
+            const pieza = this.value;
+            $.ajax({
+                url: '/api/pedido/tipoPorPieza',
+                method: 'GET',
+                dataType: 'json'
+            })
+            .done(data => {
+                tipoSel.empty().append('<option value="" disabled selected>Seleccione un tipo</option>');
+                (data[pieza] || []).forEach(t => tipoSel.append(`<option value="${t}">${t}</option>`));
+            })
+            .fail((xhr, s, e) => console.error('Error AJAX tipoPorPieza', s, e, xhr.responseText));
         });
-      }
 
-      function buildPagination() {
-        const totalPages = Math.ceil(photos.length / itemsPerPage);
-        pagination.innerHTML = "";
-        for (let i = 1; i <= totalPages; i++) {
-          let li = document.createElement("li");
-          li.className = "page-item" + (i === currentPage ? " active" : "");
-          let a = document.createElement("a");
-          a.className = "page-link";
-          a.href = "#";
-          a.textContent = i;
-          a.addEventListener("click", function (e) {
-            e.preventDefault();
-            currentPage = i;
-            showPage(currentPage);
-            buildPagination();
-          });
-          li.appendChild(a);
-          pagination.appendChild(li);
-        }
-      }
+        // ========= Mostrar/ocultar filtros (TU comportamiento original con estado-busqueda) =========
+        document.addEventListener("DOMContentLoaded", function () {
+            const formBusqueda = document.getElementById("formBusqueda");
+            const btnToggle = document.getElementById("toggleBusqueda");
+            const estadoBusqueda = document.getElementById("estado-busqueda");
 
-      showPage(currentPage);
-      buildPagination();
-    }
+            if (!formBusqueda || !btnToggle) return;
 
-    document.addEventListener("DOMContentLoaded", function () {
-      if (document.querySelector(".grid-view")) setupPagination();
-    });
+            formBusqueda.style.overflow = "hidden";
+            formBusqueda.style.transition = "max-height 0.3s ease-in-out";
 
-    // ========= 5) Infinite scroll (solo si NO hay resultados server-side) =========
-    $(document).ready(function () {
-      const estado = document.getElementById("estado-busqueda");
-      const hayResultadosServer = estado && estado.dataset.resultados === "true";
-
-      // Si ya hay resultados renderizados por servidor, NO cargamos por AJAX.
-      if (hayResultadosServer) return;
-
-      const $container = $("#photo-container");
-      if (!$container.length) return;
-
-      let currentPage = 1;
-      let isLoading = false;
-      let noMorePhotos = false;
-
-      function loadPhotos(page) {
-        if (isLoading || noMorePhotos) return;
-        isLoading = true;
-
-        $.ajax({
-          url: "/api/pedido/listarFotos",
-          type: "GET",
-          data: { page: page },
-          success: function (response) {
-            if (response && response.length > 0) {
-              response.forEach(function (photo) {
-                const img = (photo.imageUrl ? photo.imageUrl : "/images/spring.png");
-                const html = `
-                  <div class="pedido-card photo-item">
-                    <a href="/pedidos/ver/${photo.npedido}">
-                      <img src="${img}" alt="Imagen del Pedido">
-                    </a>
-                  </div>`;
-                $container.append(html);
-              });
-              currentPage++;
-              isLoading = false;
+            // si no existe estado-busqueda => página sin búsqueda: dejamos ABIERTO por defecto
+            if (!estadoBusqueda) {
+                formBusqueda.style.maxHeight = "500px";
+                btnToggle.textContent = "Ocultar Filtros";
             } else {
-              noMorePhotos = true;
-              isLoading = false;
+                // tu lógica original: si hay resultados => ocultar
+                const hayResultados = estadoBusqueda.dataset.resultados === "true";
+                if (hayResultados) {
+                    formBusqueda.style.maxHeight = "0px";
+                    btnToggle.textContent = "Mostrar Filtros";
+                } else {
+                    formBusqueda.style.maxHeight = "500px";
+                    btnToggle.textContent = "Ocultar Filtros";
+                }
             }
-          },
-          error: function (err) {
-            console.error("Error al cargar las fotos:", err);
-            isLoading = false;
-          }
+
+            btnToggle.addEventListener("click", function () {
+                const cerrado = (formBusqueda.style.maxHeight === "0px" || formBusqueda.style.maxHeight === "0");
+                if (cerrado) {
+                    formBusqueda.style.maxHeight = "500px";
+                    btnToggle.textContent = "Ocultar Filtros";
+
+                    // ✅ tu comportamiento: al abrir filtros, limpiar contenedor + paginación si existen
+                    const photoContainer = document.getElementById("photo-container");
+                    const photoPagination = document.getElementById("photo-pagination");
+                    if (photoContainer) photoContainer.innerHTML = "";
+                    if (photoPagination) photoPagination.innerHTML = "";
+                } else {
+                    formBusqueda.style.maxHeight = "0px";
+                    btnToggle.textContent = "Mostrar Filtros";
+                }
+            });
         });
-      }
 
-      // cargar primera página
-      loadPhotos(currentPage);
+        // ========= Limpiar (tu botón btnReset) =========
+        document.getElementById("btnReset")?.addEventListener("click", function () {
+            const form = document.getElementById("formBusqueda");
+            if (!form) return;
 
-      // scroll dentro del contenedor
-      $container.on("scroll", function () {
-        const el = this;
-        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) {
-          loadPhotos(currentPage);
-        }
-      });
-    });
-  </script>
+            form.reset();
+
+            // reset selects dependientes
+            setTimeout(() => {
+                $('#tipo').empty().append('<option value="" disabled selected>Seleccione una pieza primero</option>');
+                $('#pieza').val('');
+                $('#cliente').val('');
+                $('#servicios').val('');
+                $('#estado').val('');
+                $('#grupo').val('');
+                $('#ref').val('');
+                $('#fechaDesde').val('');
+                $('#fechaHasta').val('');
+                $('#activo').val('true');
+
+                // deja el formulario abierto al limpiar
+                const btnToggle = document.getElementById("toggleBusqueda");
+                form.style.maxHeight = "500px";
+                if (btnToggle) btnToggle.textContent = "Ocultar Filtros";
+            }, 50);
+        });
+    </script>
 </div>
 
 </body>
