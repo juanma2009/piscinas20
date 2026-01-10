@@ -2,506 +2,423 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorator="admin/admin_layout">
-
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="_csrf" th:content="${_csrf.token}">
-    <meta name="_csrf_header" th:content="${_csrf.headerName}">
-    <title>Galería de Imágenes</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf.token}">
+  <meta name="_csrf_header" th:content="${_csrf.headerName}">
+  <title>Galería de Imágenes</title>
 
-    <!-- ✅ Si estas librerías YA están en tu layout, puedes quitarlas aquí para evitar duplicados -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <!-- (Si tu layout YA carga jQuery/Bootstrap/AdminLTE, quita duplicados de aquí) -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
-    <!-- Slick Carousel (lo usas) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.css">
+  <link rel="stylesheet" href="../css/table.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
 
-    <!-- AdminLTE + FontAwesome -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    var tiposPorPieza = /*[[${tiposPorPieza}]]*/ {};
+    /*]]>*/
+  </script>
 
-    <script th:inline="javascript">
-        /*<![CDATA[*/
-        var tiposPorPieza = /*[[${tiposPorPieza}]]*/ {};
-        /*]]>*/
-    </script>
+  <style>
+    /* ✅ IMPORTANTE: permitir scroll vertical (antes lo estabas bloqueando con overflow:hidden) */
+    html, body{
+      height: auto !important;
+      overflow: auto !important;
+    }
+    body{
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-color: #f9f9f9;
+    }
 
-    <style>
-        /* ==========================
-           ✅ MISMO LOOK QUE PEDIDOS
-           ========================== */
+    /* ✅ ancho como Pedidos */
+    .container-fluid{
+      padding-left: .5rem;
+      padding-right: .5rem;
+    }
+    @media (min-width: 768px){
+      .container-fluid{ padding-left: 1rem; padding-right: 1rem; }
+    }
 
-        /* ✅ Body con scroll (NO overflow:hidden) */
-        html, body{
-            height: auto !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-        }
+    .card{
+      border-radius:10px;
+      box-shadow:0 2px 6px rgba(0,0,0,.08);
+      overflow:hidden;
+    }
+    .card-header{
+      background: linear-gradient(135deg, #0062cc, #004085);
+      color:#fff;
+      font-weight:700;
+      text-transform:uppercase;
+      padding:15px;
+      border-radius: 10px 10px 0 0;
+    }
 
-        .card{
-            border-radius:10px;
-            box-shadow:0 2px 6px rgba(0,0,0,.08);
-            overflow:hidden;
-        }
-        .card-header{
-            background: linear-gradient(135deg, #0062cc, #004085);
-            color:#fff;
-            font-weight:700;
-            text-transform:uppercase;
-            padding:15px;
-        }
+    /* ✅ Toolbar igual que Pedidos (botones pequeños, juntos, responsive) */
+    .toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:.5rem;
+      align-items:center;
+      padding: .75rem 1rem 0 1rem;
+    }
+    .toolbar .btn{
+      width:auto !important;
+      white-space:nowrap;
+      padding:.25rem .5rem !important;
+      font-size:.875rem !important;
+      line-height:1.2 !important;
+    }
+    @media (max-width: 768px){
+      .toolbar{ gap:.35rem; }
+      .toolbar .btn{
+        flex:0 0 auto;
+        padding:.2rem .45rem !important;
+        font-size:.82rem !important;
+      }
+    }
+    @media (max-width: 420px){
+      .toolbar .btn{
+        padding:.18rem .4rem !important;
+        font-size:.78rem !important;
+      }
+    }
 
-        /* ✅ Toolbar igual a Pedidos */
-        .toolbar{
-            display:flex;
-            flex-wrap:wrap;
-            gap:.5rem;
-            align-items:center;
-            padding: .75rem 1rem 0 1rem;
-        }
-        .toolbar .btn{
-            width:auto !important;
-            white-space:nowrap;
-        }
+    /* ✅ Filtros: toggle con altura real como Pedidos */
+    #formBusqueda{
+      overflow:hidden;
+      max-height:0;
+      transition:max-height .3s ease-in-out;
+      margin-top:.75rem;
+    }
 
-        /* ✅ Desde tablet hacia abajo: botones se adaptan y siguen "en fila" */
-        @media (max-width: 1400px){
-            .toolbar .btn{
-                flex: 1 1 calc(50% - .5rem);
-            }
-            #toggleBusqueda{
-                flex: 1 1 100%;
-            }
-        }
+    /* ✅ Grid galería */
+    .grid-view{ margin-top: 1rem; }
 
-        /* ✅ Filtros: toggle suave */
-        #formBusqueda{
-            overflow:hidden;
-            max-height:0;
-            transition:max-height .3s ease-in-out;
-            margin-top:.75rem;
-        }
+    #photo-container{
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 15px;
+      max-height: 350px;      /* como lo tenías */
+      overflow-y: auto;       /* scroll interno si hay muchas fotos */
+      -webkit-overflow-scrolling: touch;
+    }
 
-        /* ✅ separación debajo de Buscar/Limpiar */
-        .form-actions{
-            margin-top:.25rem;
-            margin-bottom:.75rem;
-            gap:.5rem;
-        }
+    .pedido-card{
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .pedido-card img{
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform .2s ease;
+    }
+    .pedido-card img:hover{ transform: scale(1.03); }
 
-        /* ==========================
-           ✅ GALERÍA
-           ========================== */
-
-        .grid-view{ margin-top: 1rem; }
-
-        /* Grid responsive de tarjetas */
-        #photo-container{
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 15px;
-        }
-
-        /* ✅ Para que el scroll sea del BODY en responsive */
-        #photo-container{
-            max-height: none;
-            overflow: visible;
-        }
-
-        /* Tarjeta */
-        .pedido-card{
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
-            border-radius: 10px;
-            background: #fff;
-        }
-        .pedido-card img{
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 10px;
-            cursor: pointer;
-        }
-        .pedido-card img:hover{
-            transform: scale(1.02);
-            transition: .15s;
-        }
-    </style>
+    /* ✅ Botones buscar/limpiar: espacio abajo (como pediste) */
+    .form-actions{
+      margin-top:.5rem;
+      margin-bottom: 1rem; /* 👈 espacio hacia abajo */
+      gap:.5rem;
+    }
+  </style>
 </head>
 
+<body class="hold-transition sidebar-mini">
 <div layout:fragment="content">
-    <div class="container-fluid px-2 px-md-3">
-        <section class="content-header">
-            <div class="card">
+  <div class="container-fluid px-2 px-md-3">
+    <section class="content-header">
+      <div class="card">
 
-                <div class="card-header">
-                    <i class="fas fa-images mr-2"></i> Galería de Imágenes
+        <div class="card-header">
+          <i class="fas fa-images mr-2"></i> Galería de Imágenes
+        </div>
+
+        <!-- ✅ Toolbar igual que Pedidos -->
+        <div class="toolbar">
+          <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-list mr-1"></i> Pedidos
+          </a>
+          <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-user mr-1"></i> Clientes
+          </a>
+          <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-user-plus mr-1"></i> Nuevo Cliente
+          </a>
+          <button type="button" class="btn btn-outline-primary btn-sm" id="toggleBusqueda">
+            Mostrar Filtros
+          </button>
+        </div>
+
+        <div class="card-body">
+
+          <form id="formBusqueda" method="post" th:action="@{'/pedidos/buscarFoto'}" class="row">
+            <div class="col-12 col-md-6 col-lg-3 mb-2">
+              <label for="cliente" class="form-label">Cliente</label>
+              <select id="cliente" name="id" class="form-control">
+                <option value="">Seleccione</option>
+                <option th:each="cliente : ${clientes}"
+                        th:value="${cliente.id}"
+                        th:text="${#strings.concat(cliente.nombre, ' ', cliente.apellido)}"
+                        th:selected="${cliente.id == clienteSeleccionado}">
+                </option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3 mb-2">
+              <label for="servicios" class="form-label">T.Pedido</label>
+              <select id="servicios" name="servicios" class="form-control">
+                <option value="">Seleccione</option>
+                <option th:each="s : ${servicios}"
+                        th:value="${s}"
+                        th:text="${s}"
+                        th:selected="${s == servicioSeleccionado}">
+                </option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3 mb-2">
+              <label for="estado" class="form-label">Estado</label>
+              <select id="estado" name="estado" class="form-control">
+                <option value="">Seleccione</option>
+                <option th:each="e : ${estados}"
+                        th:value="${e}"
+                        th:text="${e}"
+                        th:selected="${e == estadoSeleccionado}">
+                </option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3 mb-2">
+              <label for="grupo" class="form-label">Metal</label>
+              <select id="grupo" name="grupo" class="form-control">
+                <option value="">Seleccione</option>
+                <option th:each="m : ${metales}"
+                        th:value="${m}"
+                        th:text="${m}"
+                        th:selected="${m == metalSeleccionado}">
+                </option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3 mb-2">
+              <label for="pieza" class="form-label">Pieza</label>
+              <select id="pieza" name="pieza" class="form-control">
+                <option value="" disabled selected>Seleccione una pieza</option>
+                <option th:each="pieza : ${tiposPorPieza.keySet()}"
+                        th:value="${pieza}"
+                        th:text="${pieza}">
+                </option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3 mb-2">
+              <label for="tipo" class="form-label">Tipo</label>
+              <select id="tipo" class="form-control" name="tipo">
+                <option value="" disabled selected>Seleccione una pieza primero</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3 mb-2">
+              <label for="ref" class="form-label">Referencia</label>
+              <input type="text" id="ref" name="ref" class="form-control"
+                     placeholder="Ej: ABC123" th:value="${refSeleccionado}">
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3 mb-2">
+              <label for="fechaDesde" class="form-label">Fecha Desde</label>
+              <input type="date" id="fechaDesde" name="fechaDesde" class="form-control"
+                     th:value="${fechaHastaSeleccionada}">
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3 mb-2">
+              <label for="fechaHasta" class="form-label">Fecha Hasta</label>
+              <input type="date" id="fechaHasta" name="fechaHasta" class="form-control"
+                     th:value="${fechaHasta}">
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3 mb-2" th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+              <label for="activo" class="form-label">Ver pedidos</label>
+              <select class="form-control" id="activo" name="activo">
+                <option value="true" selected>Activos</option>
+                <option value="false">Dados de baja</option>
+              </select>
+            </div>
+
+            <!-- ✅ botones con espacio abajo -->
+            <div class="col-12 d-flex justify-content-end form-actions">
+              <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-search mr-1"></i> Buscar
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btnReset">
+                <i class="fas fa-undo mr-1"></i> Limpiar
+              </button>
+            </div>
+          </form>
+
+          <!-- RESULTADOS -->
+          <div th:if="${busquedaRealizada == true}">
+            <div id="estado-busqueda"
+                 th:attr="data-resultados=${pedido != null and !pedido.isEmpty()}"></div>
+
+            <div class="grid-view" th:if="${pedido != null and !pedido.isEmpty()}">
+              <div id="photo-container">
+                <div class="pedido-card photo-item" th:each="p : ${pedido}">
+                  <a th:href="@{'/pedidos/ver/' + ${p.npedido}}">
+                    <img th:src="${imagenesPedidos != null and imagenesPedidos.containsKey(p.npedido) ? imagenesPedidos[p.npedido] : '/images/spring.png'}"
+                         alt="Imagen del Pedido">
+                  </a>
                 </div>
+              </div>
 
-                <!-- ✅ Toolbar igual que en Pedidos -->
-                <div class="toolbar">
-                    <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-list mr-1"></i> Pedidos
-                    </a>
-                    <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-user mr-1"></i> Clientes
-                    </a>
-                    <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-user-plus mr-1"></i> Nuevo Cliente
-                    </a>
-                    <button type="button" class="btn btn-outline-primary btn-sm" id="toggleBusqueda">
-                        Mostrar Filtros
-                    </button>
-                </div>
+              <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mt-2" id="photo-pagination"></ul>
+              </nav>
+            </div>
 
-                <div class="card-body">
+            <div th:if="${pedido == null or pedido.isEmpty()}"
+                 class="d-flex justify-content-center align-items-center"
+                 style="height: 100px;">
+              <p class="text-muted text-center">No se han encontrado fotos con estos filtros</p>
+            </div>
+          </div>
 
-                    <form id="formBusqueda" method="post" th:action="@{'/pedidos/buscarFoto'}" class="row g-3">
-
-                        <div class="col-12 col-md-6 col-lg-3 mb-2">
-                            <label for="cliente" class="form-label">Cliente</label>
-                            <select id="cliente" name="id" class="form-control">
-                                <option value="">Seleccione</option>
-                                <option th:each="cliente : ${clientes}"
-                                        th:value="${cliente.id}"
-                                        th:text="${#strings.concat(cliente.nombre, ' ', cliente.apellido)}"
-                                        th:selected="${cliente.id == clienteSeleccionado}">
-                                </option>
-                            </select>
-                        </div>
-
-                        <div class="col-12 col-md-6 col-lg-3 mb-2">
-                            <label for="servicios" class="form-label">T.Pedido</label>
-                            <select id="servicios" name="servicios" class="form-control">
-                                <option value="">Seleccione</option>
-                                <option th:each="s : ${servicios}"
-                                        th:value="${s}"
-                                        th:text="${s}"
-                                        th:selected="${s == servicioSeleccionado}">
-                                </option>
-                            </select>
-                        </div>
-
-                        <div class="col-12 col-md-6 col-lg-3 mb-2">
-                            <label for="estado" class="form-label">Estado</label>
-                            <select id="estado" name="estado" class="form-control">
-                                <option value="">Seleccione</option>
-                                <option th:each="e : ${estados}"
-                                        th:value="${e}"
-                                        th:text="${e}"
-                                        th:selected="${e == estadoSeleccionado}">
-                                </option>
-                            </select>
-                        </div>
-
-                        <div class="col-12 col-md-6 col-lg-3 mb-2">
-                            <label for="grupo" class="form-label">Metal</label>
-                            <select id="grupo" name="grupo" class="form-control">
-                                <option value="">Seleccione</option>
-                                <option th:each="m : ${metales}"
-                                        th:value="${m}"
-                                        th:text="${m}"
-                                        th:selected="${m == metalSeleccionado}">
-                                </option>
-                            </select>
-                        </div>
-
-                        <div class="col-12 col-md-6 col-lg-3 mb-2">
-                            <label for="pieza">Pieza</label>
-                            <select id="pieza" name="pieza" class="form-control">
-                                <option value="" disabled selected>Seleccione una pieza</option>
-                                <option th:each="pieza : ${tiposPorPieza.keySet()}"
-                                        th:value="${pieza}"
-                                        th:text="${pieza}">
-                                </option>
-                            </select>
-                        </div>
-
-                        <div class="col-12 col-md-6 col-lg-3 mb-2">
-                            <label for="tipo">Tipo</label>
-                            <select id="tipo" class="form-control" name="tipo">
-                                <option value="" disabled selected>Seleccione una pieza primero</option>
-                            </select>
-                        </div>
-
-                        <div class="col-12 col-md-6 col-lg-3 mb-2">
-                            <label for="ref" class="form-label">Referencia</label>
-                            <input type="text" id="ref" name="ref" class="form-control"
-                                   placeholder="Ej: ABC123" th:value="${refSeleccionado}">
-                        </div>
-
-                        <div class="col-12 col-md-6 col-lg-3 mb-2">
-                            <label for="fechaDesde" class="form-label">Fecha Desde</label>
-                            <input type="date" id="fechaDesde" name="fechaDesde" class="form-control"
-                                   th:value="${fechaDesde}">
-                        </div>
-
-                        <div class="col-12 col-md-6 col-lg-3 mb-2">
-                            <label for="fechaHasta" class="form-label">Fecha Hasta</label>
-                            <input type="date" id="fechaHasta" name="fechaHasta" class="form-control"
-                                   th:value="${fechaHasta}">
-                        </div>
-
-                        <div class="col-12 col-md-6 col-lg-3 mb-2" th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
-                            <label for="activo" class="form-label">Ver pedidos</label>
-                            <select class="form-control" id="activo" name="activo">
-                                <option value="true" selected>Activos</option>
-                                <option value="false">Dados de baja</option>
-                            </select>
-                        </div>
-
-                        <!-- ✅ Botones pequeños + separación como Pedidos -->
-                        <div class="col-12 d-flex justify-content-end form-actions">
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                <i class="fas fa-search mr-1"></i> Buscar
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-sm" id="btnReset">
-                                <i class="fas fa-undo mr-1"></i> Limpiar
-                            </button>
-                        </div>
-
-                    </form>
-
-                    <!-- ==========================
-                         RESULTADOS (igual que tu versión)
-                         ========================== -->
-                    <div th:if="${busquedaRealizada == true}">
-                        <div id="estado-busqueda"
-                             th:attr="data-resultados=${pedido != null and !pedido.isEmpty()}"></div>
-
-                        <div class="grid-view" th:if="${pedido != null and !pedido.isEmpty()}">
-                            <div id="photo-container">
-                                <div class="pedido-card photo-item" th:each="p : ${pedido}">
-                                    <a th:href="@{'/pedidos/ver/' + ${p.npedido}}">
-                                        <img th:src="${imagenesPedidos != null and imagenesPedidos.containsKey(p.npedido) ? imagenesPedidos[p.npedido] : '/images/spring.png'}"
-                                             alt="Imagen del Pedido">
-                                    </a>
-                                </div>
-                            </div>
-
-                            <nav aria-label="Page navigation">
-                                <ul class="pagination justify-content-center mt-2" id="photo-pagination"></ul>
-                            </nav>
-                        </div>
-
-                        <div th:if="${pedido == null or pedido.isEmpty()}"
-                             class="d-flex justify-content-center align-items-center"
-                             style="height: 100px;">
-                            <p class="text-muted text-center mb-0">No se han encontrado fotos con estos filtros</p>
-                        </div>
-                    </div>
-
-                </div><!-- /card-body -->
-            </div><!-- /card -->
-        </section>
-    </div>
+        </div><!-- /card-body -->
+      </div><!-- /card -->
+    </section>
+  </div>
 </div>
 
-<!-- ✅ Scripts de la página -->
-<div layout:fragment="script">
-    <script>
-        // ==========================
-        // ✅ TOGGLE FILTROS (robusto)
-        // ==========================
-        $(function () {
-            const $form = $("#formBusqueda");
-            if ($form.length) {
-                $form.css("max-height", "0px").data("open", false);
-                $("#toggleBusqueda").text("Mostrar Filtros");
-            }
-        });
+<!-- ✅ scripts -->
+<div layout:fragment="scripts">
+  <script>
+    // ✅ Toggle filtros (robusto, igual que Pedidos)
+    $(document).on("click", "#toggleBusqueda", function (e) {
+      e.preventDefault();
 
-        $(document).on("click", "#toggleBusqueda", function (e) {
+      const $form = $("#formBusqueda");
+      const $btn  = $("#toggleBusqueda");
+      if (!$form.length) return;
+
+      if ($form.data("open") === undefined) {
+        $form.css("max-height", "0px").data("open", false);
+        $btn.text("Mostrar Filtros");
+      }
+
+      const abierto = $form.data("open") === true;
+
+      if (!abierto) {
+        $form.css("max-height", $form[0].scrollHeight + "px");
+        $form.data("open", true);
+        $btn.text("Ocultar Filtros");
+
+        // ✅ opcional: limpiar grid al abrir filtros
+        const photoContainer = document.getElementById("photo-container");
+        const photoPagination = document.getElementById("photo-pagination");
+        if (photoContainer) photoContainer.innerHTML = "";
+        if (photoPagination) photoPagination.innerHTML = "";
+      } else {
+        $form.css("max-height", "0px");
+        $form.data("open", false);
+        $btn.text("Mostrar Filtros");
+      }
+    });
+
+    // ✅ estado inicial
+    $(function () {
+      const $form = $("#formBusqueda");
+      if ($form.length) $form.css("max-height", "0px").data("open", false);
+      $("#toggleBusqueda").text("Mostrar Filtros");
+    });
+
+    // ✅ AJAX pieza -> tipo
+    $(document).on("change", "#pieza", function () {
+      const pieza = this.value;
+      const $tipo = $("#tipo");
+
+      $.ajax({
+        url: "/api/pedido/tipoPorPieza",
+        method: "GET",
+        dataType: "json"
+      }).done(data => {
+        $tipo.empty().append('<option value="" disabled selected>Seleccione un tipo</option>');
+        (data[pieza] || []).forEach(t => $tipo.append(`<option value="${t}">${t}</option>`));
+      });
+    });
+
+    // ✅ botón limpiar (mantiene selects como querías)
+    $(document).on("click", "#btnReset", function () {
+      const form = document.getElementById("formBusqueda");
+      if (!form) return;
+      form.reset();
+
+      setTimeout(() => {
+        $("#tipo").empty().append('<option value="" disabled selected>Seleccione una pieza primero</option>');
+        $("#pieza").val("");
+      }, 50);
+    });
+
+    // ✅ paginación (tu lógica original)
+    function setupPagination() {
+      const itemsPerPage = 10;
+      const photos = document.querySelectorAll(".photo-item");
+      const pagination = document.getElementById("photo-pagination");
+      let currentPage = 1;
+
+      function showPage(page) {
+        const start = (page - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        photos.forEach((photo, index) => {
+          photo.style.display = (index >= start && index < end) ? "block" : "none";
+        });
+      }
+
+      function buildPagination() {
+        const totalPages = Math.ceil(photos.length / itemsPerPage);
+        if (!pagination) return;
+
+        pagination.innerHTML = "";
+        for (let i = 1; i <= totalPages; i++) {
+          let li = document.createElement("li");
+          li.className = "page-item" + (i === currentPage ? " active" : "");
+          let a = document.createElement("a");
+          a.className = "page-link";
+          a.href = "#";
+          a.textContent = i;
+          a.addEventListener("click", function(e) {
             e.preventDefault();
-
-            const $form = $("#formBusqueda");
-            const $btn  = $("#toggleBusqueda");
-            if (!$form.length) return;
-
-            // inicializa si no existe estado
-            if ($form.data("open") === undefined) {
-                $form.css("max-height", "0px").data("open", false);
-            }
-
-            const abierto = $form.data("open") === true;
-
-            if (!abierto) {
-                $form.css("max-height", $form[0].scrollHeight + "px");
-                $form.data("open", true);
-                $btn.text("Ocultar Filtros");
-
-                // ✅ Al abrir filtros, limpia galería y paginación (igual que tu lógica)
-                const photoContainer = document.getElementById("photo-container");
-                const photoPagination = document.getElementById("photo-pagination");
-                if (photoContainer) photoContainer.innerHTML = "";
-                if (photoPagination) photoPagination.innerHTML = "";
-            } else {
-                $form.css("max-height", "0px");
-                $form.data("open", false);
-                $btn.text("Mostrar Filtros");
-            }
-        });
-
-        // ==========================
-        // ✅ PIEZA -> TIPO (AJAX)
-        // ==========================
-        $(function () {
-            const piezaSel = $('#pieza'), tipoSel = $('#tipo');
-
-            piezaSel.on('change', function () {
-                const pieza = this.value;
-
-                $.ajax({
-                    url: '/api/pedido/tipoPorPieza',
-                    method: 'GET',
-                    dataType: 'json'
-                }).done(data => {
-                    tipoSel.empty().append('<option value="" disabled selected>Seleccione un tipo</option>');
-                    (data[pieza] || []).forEach(t => {
-                        tipoSel.append(`<option value="${t}">${t}</option>`);
-                    });
-                }).fail((xhr, s, e) => {
-                    console.error('Error AJAX tipoPorPieza', s, e, xhr.responseText);
-                });
-            });
-        });
-
-        // ==========================
-        // ✅ LIMPIAR FORM
-        // ==========================
-        $(document).on("click", "#btnReset", function () {
-            const form = document.getElementById("formBusqueda");
-            if (form) form.reset();
-
-            setTimeout(() => {
-                $('#tipo').empty().append('<option value="" disabled selected>Seleccione una pieza primero</option>');
-                $('#pieza').val('');
-                $('#cliente').val('');
-                $('#servicios').val('');
-                $('#estado').val('');
-                $('#grupo').val('');
-                $('#ref').val('');
-                $('#fechaDesde').val('');
-                $('#fechaHasta').val('');
-                $('#activo').val('true');
-            }, 50);
-        });
-
-        // ==========================
-        // ✅ PAGINACIÓN GRID (tu lógica)
-        // ==========================
-        function setupPagination() {
-            const itemsPerPage = 10;
-            const photos = document.querySelectorAll(".photo-item");
-            const pagination = document.getElementById("photo-pagination");
-            let currentPage = 1;
-
-            function showPage(page) {
-                const start = (page - 1) * itemsPerPage;
-                const end = start + itemsPerPage;
-                photos.forEach((photo, index) => {
-                    photo.style.display = (index >= start && index < end) ? "block" : "none";
-                });
-            }
-
-            function buildPagination() {
-                const totalPages = Math.ceil(photos.length / itemsPerPage);
-                pagination.innerHTML = "";
-                for (let i = 1; i <= totalPages; i++) {
-                    let li = document.createElement("li");
-                    li.className = "page-item" + (i === currentPage ? " active" : "");
-                    let a = document.createElement("a");
-                    a.className = "page-link";
-                    a.href = "#";
-                    a.textContent = i;
-                    a.addEventListener("click", function(e) {
-                        e.preventDefault();
-                        currentPage = i;
-                        showPage(currentPage);
-                        buildPagination();
-                    });
-                    li.appendChild(a);
-                    pagination.appendChild(li);
-                }
-            }
-
-            if (photos.length > 0) {
-                showPage(currentPage);
-                buildPagination();
-            }
+            currentPage = i;
+            showPage(currentPage);
+            buildPagination();
+          });
+          li.appendChild(a);
+          pagination.appendChild(li);
         }
+      }
 
-        document.addEventListener("DOMContentLoaded", function () {
-            const gridView = document.querySelector(".grid-view");
-            if (gridView) setupPagination();
-        });
+      if (photos.length > 0) {
+        showPage(currentPage);
+        buildPagination();
+      }
+    }
 
-        // ==========================
-        // ✅ (OPCIONAL) infinite scroll: ahora que el scroll es del BODY,
-        // lo hacemos sobre window.
-        // Si NO lo quieres, puedes eliminar este bloque.
-        // ==========================
-        $(function(){
-            let currentPage = 1;
-            let isLoading = false;
-            let noMorePhotos = false;
-
-            function loadPhotos(page) {
-                if (isLoading || noMorePhotos) return;
-                isLoading = true;
-
-                $.ajax({
-                    url: '/api/pedido/listarFotos',
-                    type: 'GET',
-                    data: { page: page },
-                    success: function(response) {
-                        if(response && response.length > 0) {
-
-                            response.forEach(function(photo) {
-                                const html = `
-                                  <div class="pedido-card photo-item">
-                                    <a href="/pedidos/ver/${photo.npedido}">
-                                      <img src="${photo.imageUrl ? photo.imageUrl : '/images/spring.png'}" alt="Imagen del Pedido">
-                                    </a>
-                                  </div>`;
-                                $('#photo-container').append(html);
-                            });
-
-                            currentPage++;
-                            isLoading = false;
-
-                            // refresca paginación si estás usando paginación
-                            setupPagination();
-
-                        } else {
-                            noMorePhotos = true;
-                            isLoading = false;
-                        }
-                    },
-                    error: function(err) {
-                        console.error('Error al cargar las fotos:', err);
-                        isLoading = false;
-                    }
-                });
-            }
-
-            // si quieres cargar desde API al entrar (descomenta)
-            // loadPhotos(currentPage);
-
-            $(window).on('scroll', function() {
-                const nearBottom = (window.innerHeight + window.scrollY) >= (document.body.scrollHeight - 200);
-                if (nearBottom) loadPhotos(currentPage);
-            });
-        });
-
-    </script>
+    document.addEventListener("DOMContentLoaded", function () {
+      if (document.querySelector(".grid-view")) {
+        setupPagination();
+      }
+    });
+  </script>
 </div>
 
+</body>
 </html>
