@@ -6,11 +6,13 @@ package com.bolsadeideas.springboot.app;
 
  import org.slf4j.LoggerFactory;
  import org.springframework.context.annotation.Configuration;
+ import org.springframework.web.servlet.config.annotation.CorsRegistry;
+ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
  import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
  import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 
-
+@EnableWebMvc
 @Configuration
 public class MvcConfig implements WebMvcConfigurer {
 	
@@ -31,6 +33,13 @@ public class MvcConfig implements WebMvcConfigurer {
 	}
 
 
-
+	@Override
+	public void addCorsMappings(CorsRegistry registry) {
+		registry.addMapping("/api/**")
+				.allowedOrigins("http://localhost:4200")
+				.allowedMethods("GET", "POST", "PUT", "DELETE")
+				.allowedHeaders("*")
+				.maxAge(3600);
+	}
 
 }
