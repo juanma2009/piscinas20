@@ -76,8 +76,8 @@ public class Pedido implements Serializable {
     private String observaciones;
 
     //añadir una variable que guarde los archivos adjuntos en un arraylist
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "pedido")
+
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ArchivoAdjunto> archivosAdjuntos = new ArrayList<>();
 
     @PrePersist

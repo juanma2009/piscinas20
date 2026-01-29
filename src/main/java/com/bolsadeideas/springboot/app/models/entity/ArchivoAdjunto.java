@@ -25,9 +25,10 @@ public class ArchivoAdjunto implements Serializable {
     @Temporal(TemporalType.DATE)
     private Date fecha;  // Fecha de subida del archivo (puedes usar la fecha actual si lo prefieres)
 
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "npedido")
-    private Pedido pedido;  // Relación con la entidad Pedido
+    @JoinColumn(name = "npedido")  // aquí está la FK
+    private Pedido pedido;
 
     private String urlCloudinary;  // URL de Cloudinary donde se encuentra la imagen
 

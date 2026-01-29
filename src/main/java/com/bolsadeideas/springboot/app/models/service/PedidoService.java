@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -58,4 +59,5 @@ public interface PedidoService {
 	@Query("SELECT p FROM Pedido p JOIN FETCH p.cliente WHERE p.npedido = :id")
 	public Pedido findPedidoById(Long id);
 
+	Page<Pedido> buscarPedidos(Integer id, String servicios, String estado, String grupo, String pieza, String tipo, String ref, Date fechaDesdeDate, Date fechaHastaDate, Boolean activo, Pageable pageable);
 }
