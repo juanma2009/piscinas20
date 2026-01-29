@@ -20,9 +20,12 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
+                .csrf().ignoringAntMatchers("/api/**")
+                .and()
                 .authorizeRequests()
                 .antMatchers("/css/**", "/dist/**", "/plugins/**", "/js/**", "/images/**").permitAll()
                 .antMatchers("/login", "/logout").permitAll()
+                .antMatchers("/api/**").permitAll() // Permitir acceso temporal a la API
                 .antMatchers("/verify_2fa").permitAll()
                 .antMatchers("/roles/**").hasRole("ADMIN")
                 .antMatchers(HttpMethod.GET, "/api/google/drive/preview/**").authenticated()
