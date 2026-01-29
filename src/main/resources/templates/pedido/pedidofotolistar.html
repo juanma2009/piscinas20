@@ -11,12 +11,6 @@
 
     <title>Galería de Imágenes</title>
 
-    <!-- ⚠️ OJO: si tu layout ya carga jQuery/Bootstrap/AdminLTE NO lo dupliques aquí.
-         Dejo SOLO lo imprescindible para que funcione (si ya está en el layout, puedes borrar estos). -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
 
     <script th:inline="javascript">
@@ -24,197 +18,198 @@
         var tiposPorPieza = /*[[${tiposPorPieza}]]*/ {};
         /*]]>*/
     </script>
+<style>
+    /* ========= Look “Pedidos” ========= */
+    .card{
+        border-radius:10px;
+        box-shadow:0 2px 6px rgba(0,0,0,.08);
+        overflow:hidden;
+    }
 
-    <style>
-        /* ========= Look “Pedidos” ========= */
-        .card{
-            border-radius:10px;
-            box-shadow:0 2px 6px rgba(0,0,0,.08);
-            overflow:hidden;
+    .card-header{
+        background: linear-gradient(135deg, #0062cc, #004085);
+        color:#fff;
+        font-weight:700;
+        text-transform:uppercase;
+        padding:15px;
+    }
+
+    .card-header:hover {
+        background-color: #0056b3; /* Tono más oscuro de azul */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
+    }
+
+    /* ========= Toolbar ========= */
+    .toolbar{
+        display:flex;
+        flex-wrap:wrap;
+        gap:.5rem;
+        align-items:center;
+        padding: .75rem 1rem 0 1rem;
+    }
+
+    .container{
+    max-width: 100%;
+    }
+
+    /* ========= Imágenes ========= */
+    .card-img-container img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .3s;
+    }
+
+    .card-img-container img:hover{
+    transform: scale(1.05);
+    }
+
+    /* ========= Acciones ========= */
+    .form-actions{
+    margin-top: .5rem;
+    margin-bottom: .75rem;
+    gap:.5rem;
+    }
+
+    /* ========= Galería ========= */
+    #photo-container{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 15px;
+    margin-top: 1rem;
+    }
+
+    .pedido-card{
+    border: 1px solid #ddd;
+    padding: 12px;
+    border-radius: 10px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: transform .2s, box-shadow .2s;
+    }
+
+    .pedido-card:hover{
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    }
+
+    .pedido-card img{
+    width:100%;
+    height:180px;
+    object-fit:cover;
+    border-radius:8px;
+    cursor:pointer;
+    }
+
+    /* ========= Tabla ========= */
+    .table th,
+    .table td{
+    text-align:center;
+    vertical-align:middle;
+    }
+
+    .table img{
+    width:80px;
+    height:80px;
+    border-radius:5px;
+    object-fit:cover;
+    }
+
+    /* ========= Info ========= */
+    .pedido-info{
+    font-size:.85rem;
+    color:#444;
+    line-height:1.4;
+    }
+
+    .pedido-info b{ color:#000; }
+
+    .badge-status{
+    font-size:.75rem;
+    padding:4px 10px;
+    border-radius:12px;
+    display:inline-block;
+    margin-top:4px;
+    color:#fff;
+    font-weight:600;
+    }
+
+    /* ===================================
+    FILTROS COLAPSABLES
+    =================================== */
+    #formBusqueda{
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .4s ease-in-out;
+    margin-top: .75rem;
+    }
+
+    /* abierto */
+    #formBusqueda.is-open{
+    max-height: 2000px; /* suficiente para todos los campos */
+    }
+
+    /* cerrado */
+    #formBusqueda.is-closed{
+    max-height: 0;
+    }
+
+    /* ===================================
+    DESKTOP
+    =================================== */
+    @media (min-width: 769px){
+    .card{
+    }
+
+    .card-header{
+    }
+    }
+
+    /* ===================================
+    📱 MÓVIL (CRÍTICO)
+    =================================== */
+    @media (max-width: 768px){
+
+    /* 🔑 deja crecer el formulario */
+    #formBusqueda{
+    overflow: visible !important;
+    max-height: none !important;
+    transition: none !important;
+    }
+
+    #formBusqueda.is-closed{
+    display:none;
+    }
+
+    #formBusqueda.is-open{
+    display:block;
+    }
+
+    html, body{
+    height:auto;
+    min-height:100%;
+    overflow-y:auto;
+    }
+    }
+
+    /* ===== Layout horizontal del formulario (desktop) ===== */
+    @media (min-width: 769px) {
+        #formBusqueda .form-row,
+        #formBusqueda .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
-        /* ✅ Toolbar responsive */
-        .toolbar{
-            display:flex;
-            flex-wrap:wrap;
-            gap:.5rem;
-            align-items:center;
-            padding: .75rem 1rem 0 1rem;
+        #formBusqueda .form-group {
+            flex: 1 1 220px; /* columnas fluidas */
+            min-width: 220px;
         }
+    }
 
 
-        .container {
-            max-width: 100%; /* más ancho que el container por defecto */
-        }
-
-
-        .card-img-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .card-img-container img:hover {
-            transform: scale(1.05);
-        }
-
-        /* Contenedor de la grid-view sin aplicar display:grid globalmente */
-        .grid-view {
-            margin-top: 1rem;
-        }
-        /* El contenedor específico de fotos se define como grid */
-        #photo-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 2fr));
-            gap: 15px;
-        }
-        .pedido-card {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
-            border-radius: 10px;
-        }
-        .pedido-card img {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 10px;
-            cursor: pointer;
-        }
-        .table th, .table td {
-            text-align: center;
-            vertical-align: middle;
-        }
-        .table img {
-            width: 80px;
-            height: 80px;
-            border-radius: 5px;
-            object-fit: cover;
-        }
-        .card{
-            border-radius:10px;
-            box-shadow:0 2px 6px rgba(0,0,0,.08);
-            overflow:hidden;
-        }
-        .card-header.bg-white {
-            background-color: white !important;
-        }
-
-        .card-header bg-primary text-white {
-            width: 100%;
-            height: 100px;
-            border-radius: 10px 10px 0 0;
-        }
-
-
-        /* ========= Filtros: como Pedidos ========= */
-        #formBusqueda{
-            overflow:hidden;
-            max-height:0;
-            transition:max-height .3s ease-in-out;
-            margin-top:.75rem;
-        }
-
-        /* Un poco de aire debajo de Buscar/Limpiar */
-        .form-actions{
-            margin-top:.5rem;
-            margin-bottom:.75rem; /* ✅ espacio hacia abajo */
-            gap:.5rem;
-        }
-
-        /* ========= Galería ========= */
-        .grid-view{
-            margin-top:1rem;
-        }
-
-        #photo-container{
-            display:grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 15px;
-
-            /* ✅ “scroll si hay datos que mostrar” como en Pedidos */
-            max-height: 60vh;
-            overflow-y:auto;
-            padding-right: 4px;
-        }
-
-        body {
-            min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
-            background-color: #f9f9f9; /* opcional: fondo más suave */
-        }
-
-        html, body {
-            height: 100%; /* Asegura que el contenido cubra toda la pantalla */
-            margin: 0; /* Elimina márgenes por defecto */
-            padding: 0; /* Elimina el padding por defecto */
-
-        }
-        /* Hace la tabla responsiva */
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;  /* Permite scroll horizontal si es necesario */
-            -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en móviles */
-        }
-
-        /* Ajuste general de la tabla */
-        .table td, .table th {
-            white-space: nowrap; /* Evita que el contenido de las celdas se corte */
-            font-size: 14px;
-            padding: 8px;
-        }
-
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .table td,
-        .table th {
-            white-space: nowrap;
-            font-size: 14px;
-            padding: 8px;
-        }
-
-        @media screen and (min-width: 1268px) {
-            /* ✅ Toolbar responsive */
-            .toolbar{
-                display:flex;
-                flex-wrap:wrap;
-                gap:.5rem;
-                align-items:center;
-                padding: .75rem 1rem 0 1rem;
-            }
-
-            html, body {
-                margin: 0;
-                padding: 0;
-            }
-
-            .container-fluid {
-                width: 100%;
-                max-width: 100vw;
-                padding: 0;
-                margin: 0 auto;
-
-            }
-        }
-
-
-            /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
-            .dataTables_scrollBody table {
-                width: 100% !important;
-                max-width: 100%;
-                min-width: auto !important;
-                table-layout: auto;
-
-            }
-            .dataTables_scrollBody
-
-            th, td {
-                padding: 10px;
-                white-space: nowrap;
-            }
-        }
     </style>
 </head>
 
@@ -225,33 +220,32 @@
         <section class="content-header">
             <div class="card">
 
-                <div class="card-header">
+                <div class="card-header bg-primary text-white">
                     <i class="fas fa-images mr-2"></i> Galería de Imágenes
                 </div>
 
                 <div class="row justify-content-between align-items-center">
-                    <div class="col-md-8">
-                        <div class="toolbar">
-                            <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-list"></i> Pedidos
-                            </a>
-                            <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-user"></i> Clientes
-                            </a>
-                            <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-user-plus"></i> Nuevo Cliente
-                            </a>
-                            <button type="button" class="btn btn-outline-primary btn-sm" id="toggleBusqueda">
-                                Mostrar Filtros
-                            </button>
-                        </div>
+                    <div class="toolbar">
+                        <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-list"></i> Pedidos
+                        </a>
+                        <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-user"></i> Clientes
+                        </a>
+                        <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-user-plus"></i> Nuevo Cliente
+                        </a>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="toggleBusqueda">
+                            Mostrar Filtros
+                        </button>
+                        <div></div>
                     </div>
                 </div>
 
                 <div class="card-body">
 
                     <!-- ✅ FORM ORIGINAL (no lo rompo) -->
-                    <form id="formBusqueda" method="post" th:action="@{'/pedidos/buscarFoto'}" class="row g-3">
+                    <form id="formBusqueda" method="post" th:action="@{'/pedidos/buscarFoto'}" class="row mt-3">
 
                         <div class="col-12 col-md-6 col-lg-3 mb-2">
                             <label for="cliente" class="form-label">Cliente</label>
@@ -360,273 +354,7 @@
                             </button>
                         </div>
                     </form>
-                    <div layout:fragment="scripts">
-                        <!-- las librerías -->
-                        <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-                        <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
-                        <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
 
-                        <!-- tu código -->
-                        <script>
-
-
-                            // Función para la paginación del grid de fotos
-                            function setupPagination() {
-                                const itemsPerPage = 10; // Número de fotos por página
-                                const photos = document.querySelectorAll(".photo-item");
-                                const pagination = document.getElementById("photo-pagination");
-                                let currentPage = 1;
-
-                                function showPage(page) {
-                                    const start = (page - 1) * itemsPerPage;
-                                    const end = start + itemsPerPage;
-                                    photos.forEach((photo, index) => {
-                                        photo.style.display = (index >= start && index < end) ? "block" : "none";
-                                    });
-                                }
-
-                                function buildPagination() {
-                                    const totalPages = Math.ceil(photos.length / itemsPerPage);
-                                    pagination.innerHTML = "";
-                                    for (let i = 1; i <= totalPages; i++) {
-                                        let li = document.createElement("li");
-                                        li.className = "page-item" + (i === currentPage ? " active" : "");
-                                        let a = document.createElement("a");
-                                        a.className = "page-link";
-                                        a.href = "#";
-                                        a.textContent = i;
-                                        a.addEventListener("click", function(e) {
-                                            e.preventDefault();
-                                            currentPage = i;
-                                            showPage(currentPage);
-                                            buildPagination();
-                                        });
-                                        li.appendChild(a);
-                                        pagination.appendChild(li);
-                                    }
-                                }
-
-                                if (photos.length > 0) {
-                                    showPage(currentPage);
-                                    buildPagination();
-                                }
-                            }
-
-                            // Al cargar el DOM se activa la paginación si la grid-view existe y tiene elementos
-                            document.addEventListener("DOMContentLoaded", function() {
-                                const gridView = document.querySelector(".grid-view");
-                                if (gridView) {
-                                    setupPagination();
-                                }
-                            });
-
-                            $(document).ready(function(){
-                                var currentPage = 1;
-                                var isLoading = false;
-                                var noMorePhotos = false;
-
-                                // Función para cargar fotos vía AJAX según la página solicitada
-                                function loadPhotos(page) {
-                                    if(isLoading || noMorePhotos) return;
-                                    isLoading = true;
-
-                                    $.ajax({
-                                        url: '/api/pedido/listarFotos', // Asegúrate de tener este endpoint implementado
-                                        type: 'GET',
-                                        data: { page: page },
-                                        success: function(response) {
-                                            // Se asume que response es un arreglo JSON de objetos (puedes ajustar según tu API)
-                                            if(response && response.length > 0) {
-                                                response.forEach(function(photo) {
-                                                    // Construir el HTML de cada foto
-                                                    var photoHtml = '<div class="pedido-card photo-item">' +
-                                                        '<a href="/pedidos/ver/' + photo.npedido + '">' +
-                                                        '<img src="' + (photo.imageUrl ? photo.imageUrl : '/images/spring.png') + '" alt="Imagen del Pedido">' +
-                                                        '</a>' +
-                                                        '</div>';
-                                                    $('#card-body').append(photoHtml);
-                                                });
-                                                currentPage++; // Incrementa el contador de página para la siguiente carga
-                                                isLoading = false;
-                                            } else {
-                                                // Si no hay más fotos, se marca la bandera para no intentar más cargas
-                                                noMorePhotos = true;
-                                                isLoading = false;
-
-
-                                            }
-                                        },
-                                        error: function(err) {
-                                            console.error('Error al cargar las fotos:', err);
-                                            isLoading = false;
-                                        }
-                                    });
-                                }
-
-                                // Cargar la primera página al iniciar
-                                loadPhotos(currentPage);
-
-                                // Detectar el evento scroll en el contenedor de fotos
-                                $('#photo-container').on('scroll', function() {
-                                    var container = $(this);
-                                    // Si se llega a 50px del final, cargar más fotos
-                                    if (container.scrollTop() + container.innerHeight() >= container[0].scrollHeight - 50) {
-                                        loadPhotos(currentPage);
-                                    }
-                                });
-                            });
-
-                            // AJAX pieza → tipo
-                            const piezaSel = $('#pieza'), tipoSel = $('#tipo');
-                            piezaSel.on('change', function () {
-                                const pieza = this.value;
-                                $.ajax({
-                                    url: '/api/pedido/tipoPorPieza',
-                                    method: 'GET',
-                                    dataType: 'json'
-                                })
-                                    .done(data => {
-                                        tipoSel.empty().append('<option value="" disabled selected>Seleccione un tipo</option>');
-                                        (data[pieza] || []).forEach(t => {
-                                            tipoSel.append(`<option value="${t}">${t}</option>`);
-                                        });
-                                    })
-                                    .fail((xhr, s, e) => {
-                                        console.error('Error AJAX tipoPorPieza', s, e, xhr.responseText);
-                                    });
-                            });
-
-                            // Mostrar/ocultar el formulario de búsqueda al recargar la pagina
-                            document.addEventListener("DOMContentLoaded", function () {
-                                const formBusqueda = document.getElementById("formBusqueda");
-                                const btnToggle = document.getElementById("toggleBusqueda");
-                                const estadoBusqueda = document.getElementById("estado-busqueda");
-
-                                if (!formBusqueda || !btnToggle || !estadoBusqueda) return;
-
-                                formBusqueda.style.overflow = "hidden";
-                                formBusqueda.style.transition = "max-height 0.3s ease-in-out";
-
-                                const hayResultados = estadoBusqueda.dataset.resultados === "true";
-
-                                if (hayResultados) {
-                                    formBusqueda.style.maxHeight = "0";
-                                    btnToggle.textContent = "Mostrar Filtros";
-                                } else {
-                                    formBusqueda.style.maxHeight = formBusqueda.scrollHeight + "px";
-                                    btnToggle.textContent = "Ocultar Filtros";
-                                }
-
-                                // Toggle del botón
-                                btnToggle.addEventListener("click", function () {
-                                    if (formBusqueda.style.maxHeight === "0px" || formBusqueda.style.maxHeight === "") {
-                                        formBusqueda.style.maxHeight = formBusqueda.scrollHeight + "px";
-                                        btnToggle.textContent = "Ocultar Filtros";
-
-                                        // ✅ BORRAR el contenedor de fotos al mostrar los filtros
-                                        const photoContainer = document.getElementById("photo-container");
-                                        const photoPagination = document.getElementById("photo-pagination");
-                                        if (photoContainer) {
-                                            photoContainer.innerHTML = "";
-                                            photoPagination.innerHTML ="";
-
-                                        }
-                                    } else {
-                                        formBusqueda.style.maxHeight = "0";
-                                        btnToggle.textContent = "Mostrar Filtros";
-                                    }
-                                });
-                            });
-
-                            // // Limpiar el formulario al hacer clic en el botón "Limpiar" despues de una busqueda
-                            // document.getElementById("btnReset").addEventListener("click", function () {
-                            //     const form = document.getElementById("formBusqueda");
-                            //     form.reset(); // Limpiar todos los campos del formulario
-                            //
-                            //     //todo ver que cargue bien el tipo y pieza cuando al hacer click en limpiar
-                            //     // Limpiar select "tipo"
-                            //     const tipo = document.getElementById("tipo");
-                            //     tipo.innerHTML = '<div class="col-md-3">\n' +
-                            //         '                            <label for="tipo">Tipo:</label>\n' +
-                            //         '                            <select id="tipo"  class="form-control" name="tipo">\n' +
-                            //         '                                <option value="" disabled selected>Seleccione una pieza primero</option>   <!-- Opciones generadas por JS -->\n' +
-                            //         '                            </select>\n' +
-                            //         '                        </div>';
-                            //     $('#formBusqueda').append(tipo);
-                            //     // Limpiar el select "pieza"
-                            //     const pieza = document.getElementById("pieza");
-                            //   pieza.innerHTML = '<div class="col-md-3">\n' +
-                            //       '                            <label for="pieza">Pieza:</label>\n' +
-                            //       '                            <select id="pieza" name="pieza" class="form-control">\n' +
-                            //       '                                <option value="" disabled selected>Seleccione una pieza</option>\n' +
-                            //       '                                <option th:each="pieza : ${tiposPorPieza.keySet()}"\n' +
-                            //       '                                        th:value="${pieza}"\n' +
-                            //       '                                        th:text="${pieza}">\n' +
-                            //       '                                </option>\n' +
-                            //       '                            </select>\n' +
-                            //       '                        </div>';
-                            //     $('#formBusqueda').append(pieza);
-                            //     // Limpiar el select "cliente"
-                            //     const cliente = document.getElementById("cliente");
-                            //     cliente.selectedIndex = 0;
-                            //     // Limpiar el select "servicios"
-                            //     const servicios = document.getElementById("servicios");
-                            //     servicios.selectedIndex = 0;
-                            //     // Limpiar el select "estado"
-                            //     const estado = document.getElementById("estado");
-                            //     estado.selectedIndex = 0;
-                            //
-                            //     // Mostrar el formulario si estaba oculto
-                            //     form.style.maxHeight = "500px";
-                            //     document.getElementById("toggleBusqueda").textContent = "Ocultar Filtros";
-                            // });
-
-
-                            document.getElementById("btnReset").addEventListener("click", function (e) {
-                                // Esperar un pequeño momento a que el reset ocurra
-                                setTimeout(() => {
-                                    // Restaurar el select "tipo"
-                                    $('#tipo').empty().append('<option value="" disabled selected>Seleccione una pieza primero</option>');
-
-                                    // Restaurar el select "pieza" (las opciones Thymeleaf se regeneran desde el servidor, así que aquí puedes dejarlo vacío o hacer un reload AJAX)
-                                    // AJAX pieza → tipo
-                                    $('#pieza').val('');
-
-                                    const piezaSel = $('#pieza'), tipoSel = $('#tipo');
-                                    piezaSel.on('change', function () {
-                                        const pieza = this.value;
-                                        $.ajax({
-                                            url: '/api/pedido/tipoPorPieza',
-                                            method: 'GET',
-                                            dataType: 'json'
-                                        })
-                                            .done(data => {
-                                                tipoSel.empty().append('<option value="" disabled selected>Seleccione un tipo</option>');
-                                                (data[pieza] || []).forEach(t => {
-                                                    tipoSel.append(`<option value="${t}">${t}</option>`);
-                                                });
-                                            })
-                                            .fail((xhr, s, e) => {
-                                                console.error('Error AJAX tipoPorPieza', s, e, xhr.responseText);
-                                            });
-                                    });
-
-                                    // También podrías restaurar otros selects si es necesario
-                                    $('#cliente').val('');
-                                    $('#servicios').val('');
-                                    $('#estado').val('');
-                                    $('#grupo').val('');
-                                    $('#ref').val('');
-                                    $('#fechaDesde').val('');
-                                    $('#fechaHasta').val('');
-                                }, 50);
-                            });
-
-                        </script>
-                    </div>
-
-
-                    <!-- ======= RESULTADOS (igual que tu versión) ======= -->
                     <div th:if="${busquedaRealizada == true}">
 
                         <!-- Flag: si hay resultados -->
@@ -638,12 +366,21 @@
                             <div id="photo-container">
                                 <div class="pedido-card photo-item" th:each="p : ${pedido}">
                                     <a th:href="@{'/pedidos/ver/' + ${p.npedido}}">
-                                        <img th:src="${imagenesPedidos != null and imagenesPedidos.containsKey(p.npedido) ? imagenesPedidos[p.npedido] : '/images/spring.png'}"
-                                             alt="Imagen del Pedido">
+                                        <img th:src="${imagenesPedidos != null and imagenesPedidos.containsKey(p.npedido) ? imagenesPedidos[p.npedido] : '/images/spring.png'}" alt="Imagen del Pedido">
                                     </a>
+                                    <div class="pedido-info">
+                                        <div><b>Cliente:</b> [[${p.cliente.nombre}]] [[${p.cliente.apellido}]]</div>
+                                        <div><b>Ref:</b> [[${p.ref}]]</div>
+                                        <div><b>Pieza:</b> [[${p.pieza}]] - [[${p.tipo}]]</div>
+                                        <div><b>F.Finalizado:</b> [[${#dates.format(p.fechaFinalizado, 'dd/MM/yyyy')}]]</div>
+                                        <div class="badge-status"
+                                             th:classappend="${p.estado == 'Terminado' ? 'bg-success' : (p.estado == 'Pendiente' ? 'bg-danger' : 'bg-warning')}"
+                                             th:text="${p.estado}">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-
+                        </div>
                             <nav aria-label="Page navigation">
                                 <ul class="pagination justify-content-center mt-2" id="photo-pagination"></ul>
                             </nav>
@@ -656,105 +393,155 @@
                             <p class="text-muted text-center mb-0">No se han encontrado fotos con estos filtros</p>
                         </div>
                     </div>
-
                 </div><!-- /card-body -->
             </div><!-- /card -->
         </section>
     </div>
 </div>
 
-<!-- ================= SCRIPTS (TU LÓGICA ORIGINAL, SIN ROMPER) ================= -->
-<div layout:fragment="scripts">
-    <script>
-        // ========= AJAX pieza -> tipo (igual que siempre) =========
-        const piezaSel = $('#pieza'), tipoSel = $('#tipo');
-        piezaSel.on('change', function () {
-            const pieza = this.value;
-            $.ajax({
-                url: '/api/pedido/tipoPorPieza',
-                method: 'GET',
-                dataType: 'json'
-            })
-            .done(data => {
-                tipoSel.empty().append('<option value="" disabled selected>Seleccione un tipo</option>');
-                (data[pieza] || []).forEach(t => tipoSel.append(`<option value="${t}">${t}</option>`));
-            })
-            .fail((xhr, s, e) => console.error('Error AJAX tipoPorPieza', s, e, xhr.responseText));
-        });
+<!-- ================= SCRIPTS ================= -->
+<div layout:fragment="script">
+    <script th:inline="javascript">
+        $(document).ready(function() {
+            // 1. Piece -> Type AJAX
+            const piezaSel = $('#pieza'), tipoSel = $('#tipo');
+            piezaSel.on('change', function () {
+                const pieza = this.value;
+                $.ajax({
+                    url: '/api/pedido/tipoPorPieza',
+                    method: 'GET',
+                    dataType: 'json'
+                }).done(data => {
+                    tipoSel.empty().append('<option value="" disabled selected>Seleccione un tipo</option>');
+                    if (data[pieza]) {
+                        data[pieza].forEach(t => {
+                            tipoSel.append(`<option value="${t}">${t}</option>`);
+                        });
+                    }
+                }).fail((xhr, s, e) => {
+                    console.error('Error AJAX tipoPorPieza', s, e, xhr.responseText);
+                });
+            });
 
-        // ========= Mostrar/ocultar filtros (TU comportamiento original con estado-busqueda) =========
-        document.addEventListener("DOMContentLoaded", function () {
+            // 2. Filter Toggle (Responsive)
             const formBusqueda = document.getElementById("formBusqueda");
             const btnToggle = document.getElementById("toggleBusqueda");
             const estadoBusqueda = document.getElementById("estado-busqueda");
 
-            if (!formBusqueda || !btnToggle) return;
+            if (formBusqueda && btnToggle) {
+                const hayResultados = estadoBusqueda?.dataset.resultados === "true";
 
-            formBusqueda.style.overflow = "hidden";
-            formBusqueda.style.transition = "max-height 0.3s ease-in-out";
+                function esMovil() {
+                    return window.innerWidth <= 768;
+                }
 
-            // si no existe estado-busqueda => página sin búsqueda: dejamos ABIERTO por defecto
-            if (!estadoBusqueda) {
-                formBusqueda.style.maxHeight = "500px";
-                btnToggle.textContent = "Ocultar Filtros";
-            } else {
-                // tu lógica original: si hay resultados => ocultar
-                const hayResultados = estadoBusqueda.dataset.resultados === "true";
-                if (hayResultados) {
-                    formBusqueda.style.maxHeight = "0px";
-                    btnToggle.textContent = "Mostrar Filtros";
-                } else {
-                    formBusqueda.style.maxHeight = "500px";
+                function abrirFiltros() {
+                    if (esMovil()) {
+                        formBusqueda.style.display = "flex";
+                        formBusqueda.style.maxHeight = "none";
+                    } else {
+                        formBusqueda.style.display = "flex";
+                        formBusqueda.style.maxHeight = formBusqueda.scrollHeight + "px";
+                    }
+                    formBusqueda.classList.remove("is-closed");
+                    formBusqueda.classList.add("is-open");
                     btnToggle.textContent = "Ocultar Filtros";
+                }
+
+                function cerrarFiltros() {
+                    if (esMovil()) {
+                        formBusqueda.style.display = "none";
+                    } else {
+                        formBusqueda.style.maxHeight = "0px";
+                    }
+                    formBusqueda.classList.remove("is-open");
+                    formBusqueda.classList.add("is-closed");
+                    btnToggle.textContent = "Mostrar Filtros";
+                }
+
+                btnToggle.addEventListener("click", function () {
+                    if (formBusqueda.classList.contains("is-closed")) {
+                        abrirFiltros();
+                    } else {
+                        cerrarFiltros();
+                    }
+                });
+
+                // Initial state
+                if (hayResultados) {
+                    cerrarFiltros();
+                } else {
+                    abrirFiltros();
+                }
+
+                window.addEventListener('resize', function() {
+                    if (formBusqueda.classList.contains("is-open")) {
+                        if (!esMovil()) {
+                            formBusqueda.style.maxHeight = formBusqueda.scrollHeight + "px";
+                        } else {
+                            formBusqueda.style.maxHeight = "none";
+                            formBusqueda.style.display = "flex";
+                        }
+                    }
+                });
+            }
+
+            // 3. Pagination for the grid
+            const itemsPerPage = 5;
+            const photos = document.querySelectorAll(".photo-item");
+            const pagination = document.getElementById("photo-pagination");
+            let currentPage = 1;
+
+            function showPage(page) {
+                const start = (page - 1) * itemsPerPage;
+                const end = start + itemsPerPage;
+                photos.forEach((photo, index) => {
+                    photo.style.display = (index >= start && index < end) ? "block" : "none";
+                });
+            }
+
+            function buildPagination() {
+                if (!pagination) return;
+                const totalPages = Math.ceil(photos.length / itemsPerPage);
+                pagination.innerHTML = "";
+                if (totalPages <= 1) return;
+
+                for (let i = 1; i <= totalPages; i++) {
+                    let li = document.createElement("li");
+                    li.className = "page-item" + (i === currentPage ? " active" : "");
+                    let a = document.createElement("a");
+                    a.className = "page-link";
+                    a.href = "javascript:void(0)";
+                    a.textContent = i;
+                    a.addEventListener("click", function(e) {
+                        e.preventDefault();
+                        currentPage = i;
+                        showPage(currentPage);
+                        buildPagination();
+                        const grid = document.querySelector(".grid-view");
+                        if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+                    });
+                    li.appendChild(a);
+                    pagination.appendChild(li);
                 }
             }
 
-            btnToggle.addEventListener("click", function () {
-                const cerrado = (formBusqueda.style.maxHeight === "0px" || formBusqueda.style.maxHeight === "0");
-                if (cerrado) {
-                    formBusqueda.style.maxHeight = "500px";
-                    btnToggle.textContent = "Ocultar Filtros";
+            if (photos.length > 0) {
+                showPage(1);
+                buildPagination();
+            }
 
-                    // ✅ tu comportamiento: al abrir filtros, limpiar contenedor + paginación si existen
-                    const photoContainer = document.getElementById("photo-container");
-                    const photoPagination = document.getElementById("photo-pagination");
-                    if (photoContainer) photoContainer.innerHTML = "";
-                    if (photoPagination) photoPagination.innerHTML = "";
-                } else {
-                    formBusqueda.style.maxHeight = "0px";
-                    btnToggle.textContent = "Mostrar Filtros";
-                }
-            });
-        });
-
-        // ========= Limpiar (tu botón btnReset) =========
-        document.getElementById("btnReset")?.addEventListener("click", function () {
-            const form = document.getElementById("formBusqueda");
-            if (!form) return;
-
-            form.reset();
-
-            // reset selects dependientes
-            setTimeout(() => {
-                $('#tipo').empty().append('<option value="" disabled selected>Seleccione una pieza primero</option>');
-                $('#pieza').val('');
-                $('#cliente').val('');
-                $('#servicios').val('');
-                $('#estado').val('');
-                $('#grupo').val('');
-                $('#ref').val('');
-                $('#fechaDesde').val('');
-                $('#fechaHasta').val('');
-                $('#activo').val('true');
-
-                // deja el formulario abierto al limpiar
-                const btnToggle = document.getElementById("toggleBusqueda");
-                form.style.maxHeight = "500px";
-                if (btnToggle) btnToggle.textContent = "Ocultar Filtros";
-            }, 50);
+            // 4. Reset Button
+            const btnReset = document.getElementById("btnReset");
+            if (btnReset) {
+                btnReset.addEventListener("click", function() {
+                    formBusqueda.reset();
+                    $(formBusqueda).find('select').val('').trigger('change');
+                    tipoSel.empty().append('<option value="" disabled selected>Seleccione una pieza primero</option>');
+                });
+            }
         });
     </script>
 </div>
-
 </body>
 </html>

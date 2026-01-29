@@ -1030,10 +1030,13 @@ public class PedidoController {
             @RequestParam(name = "files", required = false) MultipartFile[] files,
             @RequestParam(name = "googleDriveFileIds", required = false) String[] googleDriveFileIds,
             @RequestParam(name = "googleDriveToken", required = false) String googleDriveToken,
-            String principal) {
+            Principal principal) {
 
-        String userId = principal != null ? principal : null;
+        String userId = principal != null ? principal.getName() : null;
+        return subirArchivos(npedido, files, googleDriveFileIds, googleDriveToken, userId);
+    }
 
+    public ResponseEntity<?> subirArchivos(Long npedido, MultipartFile[] files, String[] googleDriveFileIds, String googleDriveToken, String userId) {
         int procesados = archivoSubidaService.procesarArchivos(npedido, files, googleDriveFileIds, googleDriveToken, userId);
 
         return ResponseEntity.ok(Map.of(

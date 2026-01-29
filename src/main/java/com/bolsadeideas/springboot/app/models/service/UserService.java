@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
+
 @Service
 public class UserService {
 
@@ -16,28 +18,25 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public boolean authenticate(String username, String password) {
+    public boolean authenticate(String username, String rawPassword) {
         User user = userRepository.findByUsername(username);
-        return user != null && user.getPassword().equals(password);
+        // Compara la contraseña encriptada usando BCrypt
+        return user != null && passwordEncoder.matches(rawPassword, user.getPassword());
     }
 
     public void registerUser(User user) {
-        // Codificamos la contraseña antes de guardar el usuario
         String encodedPassword = passwordEncoder.encode(user.getPassword());
-        System.out.println("Contraseña codificada: " + encodedPassword);
-        // Asignamos la contraseña codificada al usuario en Bycrypt
         user.setPassword(encodedPassword);
-        user.setActive(true); // Por defecto, el usuario está activo
-        // Guardamos el usuario en la base de datos
+        user.setActive(true);
         userRepository.save(user);
-
     }
 
-    //para actualizar la contraseña
     public void updateUser(User user) {
-        // Verificamos si la contraseña se ha cambiado, y la codificamos
-        String encodedPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(encodedPassword);
+        // Solo encripta si la contraseña fue proporcionada
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            String encodedPassword = passwordEncoder.encode(user.getPassword());
+            user.setPassword(encodedPassword);
+        }
         userRepository.save(user);
     }
 
@@ -89,5 +88,8 @@ public class UserService {
 
     public void save(User user) {
         userRepository.save(user);
-    }
-}
+    }}
+
+
+
+
