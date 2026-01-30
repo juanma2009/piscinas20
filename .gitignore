@@ -60,3 +60,15 @@ out/
 .DS_Store
 Thumbs.db
 *.log
+
+# Android
+.gradle/
+build/
+*/build/
+local.properties
+
+
+# Backups
+*.backup
+*.old
+
