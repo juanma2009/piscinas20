@@ -12,6 +12,7 @@ package com.bolsadeideas.springboot.app;
  import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 
+@EnableWebMvc
 @Configuration
 public class MvcConfig implements WebMvcConfigurer {
 	

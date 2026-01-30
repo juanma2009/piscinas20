@@ -1,123 +1,140 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" 
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" 
-      layout:decorate="admin/admin_layout">
-<head>
-    <title th:text="${titulo}"></title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="layout/layoutMcompras :: head"></head>
+<style>
+.bootstrap-iso .formden_header h2, .bootstrap-iso .formden_header p,
+	.bootstrap-iso form {
+	font-family: Arial, Helvetica, sans-serif;
+	color: black
+}
+
+.bootstrap-iso form button, .bootstrap-iso form button:hover {
+	color: #337ab7 !important;
+}
+
+.bootstrap-iso .outline, .bootstrap-iso .outline:focus {
+	background-color: transparent;
+	
+	border: 2px solid #337ab7
+}
+
+.bootstrap-iso .outline:hover {
+	background-color: transparent;
+	border: 2px solid #5ba2df;
+	color: #5ba2df !important
+}
+
+.asteriskField {
+	color: red;
+}
+</style>
 <body>
-    <div layout:fragment="content">
-        <div class="container-fluid px-2 px-md-3">
-            <section class="content-header">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-file-invoice mr-2"></i> <span th:text="${titulo}"></span>
-                    </div>
-                    
-                    <div class="toolbar">
-                        <a th:href="@{'/ver/' + ${albaran.cliente.id}}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-arrow-left mr-1"></i> Volver
-                        </a>
-                        <a th:href="@{/albaranes/listarAlbaranes}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-list mr-1"></i> Listar Albaranes
-                        </a>
-                    </div>
+	<header th:replace="layout/layoutMcompras :: header"></header>
+	<div class="container py-4">
+		<div class="card bg-light">
+			<div class="card-header" th:text="${titulo}"></div>
+			<div class="card-body">
+				<h4 class="card-title">
+					<a class="btn btn-light"
+						th:href="@{'/ver/' + ${albaran.cliente.id}}"
+						th:text="'&laquo; volver'"></a>
+				</h4>
+				<form th:action="@{/albaranes/form/}"  enctype="multipart/form-data" th:object="${albaran}"
+					method="post">
 
-                    <div class="card-body">
-                        <form th:action="@{/albaranes/form/}" enctype="multipart/form-data" th:object="${albaran}" method="post">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label>Cliente</label>
-                                        <input th:value="${albaran.cliente.nombre} + ' ' + ${albaran.cliente.apellido}" class="form-control" disabled />
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="lugar">Obra</label>
-                                        <input type="text" th:field="*{lugar}" class="form-control" th:errorclass="is-invalid" />
-                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('lugar')}" th:errors="*{lugar}"></div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="date">Fecha del Albarán</label>
-                                        <input class="form-control" id="date" name="dfechavenci" type="date" />
-                                        <small class="form-text text-danger" th:if="${#fields.hasErrors('dfechavenci')}" th:errors="*{dfechavenci}"></small>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label>Nº Albarán</label>
-                                        <input type="text" th:field="*{numeroAlbaran}" class="form-control" th:errorclass="is-invalid" />
-                                        <small class="form-text text-danger" th:if="${#fields.hasErrors('numeroAlbaran')}" th:errors="*{numeroAlbaran}"></small>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label>Proveedor</label>
-                                        <select class="form-control" th:field="*{proveedor}">
-                                            <option th:each="proveedor:${proveedores}" th:value="${proveedor.id}" th:text="${proveedor.vnombre}" />
-                                        </select>
-                                        <small class="form-text text-danger" th:if="${#fields.hasErrors('proveedor')}" th:errors="*{proveedor}"></small>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="buscar_producto">Buscar producto</label>
-                                        <input type="text" name="buscar_producto" id="buscar_producto" class="form-control" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="table-responsive mt-3">
-                                <table th:replace="albaran/plantilla-items :: itemsFactura"></table>
-                                <table id="cargarItemProductos" class="table table-sm table-striped table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Nombre</th>
-                                            <th>Cantidad</th>
-                                            <th>Eliminar</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                                <h5>Total <span class="badge badge-secondary" id="gran_total">0</span></h5>
-                            </div>
-
-                            <div class="row mt-3">
-                                <div class="col-md-8">
-                                    <div class="form-group">
-                                        <label for="observacion">Observación</label>
-                                        <textarea th:field="*{observacion}" class="form-control" rows="3"></textarea>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="file">Foto</label>
-                                        <input type="file" name="file" class="form-control-file" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="d-flex justify-content-end mt-3 gap-2">
-                                <button type="reset" class="btn btn-secondary">
-                                    <i class="fas fa-undo mr-1"></i> Resetear
-                                </button>
-                                <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-save mr-1"></i> <span th:text="${titulo}"></span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </section>
-        </div>
-    </div>
-    
-    <script th:replace="factura/js/listarproductos :: javascript"></script>
+					<div class="form-group row">
+						<label for="cliente" class="col-sm-2 col-form-label"
+							th:text="'Cliente'"></label>
+						<div class="col-sm-4">
+							<input name="cliente"
+								th:value="${albaran.cliente.nombre} + ' ' + ${albaran.cliente.apellido}"
+								class="form-control" disabled='disabled' />
+						</div>
+					</div>
+					<div class="form-group row">
+						<label for="lugar" class="col-sm-2 col-form-label"
+							th:text="'Obra'"></label>
+						<div class="col-sm-6">
+							<input type="text" th:field="*{lugar}" class="form-control" th:errorclass="'form-control is-invalid'" />
+							<div class="invalid-feedback" th:if="${#fields.hasErrors('lugar')}" th:errors="*{lugar}"></div>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label for="dfechavenci" class="col-sm-2 col-form-label" >Fecha del Albaran</label>
+						<div class="col-sm-2">
+							<input class="form-control" id="date" name="dfechavenci" type="date"/><small
+								class="form-text text-danger"
+								th:if="${#fields.hasErrors('dfechavenci')}"
+								th:errors="*{dfechavenci}"></small>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="col-sm-2 col-form-label">Nº Albaran</label>
+						<div class="col-sm-2">
+							<input type="text" th:field="*{numeroAlbaran}" class="form-control"
+								th:errorclass="'form-control alert-danger'" /> <small
+								class="form-text text-danger" th:if="${#fields.hasErrors('numeroAlbaran')}" th:errors="*{numeroAlbaran}"></small>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="col-sm-2 col-form-label">Proveedor</label>
+						<div class="col-sm-4">
+							<select class="form-control"  th:field="*{proveedor}">
+								<option th:each="proveedor:${proveedores}"
+										th:value="${proveedor.id}" th:text="${proveedor.vnombre}"
+										th:selected="false" />
+							</select> <small class="form-text text-danger"
+								th:if="${#fields.hasErrors('proveedor')}" th:errors="*{proveedor}"></small>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label for="buscar_producto" class="col-sm-2 col-form-label"
+							th:text="'Buscar producto'"></label>
+						<div class="col-sm-6">
+							<input type="text" name="buscar_producto" id="buscar_producto"
+								class="form-control" />
+						</div>
+					</div>
+					<table th:replace="albaran/plantilla-items :: itemsFactura"></table>
+					<table id="cargarItemProductos"
+						class="table table-sm table-striped table-hover">
+						<thead>
+							<tr>
+								<th>Nombre</th>							
+								<th>Cantidad</th>							
+								<th>Eliminar</th>
+							</tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+					<h5>Total <span class="badge badge-secondary" id="gran_total">0</span></h5>
+						<div class="form-group row">
+						<label for="observacion" class="col-sm-2 col-form-label"
+							th:text="'Observación'"></label>
+						<div class="col-sm-6">
+							<textarea th:field="*{observacion}" class="form-control"></textarea>
+						</div>
+					</div>
+						<div class="form-group row">
+						<label for="file" class="col-sm-2 col-form-label">Foto</label>
+						<div class="col-sm-6">
+							<input type="file" name="file" class="form-control" />
+						</div>
+					</div>
+					<div class="form-group row">
+						<div class="col-sm-6">
+							<input type="submit" th:value="${titulo}"
+								class="btn btn-secondary" />
+							<button type="reset" class="btn btn-secondary">Resetear</button>
+							<a th:href="@{/albaranes/listarAlbaranes}" class="btn btn-secondary">Listar Albaranes</a>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+	<footer th:replace="layout/layoutMcompras :: footer"></footer>
+	<script th:replace="factura/js/listarproductos :: javascript"></script>
 </body>
 </html>

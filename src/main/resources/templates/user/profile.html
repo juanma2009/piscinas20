@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es"
-      layout:decorate="admin/admin_layout"
+      layout:decorator="admin/admin_layout"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
@@ -22,6 +22,39 @@
         .estado-pendiente { background-color: #f8d7da; }
         .estado-terminado { background-color: #d4edda; }
 
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #0062cc, #004085);
+            color: #fff;
+            padding: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 1.25rem;
+            border-radius: 8px 8px 0 0;
+            border-bottom: none;
+        }
+
+        /* Toolbar igual que listarpedido */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+            align-items: center;
+            padding: .75rem 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .toolbar .btn {
+                width: auto !important;
+                flex: 1 1 auto;
+            }
+        }
+
         .invalid-feedback { display: block; }
 
         /* Quitar los iconos de validación por defecto de Bootstrap */
@@ -30,7 +63,22 @@
             padding-right: 0.75rem !important;
         }
 
-        .tab-content { margin-top: 20px; }
+        @media screen and (min-width: 1268px) {
+            html, body {
+                overflow-x: hidden;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            .container-fluid {
+                width: 100%;
+                max-width: 100vw;
+                padding: 0;
+                margin: 0 auto;
+                overflow-x: hidden;
+            }
+            .tab-content { margin-top: 20px; }
+        }
     </style>
 </head>
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="admin/admin_layout">
+      layout:decorator="admin/admin_layout">
 
 <head>
     <meta charset="utf-8"/>
@@ -19,106 +19,182 @@
         /*]]>*/
     </script>
 <style>
-    .container { max-width: 100%; }
+    /* ========= Look “Pedidos” ========= */
+    .card{
+        border-radius:10px;
+        box-shadow:0 2px 6px rgba(0,0,0,.08);
+        overflow:hidden;
+    }
+
+    .card-header{
+        background: linear-gradient(135deg, #0062cc, #004085);
+        color:#fff;
+        font-weight:700;
+        text-transform:uppercase;
+        padding:15px;
+    }
+
+    .card-header:hover {
+        background-color: #0056b3; /* Tono más oscuro de azul */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
+    }
+
+    /* ========= Toolbar ========= */
+    .toolbar{
+        display:flex;
+        flex-wrap:wrap;
+        gap:.5rem;
+        align-items:center;
+        padding: .75rem 1rem 0 1rem;
+    }
+
+    .container{
+    max-width: 100%;
+    }
 
     /* ========= Imágenes ========= */
-    .card-img-container img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform .3s;
+    .card-img-container img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .3s;
     }
-    .card-img-container img:hover { transform: scale(1.05); }
+
+    .card-img-container img:hover{
+    transform: scale(1.05);
+    }
 
     /* ========= Acciones ========= */
-    .form-actions {
-        margin-top: .5rem;
-        margin-bottom: .75rem;
-        gap: .5rem;
+    .form-actions{
+    margin-top: .5rem;
+    margin-bottom: .75rem;
+    gap:.5rem;
     }
 
     /* ========= Galería ========= */
-    #photo-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 15px;
-        margin-top: 1rem;
+    #photo-container{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 15px;
+    margin-top: 1rem;
     }
 
-    .pedido-card {
-        border: 1px solid #ddd;
-        padding: 12px;
-        border-radius: 10px;
-        background: #fff;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        transition: transform .2s, box-shadow .2s;
+    .pedido-card{
+    border: 1px solid #ddd;
+    padding: 12px;
+    border-radius: 10px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: transform .2s, box-shadow .2s;
     }
-    .pedido-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 12px rgba(0,0,0,.1);
+
+    .pedido-card:hover{
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
     }
-    .pedido-card img {
-        width: 100%;
-        height: 180px;
-        object-fit: cover;
-        border-radius: 8px;
-        cursor: pointer;
+
+    .pedido-card img{
+    width:100%;
+    height:180px;
+    object-fit:cover;
+    border-radius:8px;
+    cursor:pointer;
     }
 
     /* ========= Tabla ========= */
-    .table th, .table td {
-        text-align: center;
-        vertical-align: middle;
+    .table th,
+    .table td{
+    text-align:center;
+    vertical-align:middle;
     }
-    .table img {
-        width: 80px;
-        height: 80px;
-        border-radius: 5px;
-        object-fit: cover;
+
+    .table img{
+    width:80px;
+    height:80px;
+    border-radius:5px;
+    object-fit:cover;
     }
 
     /* ========= Info ========= */
-    .pedido-info {
-        font-size: .85rem;
-        color: #444;
-        line-height: 1.4;
-    }
-    .pedido-info b { color: #000; }
-
-    .badge-status {
-        font-size: .75rem;
-        padding: 4px 10px;
-        border-radius: 12px;
-        display: inline-block;
-        margin-top: 4px;
-        color: #fff;
-        font-weight: 600;
+    .pedido-info{
+    font-size:.85rem;
+    color:#444;
+    line-height:1.4;
     }
 
-    /* ========= Filtros Colapsables ========= */
-    #formBusqueda {
-        overflow: hidden;
-        max-height: 0;
-        transition: max-height .4s ease-in-out;
-        margin-top: .75rem;
-    }
-    #formBusqueda.is-open { max-height: 2000px; }
-    #formBusqueda.is-closed { max-height: 0; }
+    .pedido-info b{ color:#000; }
 
-    /* 📱 MÓVIL */
-    @media (max-width: 768px) {
-        #formBusqueda {
-            overflow: visible !important;
-            max-height: none !important;
-            transition: none !important;
-        }
-        #formBusqueda.is-closed { display: none; }
-        #formBusqueda.is-open { display: block; }
+    .badge-status{
+    font-size:.75rem;
+    padding:4px 10px;
+    border-radius:12px;
+    display:inline-block;
+    margin-top:4px;
+    color:#fff;
+    font-weight:600;
     }
 
-    /* 💻 DESKTOP */
+    /* ===================================
+    FILTROS COLAPSABLES
+    =================================== */
+    #formBusqueda{
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .4s ease-in-out;
+    margin-top: .75rem;
+    }
+
+    /* abierto */
+    #formBusqueda.is-open{
+    max-height: 2000px; /* suficiente para todos los campos */
+    }
+
+    /* cerrado */
+    #formBusqueda.is-closed{
+    max-height: 0;
+    }
+
+    /* ===================================
+    DESKTOP
+    =================================== */
+    @media (min-width: 769px){
+    .card{
+    }
+
+    .card-header{
+    }
+    }
+
+    /* ===================================
+    📱 MÓVIL (CRÍTICO)
+    =================================== */
+    @media (max-width: 768px){
+
+    /* 🔑 deja crecer el formulario */
+    #formBusqueda{
+    overflow: visible !important;
+    max-height: none !important;
+    transition: none !important;
+    }
+
+    #formBusqueda.is-closed{
+    display:none;
+    }
+
+    #formBusqueda.is-open{
+    display:block;
+    }
+
+    html, body{
+    height:auto;
+    min-height:100%;
+    overflow-y:auto;
+    }
+    }
+
+    /* ===== Layout horizontal del formulario (desktop) ===== */
     @media (min-width: 769px) {
         #formBusqueda .form-row,
         #formBusqueda .row {
@@ -126,12 +202,15 @@
             flex-wrap: wrap;
             gap: 1rem;
         }
+
         #formBusqueda .form-group {
-            flex: 1 1 220px;
+            flex: 1 1 220px; /* columnas fluidas */
             min-width: 220px;
         }
     }
-</style>
+
+
+    </style>
 </head>
 
 <body class="hold-transition sidebar-mini">

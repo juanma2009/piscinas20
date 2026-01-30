@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="admin/admin_layout">
+      layout:decorator="admin/admin_layout">
 <head>
     <!-- Agregar jQuery -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -23,28 +23,110 @@
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 
     <style>
-        /* ✅ Columna nombre: por defecto normal en escritorio */
+        /* ✅ Columna nombre: por defecto normal en escritorio (puedes cambiarlo a ellipsis si quieres) */
         #fileListTable td.file-name-cell,
         #googleDriveFilesTable td.file-name-cell {
-            white-space: normal;
+            white-space: normal;          /* escritorio: permite salto */
             overflow-wrap: anywhere;
             word-break: break-word;
         }
 
         /* ✅ En móvil/tablet: ellipsis profesional */
         @media (max-width: 992px) {
+
+            /* tabla fija para que ellipsis funcione */
             #fileListTable, #googleDriveFilesTable {
                 table-layout: fixed;
                 width: 100%;
             }
+
+            /* el nombre no salta, se corta con "..." */
             #fileListTable td.file-name-cell,
             #googleDriveFilesTable td.file-name-cell {
                 white-space: nowrap !important;
                 overflow: hidden !important;
                 text-overflow: ellipsis !important;
-                max-width: 140px;
+
+                max-width: 140px;         /* ajusta si quieres (120-200 suele ir bien) */
                 font-size: 13px;
             }
+        }
+
+
+        /*boton modal*/
+        .btn-modern{
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 10px !important;
+            font-weight: 700;
+            letter-spacing: .2px;
+        }
+        .btn-modern i{
+            font-size: 1.15rem;
+            line-height: 1;
+        }
+
+        .btn {
+            border-radius: 8px !important;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0069d9, #004a99);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            border: none;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #34c759, #1e7e34);
+        }
+
+        /*dentro del modal*/
+        /* 🔹 Espaciado horizontal entre botones */
+        .gap-2 > * {
+            margin-right: 8px;
+        }
+
+        .gap-2 > *:last-child {
+            margin-right: 0;
+        }
+
+        /* 🔹 Mejora visual del modal */
+        .modal-lg {
+            max-width: 900px; /* aumenta el ancho */
+        }
+
+        .modal-content {
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            border-bottom: 2px solid #004085;
+        }
+
+        .modal-body {
+            background-color: #f8f9fa;
+            border-radius: 0 0 10px 10px;
+            overflow: visible; /* Permite que Google Picker escape del modal */
+            position: relative;
         }
 
         /* Google Drive Tab - Permitir que el Picker se muestre correctamente */
@@ -54,17 +136,36 @@
             z-index: 1;
         }
 
-        /* loading */
+        /* 🔹 Botones uniformes */
+        .btn {
+            border-radius: 6px !important;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /*loading*/
         #loadingOverlay .progress {
             box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
         }
+
         #loadingOverlay .progress-bar {
             font-weight: 600;
             font-size: 0.9rem;
         }
 
-        .estado-pendiente { background-color: #f8d7da; }
-        .estado-terminado { background-color: #d4edda; }
+        .estado-pendiente {
+            background-color: #f8d7da; /* Rojo claro */
+        }
+
+        .estado-terminado {
+            background-color: #d4edda; /* Verde claro */
+        }
 
         #fileListContainer {
             background-color: white;
@@ -73,34 +174,230 @@
             border-radius: 5px;
         }
 
-        /* Spinner de guardado pantalla completa */
-        #spinnerGuardado {
-            position: fixed;
-            top: 0;
-            left: 0;
+        #fileList {
+            list-style: none;
+            padding: 0;
+        }
+
+        .deleteButton {
+            background-color: transparent;
+            border: none;
+            color: red;
+            cursor: pointer;
+            font-size: 16px;
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+
+
+
+        /* Establecer un padding y margen general para todas las secciones internas */
+
+        .card{
+            border-radius:10px;
+            box-shadow:0 2px 6px rgba(0,0,0,.08);
+            overflow:hidden;
+            padding: 1rem;
+        }
+        .card-header{
+            background: linear-gradient(135deg, #0062cc, #004085);
+            color:#fff;
+            font-weight:700;
+            text-transform:uppercase;
+            padding:15px;
+        }
+
+
+        /* Control uniforme para las tablas */
+        .table {
+            margin-bottom: 1rem;
+        }
+
+        /* Espaciado entre botones */
+        .btn-group .btn {
+            margin-right: 0.5rem;
+        }
+
+        /* Botones pequeños con padding uniforme */
+        .btn-sm {
+            padding: 0.4rem 0.75rem;
+        }
+
+
+
+        /* Hace la tabla responsiva */
+        .table-responsive {
             width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.3);
-            display: none;
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-        }
-        #spinnerGuardado i {
-            font-size: 3rem;
-            color: #fff;
+            overflow-x: auto; /* Permite scroll horizontal si es necesario */
+            -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en móviles */
         }
 
-        /* Google Picker API - Estilos para asegurar visibilidad */
-        .goog-md-menu, .goog-menuitem, .goog-menuseparator, .goog-menu-button,
-        .goog-toolbar-button, .goog-imagemenu-value, .picker-dialog, .picker-frame,
-        iframe[src*="accounts.google.com"], iframe[src*="apis.google.com"],
-        .picker-dialog-bg, .picker-dlg {
-            z-index: 10000 !important;
+        /* Ajuste general de la tabla */
+        .table td, .table th {
+            white-space: nowrap; /* Evita que el contenido de las celdas se corte */
+            font-size: 14px;
+            padding: 8px;
         }
 
-        .modal-backdrop { z-index: 999; }
-        .modal.show { z-index: 1050; }
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table td,
+        .table th {
+            white-space: nowrap;
+            font-size: 14px;
+            padding: 8px;
+        }
+
+        @media screen and (min-width: 1268px) {
+            html, body {
+                overflow-x: hidden;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            .card{
+                border-radius:10px;
+                box-shadow:0 2px 6px rgba(0,0,0,.08);
+                overflow:hidden;
+            }
+            .card-header{
+                background: linear-gradient(135deg, #0062cc, #004085);
+                color:#fff;
+                font-weight:700;
+                text-transform:uppercase;
+                padding:15px;
+            }
+
+            .tab-content {
+                margin-top: 20px;
+            }
+
+            /* Contenedor scrollable de la tabla */
+            .dataTables_scrollBody {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 290px; /* 🔹 Altura fija de la tabla visible */
+                overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
+                overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
+                display: block;
+            }
+
+            /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
+            .dataTables_scrollBody table {
+                width: 100% !important;
+                max-width: 100%;
+                min-width: auto !important;
+                table-layout: auto;
+            }
+
+            .dataTables_scrollBody th,
+            .dataTables_scrollBody td {
+                padding: 10px;
+                white-space: nowrap;
+            }
+            /* Spinner de guardado pantalla completa */
+            #spinnerGuardado {
+                position: fixed;           /* Se pega a la ventana, no al card */
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.3);  /* Fondo semitransparente */
+                display: none;             /* Oculto por defecto */
+                z-index: 9999;
+
+                /* Centrar el icono */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #spinnerGuardado i {
+                font-size: 3rem;
+                color: #fff;
+            }
+
+            /* Google Picker API - Estilos para asegurar visibilidad */
+            /* Dialog principal del Picker */
+            .goog-md-menu,
+            .goog-menuitem,
+            .goog-menuseparator,
+            .goog-menu-button,
+            .goog-toolbar-button,
+            .goog-imagemenu-value,
+            .picker-dialog,
+            .picker-frame {
+                z-index: 10000 !important;
+            }
+
+            /* IFrame del Picker */
+            iframe[src*="accounts.google.com"],
+            iframe[src*="apis.google.com"],
+            .picker-dialog-bg,
+            .picker-dlg {
+                z-index: 10000 !important;
+            }
+
+            /* Asegurar que el modal no interfiera */
+            .modal-backdrop {
+                z-index: 999;
+            }
+
+            .modal.show {
+                z-index: 1050;
+            }
+
+            /*RESPONSIVE LOS BOTONES Y NORMAL CUANDO NO ESTA EN ESE RESPONSIVO
+            /* Estilos generales */
+            .btn i {
+                font-size: 1.5rem; /* Tamaño del icono */
+            }
+
+            /* Estilos responsivos */
+            @media screen and (max-width: 1268px) {
+                /* Ocultar texto en pantallas pequeñas */
+                .btn span {
+                    display: none;
+                }
+
+                /* Mostrar solo los iconos */
+                .btn i {
+                    display: inline-block; /* Muestra el icono */
+                }
+
+                /* Asegúrate de que el tamaño del botón no cambie demasiado */
+                .btn {
+                    padding: 8px;
+                    font-size: 1.5rem;
+                }
+            }
+
+            /* Asegura que el texto se muestre en pantallas grandes */
+            @media screen and (min-width: 1268px) {
+                /* Mostrar el texto y ocultar el icono */
+                .btn i {
+                    display: none; /* Ocultar el icono */
+                }
+
+                .btn span {
+                    display: inline; /* Mostrar el texto */
+                }
+            }
+
+        }
+        /* ✅ Toolbar responsive */
+        .toolbar{
+            display:flex;
+            flex-wrap:wrap;
+            gap:.5rem;
+            align-items:center;
+            padding: .75rem 1rem 0 1rem;
+        }
     </style>
 </head>
 
@@ -111,23 +408,37 @@
 
     <section class="content-header">
         <div class="card">
-            <div class="card-header">
-                <i class="fas fa-edit mr-2"></i> <span th:text="${titulo}"></span>
+            <div class="card-header bg-primary text-white">
+                <div th:text="${titulo}"></div> <!-- Título de la tarjeta -->
             </div>
+            <!-- Botones de navegación -->
 
-            <div class="toolbar">
-                <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
-                    <i class="fas fa-list mr-1"></i> Listado
-                </a>
-                <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary btn-sm">
-                    <i class="fas fa-images mr-1"></i> Galería
-                </a>
-                <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
-                    <i class="fas fa-user mr-1"></i> Clientes
-                </a>
-            </div>
+                <div class="toolbar">
 
-            <div class="container-fluid mt-3 px-3">
+                        <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-list"></i> <span>Pedidos</span>
+                        </a>
+                        <!-- Ejemplo: botón "Ver pedido" solo visible en modo edición -->
+                        <a th:if="${pedido.npedido != null}"
+                           th:href="@{/pedidos/ver/{npedido}(npedido=${pedido.npedido})}"
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye"></i><span>Ver detalles</span>
+                        </a>
+                        <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-images"></i> <span>Galería</span>
+                        </a>
+                        <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-user"></i> <span>Clientes</span>
+                        </a>
+                        <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-user-plus"></i> <span>Nuevo Cliente</span>
+                        </a>
+
+                    </div>
+
+
+            <div></div>
+            <div class="container-fluid mt-3">
                 <form id="pedidoForm" th:action="@{/pedidos/form/}" enctype="multipart/form-data" th:object="${pedido}"
                       method="post">
                     <!-- Navegación de pestañas -->

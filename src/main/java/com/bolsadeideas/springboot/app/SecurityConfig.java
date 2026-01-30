@@ -23,7 +23,7 @@ public class SecurityConfig {
                 .csrf().ignoringAntMatchers("/api/**")
                 .and()
                 .authorizeRequests()
-                .antMatchers("/css/**", "/js/**", "/images/**", "/admin/**", "/style.css", "/sw.js", "/favicon.ico").permitAll()
+                .antMatchers("/css/**", "/dist/**", "/plugins/**", "/js/**", "/images/**").permitAll()
                 .antMatchers("/login", "/logout").permitAll()
                 .antMatchers("/api/**").permitAll() // Permitir acceso temporal a la API
                 .antMatchers("/verify_2fa").permitAll()
