@@ -24,27 +24,41 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
 
     <style>
-        html, body {
+        /* Estabilización del layout para evitar saltos */
+        html {
+            /* 1. Reserva el espacio de la barra de scroll para evitar el movimiento horizontal */
+            scrollbar-gutter: stable;
+            height: 100%;
+        }
+
+        body {
+            height: 100% !important;
             margin: 0;
             padding: 0;
+            /* 2. Evitamos el scroll horizontal y dejamos que AdminLTE maneje el vertical */
             overflow-x: hidden;
             overflow-y: auto;
-            height: auto;
+        }
+
+        /* Asegurar que el wrapper ocupe todo el espacio sin saltos */
+        .wrapper {
+            position: relative;
+            min-height: 100%;
+            display: block; /* AdminLTE prefiere block sobre flex en el wrapper principal */
         }
 
         .content-wrapper {
-            position: relative;
             background-size: cover;
             background-repeat: no-repeat;
             background-position: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-            overflow-y: auto;
+            /* 3. Evitamos el uso de 100vh que suele causar scroll prematuro al sumarse al navbar */
+            min-height: calc(100vh - 57px) !important; 
         }
 
         .content-wrapper > .container-fluid {
             padding-left: .5rem;
             padding-right: .5rem;
+            flex: 1;
         }
         @media (min-width: 768px) {
             .content-wrapper > .container-fluid {
@@ -64,7 +78,11 @@
     </style>
 </head>
 
-<body class="hold-transition sidebar-mini layout-fixed">
+<body class="sidebar-mini layout-fixed control-sidebar-slide-open">
+<script>
+    // Evitar el "rebote" de hold-transition quitando la clase inmediatamente
+    document.body.classList.remove('hold-transition');
+</script>
 <div class="wrapper">
 
     <!-- Header -->

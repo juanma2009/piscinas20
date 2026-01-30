@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorator="admin/admin_layout">
+      layout:decorate="admin/admin_layout">
 
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,109 +18,19 @@
     <meta name="_csrf" th:content="${_csrf.token}" />
     <meta name="_csrf_header" th:content="${_csrf.headerName}" />
     <style>
-
-        .card{
-            border-radius:10px;
-            box-shadow:0 2px 6px rgba(0,0,0,.08);
-            overflow:hidden;
-        }
-        .card-header{
-            background: linear-gradient(135deg, #0062cc, #004085);
-            color:#fff;
-            font-weight:700;
-            text-transform:uppercase;
-            padding:15px;
-        }
-
-        /* ✅ Toolbar responsive */
-        .toolbar{
-            display:flex;
-            flex-wrap:wrap;
-            gap:.5rem;
-            align-items:center;
-            padding: .75rem 1rem 0 1rem;
-        }
-
-
         /* ✅ Filtros: toggle con altura real */
-        #formBusqueda{
-            overflow:hidden;
-            max-height:0;
-            transition:max-height .3s ease-in-out;
-            margin-top:.75rem;
+        #formBusqueda {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height .3s ease-in-out;
+            margin-top: .75rem;
         }
 
-        /* ✅ Tabla: dentro de márgenes + scroll si hace falta */
-        .table-responsive{
-            width:100%;
-            overflow-x:auto;
-            -webkit-overflow-scrolling:touch;
-        }
-        .dataTables_wrapper{
-            width:100%;
-            overflow-x:auto;
-        }
-
-        table.dataTable{ width:100% !important; }
-
-        .table td, .table th{
-            white-space:nowrap;
-            font-size:14px;
-            padding:8px;
-
-
-             /* Espaciado entre botones */
-        .btn-group .btn {
-            margin-right: 0.5rem;
-        }
-
-
-        .card-header:hover {
-            background-color: #0056b3; /* Tono más oscuro de azul */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
-        }
-
-
-        }
-        html, body {
-
-            margin: 0; /* Elimina márgenes por defecto */
-            padding: 0; /* Elimina el padding por defecto */
-
-        }
         .nav-tabs .nav-link.active {
-            color: #007bff !important; /* azul Bootstrap */
+            color: #007bff !important;
             border-color: #007bff #007bff #fff;
         }
-        .list-group-item {
-            border: none;
-        }
-        @media screen and (min-width: 1268px) {
-
-            html, body {
-
-                width: 100%;
-                margin: 0;
-                padding: 0;
-            }
-
-
-            .tab-content {
-                margin-top: 20px;
-            }
-
-
-            /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
-            .dataTables_scrollBody table {
-                width: 100% !important;
-                max-width: 100%;
-                min-width: auto !important;
-                table-layout: auto;
-
-            }
-
-
-        }
+        .list-group-item { border: none; }
 
         /* Estilos para el carrusel ORIGINAL con mejoras */
         #fotoMini {
@@ -171,21 +81,10 @@
             transform: translateY(-50%) scale(1.1);
         }
 
-        .slick-prev {
-            left: 0;
-        }
-
-        .slick-next {
-            right: 0;
-        }
-
-        .slick-prev:before {
-            content: '←';
-        }
-
-        .slick-next:before {
-            content: '→';
-        }
+        .slick-prev { left: 0; }
+        .slick-next { right: 0; }
+        .slick-prev:before { content: '←'; }
+        .slick-next:before { content: '→'; }
 
         /* Estilos para archivos no-imagen */
         .non-image-file {
@@ -239,35 +138,24 @@
         }
 
         /* Iconos por tipo de archivo */
-        .pdf-file {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-
-        .doc-file {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        }
-
-        .txt-file {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-        }
-
+        .pdf-file { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .doc-file { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .txt-file { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
         .other-file {
             background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
             color: #333;
         }
-
         .other-file .file-type-badge {
             color: #333;
             background: rgba(255, 255, 255, 0.5);
         }
 
-        /* Estilo para la imagen que se hace zoom hacia la parte de la imagen */
         .zoomed {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) scale(2);
-            transition: transform 0.5s;
+            transition: transform 0.5s ease;
             z-index: 1000;
             max-width: 50vw;
             max-height: 50vh;
@@ -287,6 +175,7 @@
                 transition: transform 0.5s;
             }
         }
+
 
         /* Ajustes para el carrusel en móviles */
         @media (max-width: 768px) {

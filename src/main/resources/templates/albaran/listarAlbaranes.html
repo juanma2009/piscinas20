@@ -1,105 +1,108 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorator="/admin/admin_layout">
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" 
+      layout:decorate="admin/admin_layout">
 
-
-<head >
-<meta charset="utf-8" />
-
-<title>Lista Albaranes</title>
-	<link rel="stylesheet" href="../css/table.css">
-	<!--  Bootstrap  -->
-	<link rel="stylesheet"
-		  href="cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js">
-	<link rel="stylesheet"
-		  href="cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
-	<!-- Plugin Leaflet.awesome-markers  -->
-	<link rel="stylesheet" href="../dist/leaflet.awesome-markers.css">
-
+<head>
+    <title th:text="${titulo}">Listado de Albaranes</title>
 </head>
-<body>
 
 <div layout:fragment="content">
+    <div class="container-fluid px-2 px-md-3">
+        <section class="content-header">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-file-invoice mr-2"></i> <span th:text="${titulo}"></span>
+                </div>
 
-	<div class="container py-4">
+                <div class="toolbar">
+                    <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list mr-1"></i> Pedidos
+                    </a>
+                    <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user mr-1"></i> Clientes
+                    </a>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="toggleBusqueda">
+                        <i class="fas fa-search mr-1"></i> Filtros
+                    </button>
+                </div>
 
-		<div class="card bg-light">
-			<div class="card-header" th:text="${titulo}"></div>
-			<div class="card-body">
-				<div class="form-group row">
-					<div class="col-sm-12">
-						<form th:action="@{/albaranes/buscar}" method="post">
-							<label for="cliente"  th:text="'Cliente'"></label>
-							 <input type="text" id="cliente" name="cliente">
-							 
-							 <label for="tipo"  th:text="'Tipo de Pedido'"></label>
-							 <input type="text" id="tipo" name="tipo">
-							 
+                <div class="card-body">
+                    <!-- Formulario de Búsqueda Colapsable -->
+                    <div id="formBusqueda" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;">
+                        <form th:action="@{/albaranes/buscar}" method="post" class="row mb-4">
+                            <div class="col-md-5 mb-2">
+                                <label for="cliente" class="small font-weight-bold">Cliente</label>
+                                <input type="text" id="cliente" name="cliente" class="form-control form-control-sm" placeholder="Nombre del cliente">
+                            </div>
+                            <div class="col-md-5 mb-2">
+                                <label for="tipo" class="small font-weight-bold">Tipo de Pedido</label>
+                                <input type="text" id="tipo" name="tipo" class="form-control form-control-sm" placeholder="Ej: Reparación">
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end mb-2">
+                                <button type="submit" class="btn btn-primary btn-block btn-sm">
+                                    <i class="fas fa-filter mr-1"></i> Buscar
+                                </button>
+                            </div>
+                        </form>
+                        <hr>
+                    </div>
 
-							 
-							 <input type="submit" class="btn btn-primary btn-sm" value="Buscar">							
-						</form>
-					</div>				
-					<div class="table-responsive">
-					<table id="table" class="table mt-2">
-						<thead class="thead-dark">
-							<tr>
-								<th>#</th>
-								<th>Cliente</th>
-								<th>Proveedor</th>
-								<th>F.Albaran</th>
-								<th>Lugar</th>
-								<th>Nº Albaran</th>
-								<th>Ver</th>
-							
-							</tr>
-						</thead>
-						 <tbody>
-							<tr th:each="albaranes:${albaranes}">
-								<td th:text="${albaranes.id}"></td>
-								<td th:text="${albaranes.cliente.nombre}"></td>
-								<td th:text="${albaranes.proveedor.vnombre}"></td>								
-								<td th:text="${albaranes.dfechavenci}"></td>								
-								<td th:text="${albaranes.lugar}"></td>
-								<td th:text="${albaranes.numeroAlbaran}"></td>
-						<td><a class="btn btn-primary btn-sm" th:href="@{'/albaranes/ver/' + ${albaranes.id}}" th:text="'detalle'"></a></td>							</tr>
-						</tbody>
-
-					</table>
-					</div>
-				</div>
-			</div>
-			<nav th:replace="paginator-nav ::paginator"></nav>
-		</div>
-	</div>
-
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered datatable w-100" data-dt="auto">
+                            <thead class="table-dark text-center">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Cliente</th>
+                                    <th>Proveedor</th>
+                                    <th>Fecha</th>
+                                    <th>Lugar</th>
+                                    <th>Nº Albarán</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="albaran : ${albaranes}">
+                                    <td class="text-center" th:text="${albaran.id}"></td>
+                                    <td th:text="${albaran.cliente.nombre + ' ' + albaran.cliente.apellido}"></td>
+                                    <td th:text="${albaran.proveedor != null ? albaran.proveedor.vnombre : '-'}"></td>
+                                    <td class="text-center" th:text="${#dates.format(albaran.dfechavenci, 'dd/MM/yyyy')}"></td>
+                                    <td th:text="${albaran.lugar}"></td>
+                                    <td class="text-center font-weight-bold" th:text="${albaran.numeroAlbaran}"></td>
+                                    <td class="text-center">
+                                        <a class="btn btn-outline-primary btn-sm" th:href="@{'/albaranes/ver/' + ${albaran.id}}" title="Ver Detalles">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-white border-top-0">
+                    <nav th:replace="paginator-nav :: paginator"></nav>
+                </div>
+            </div>
+        </section>
+    </div>
 </div>
-</body>
 
-<!-- ordenar la tabla poner en un archivo par poder luego llamar -->
-<script type="text/javascript">
-	
-</script>
-
-<style>
-table tr th {
-	cursor: pointer;
-	-webkit-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	user-select: none;
-}
-
-.sorting {
-	background-color: #D4D4D4;
-}
-
-.asc:after {
-	content: ' ↑';
-}
-
-.desc:after {
-	content: " ↓";
-}
-</style>
-
+<div layout:fragment="script">
+    <script>
+        $(document).ready(function() {
+            // Lógica de toggle para filtros
+            $('#toggleBusqueda').click(function() {
+                const $form = $('#formBusqueda');
+                if ($form.css('max-height') === '0px') {
+                    $form.css('max-height', $form[0].scrollHeight + 'px');
+                    $(this).html('<i class="fas fa-times mr-1"></i> Cerrar Filtros');
+                } else {
+                    $form.css('max-height', '0px');
+                    $(this).html('<i class="fas fa-search mr-1"></i> Filtros');
+                }
+            });
+        });
+    </script>
+</div>
 </html>

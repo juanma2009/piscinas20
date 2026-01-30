@@ -1,80 +1,90 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorator="admin/admin_layout">
-
-
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" 
+      layout:decorate="admin/admin_layout">
 <head>
+    <title th:text="${titulo}"></title>
 </head>
 <body>
-
-
-<div layout:fragment="content">
-    <div class="container py-4">
-
-        <div class="card bg-light">
-            <div class="card-header" th:text="${titulo}"></div>
-            <div class="card-body">
-                <div class="form-group row">
-                    <h4 class="card-title">
-                        <a th:href="@{/proveedor/form}" class="btn btn-primary btn-sm">Crear Proveedor</a>
-                    </h4>
-                    <div class="col-sm-6">
-                        <form th:action="@{/proveedor/buscar}" method="post">
-                            <label for="nombre" class="card-title" th:text="'Buscar Proveedor'"></label>
-                            <input type="text" id="nombre" name="nombre"> <input
-                                type="submit" class="btn btn-primary btn-sm" value="Buscar">
-
-                        </form>
+    <div layout:fragment="content">
+        <div class="container-fluid px-2 px-md-3">
+            <section class="content-header">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-truck-moving mr-2"></i> <span th:text="${titulo}"></span>
                     </div>
 
-                    <table class="table table-striped">
-                        <thead class="thead-dark">
-                        <tr>
-                            <th>#</th>
-                            <th>Nombre</th>
-                            <th COLSPAN="1">direccion</th>
-                            <th>Teléfono</th>
-                            <th>Email</th>
+                    <div class="toolbar">
+                        <a th:href="@{/proveedor/form}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus mr-1"></i> Crear Proveedor
+                        </a>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="toggleBusqueda">
+                            <i class="fas fa-search mr-1"></i> Filtros
+                        </button>
+                    </div>
 
-                            <th>Editar</th>
-                           <!-- <th>Eliminar</th>-->
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="proveedor:${proveedor}">
-                            <td
-                                    th:text="${proveedor.nproveedor}"></td>
-                            <td th:text="${proveedor.vnombre}"></td>
-                            <td th:text="${proveedor.vdireccion}"></td>
-                            <td th:text="${proveedor.ntelefono}"></td>
-                            <td th:text="${proveedor.vemail}"></td>
+                    <div class="card-body">
+                        <!-- Formulario de Búsqueda Colapsable -->
+                        <div id="formBusqueda" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;">
+                            <form th:action="@{/proveedor/buscar}" method="post" class="row mb-4">
+                                <div class="col-md-10 mb-2">
+                                    <label for="nombre" class="small font-weight-bold">Nombre del Proveedor</label>
+                                    <input type="text" id="nombre" name="nombre" class="form-control form-control-sm" placeholder="Buscar por nombre...">
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end mb-2">
+                                    <button type="submit" class="btn btn-primary btn-block btn-sm">
+                                        <i class="fas fa-filter mr-1"></i> Buscar
+                                    </button>
+                                </div>
+                            </form>
+                            <hr>
+                        </div>
 
-
-                            <!--hasta que no tenga el modulo completo no se vera con el tema de genera factura al los clientes
-                            <td><a class="btn btn-success btn-sm"
-                                th:href="@{'/factura/form/' + ${clientes.ncliente}}"
-                                th:text="'crear factura'"></a></td>
-                                -->
-                            <td><a class="btn btn-primary btn-sm"
-                                   th:href="@{/proveedor/form/} + ${proveedor.nproveedor}">Editar</a>
-                            </td>
-
-                          <!--  <td><a class="btn btn-danger btn-sm"
-                                   th:href="@{/proveedor/eliminar/} + ${proveedor.nproveedor}"
-                                   onclick="return confirm('Est�s seguro que quieres eliminar el proveedor?');">Eliminar</a>
-                            </td>-->
-                        </tr>
-                        </tbody>
-
-                    </table>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nombre</th>
+                                        <th>Dirección</th>
+                                        <th>Teléfono</th>
+                                        <th>Email</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="proveedor:${proveedor}">
+                                        <td th:text="${proveedor.nproveedor}"></td>
+                                        <td th:text="${proveedor.vnombre}"></td>
+                                        <td th:text="${proveedor.vdireccion}"></td>
+                                        <td th:text="${proveedor.ntelefono}"></td>
+                                        <td th:text="${proveedor.vemail}"></td>
+                                        <td>
+                                            <a class="btn btn-primary btn-sm" th:href="@{/proveedor/form/} + ${proveedor.nproveedor}">
+                                                <i class="fas fa-edit"></i> Editar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <nav th:replace="paginator-nav :: paginator"></nav>
+                    </div>
                 </div>
-                <nav th:replace="paginator-nav ::paginator"></nav>
-            </div>
+            </section>
         </div>
-
-
     </div>
-
-</div>
+    <script>
+        $(document).ready(function() {
+            $('#toggleBusqueda').click(function() {
+                var form = $('#formBusqueda');
+                if (form.css('max-height') === '0px') {
+                    form.css('max-height', '2000px');
+                } else {
+                    form.css('max-height', '0px');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

@@ -1,231 +1,116 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorator="admin/admin_layout">
 <head>
-    <!-- Agregar jQuery -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <link rel="stylesheet" href="cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
-    <meta name="_csrf" th:content="${_csrf.token}" />
-    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-
-    <style>
-
-        .estado-pendiente {
-            background-color: #f8d7da; /* Rojo claro */
-        }
-
-        .estado-terminado {
-            background-color: #d4edda; /* Verde claro */
-        }
-        /* se comentan porque no deja ver el contenido
-        tab-content {
-           margin-top: 20cm;
-        }*/
-
-        #fileListContainer {
-            background-color: white;
-            border: 1px solid #ccc;
-            padding: 10px;
-            border-radius: 5px;
-        }
-
-        #fileList {
-            list-style: none;
-            padding: 0;
-        }
-
-        .deleteButton {
-            background-color: transparent;
-            border: none;
-            color: red;
-            cursor: pointer;
-            font-size: 16px;
-            vertical-align: middle;
-            margin-left: 5px;
-        }
-
-        /* Control uniforme para las tablas */
-        .table {
-            margin-bottom: 1rem;
-        }
-
-        /* Espaciado entre botones */
-        .btn-group .btn {
-            margin-right: 0.5rem;
-        }
-
-        /* Botones pequeños con padding uniforme */
-        .btn-sm {
-            padding: 0.4rem 0.75rem;
-        }
-
-        html, body {
-            overflow-x: hidden;
-            width: 100%;
-            margin: 0;
-            padding: 0;
-        }
-
-        .card{
-            border-radius:10px;
-            box-shadow:0 2px 6px rgba(0,0,0,.08);
-            overflow:hidden;
-            padding: 1rem;
-        }
-        .card-header{
-            background: linear-gradient(135deg, #0062cc, #004085);
-            color:#fff;
-            font-weight:700;
-            text-transform:uppercase;
-            padding:15px;
-        }
-
-        @media screen and (min-width: 1268px) {
-
-            html, body {
-                overflow-x: hidden;
-                width: 100%;
-                margin: 0;
-                padding: 0;
-            }
-
-            .container-fluid {
-                width: 100%;
-                max-width: 100vw;
-                padding: 0;
-                margin: 0 auto;
-                overflow-x: hidden;
-            }
-            .tab-content {
-                margin-top: 20px;
-            }
-
-            /* Contenedor scrollable de la tabla */
-            .dataTables_scrollBody {
-                width: 100% !important;
-                max-width: 100% !important;
-                height: 290px; /* 🔹 Altura fija de la tabla visible */
-
-                overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
-                overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
-                display: block;
-            }
-
-            /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
-            .dataTables_scrollBody table {
-                width: 100% !important;
-                max-width: 100%;
-                min-width: auto !important;
-                table-layout: auto;
-
-            }
-
-
-        }
-        /* ✅ Toolbar responsive */
-        .toolbar{
-            display:flex;
-            flex-wrap:wrap;
-            gap:.5rem;
-            align-items:center;
-            padding: .75rem 1rem 0 1rem;
-        }
-
-    </style>
+    <title th:text="${titulo}">Formulario de Cliente</title>
 </head>
-<body>
-
+<link rel="stylesheet" th:href="@{/css/table.css}"/>
+<!-- AdminLTE CSS puedes dejarlo si NO está ya en el layout; si ya está en admin/shared/style, quítalo -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 <div layout:fragment="content">
-        <div id="messege"></div>
-
+    <div class="container-fluid px-2 px-md-3">
         <section class="content-header">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <div  th:text="${titulo}"></div> <!-- Título de la tarjeta -->
+            <div class="card shadow-lg">
+                <div class="card-header">
+                    <i class="fas fa-user-edit mr-2"></i> <span th:text="${titulo}"></span>
                 </div>
-                <!-- Botones de navegación -->
 
-                    <div class="toolbar">
-
-                            <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-list"></i> Pedidos
-                            </a>
-                            <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-images"></i> Galería
-                            </a>
-                            <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-user"></i> Clientes
-                            </a>
-                            <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-user-plus"></i> Nuevo Cliente
-                            </a>
-
-
+                <div class="toolbar">
+                    <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list mr-1"></i> Pedidos
+                    </a>
+                    <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-images mr-1"></i> Galería
+                    </a>
+                    <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user mr-1"></i> Clientes
+                    </a>
                 </div>
-                <form th:action="@{/form}" th:object="${cliente}" method="post" class="needs-validation" novalidate>
 
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label><i class="fas fa-user"></i> Nombre</label>
-                            <input type="text" th:field="*{nombre}" class="form-control" placeholder="Ingrese nombre"
-                                   th:errorclass="'form-control is-invalid'"/>
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
+                <div class="card-body p-4">
+                    <form th:action="@{/form}" th:object="${cliente}" method="post" class="needs-validation" novalidate>
+                        
+                        <div class="row">
+                            <!-- Nombre -->
+                            <div class="form-group col-md-6">
+                                <label class="font-weight-bold"><i class="fas fa-user text-primary mr-1"></i> Nombre</label>
+                                <input type="text" th:field="*{nombre}" class="form-control" placeholder="Nombre del cliente"
+                                       th:errorclass="'form-control is-invalid'" required/>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
+                            </div>
+
+                            <!-- Apellido -->
+                            <div class="form-group col-md-6">
+                                <label class="font-weight-bold"><i class="fas fa-user text-primary mr-1"></i> Apellidos</label>
+                                <input type="text" th:field="*{apellido}" class="form-control" placeholder="Apellidos del cliente"
+                                       th:errorclass="'form-control is-invalid'" required/>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('apellido')}" th:errors="*{apellido}"></div>
+                            </div>
                         </div>
 
-                        <div class="form-group col-md-6">
-                            <label><i class="fas fa-user"></i> Apellido</label>
-                            <input type="text" th:field="*{apellido}" class="form-control" placeholder="Ingrese apellido"
-                                   th:errorclass="'form-control is-invalid'"/>
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('apellido')}" th:errors="*{apellido}"></div>
-                        </div>
-                    </div>
+                        <div class="row">
+                            <!-- Email -->
+                            <div class="form-group col-md-6">
+                                <label class="font-weight-bold"><i class="fas fa-envelope text-primary mr-1"></i> Email</label>
+                                <input type="email" th:field="*{email}" class="form-control" placeholder="ejemplo@correo.com"
+                                       th:errorclass="'form-control is-invalid'" required/>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                            </div>
 
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label><i class="fas fa-map-marker-alt"></i> Dirección</label>
-                            <input type="text" th:field="*{direccion}" class="form-control" placeholder="Calle, número, ciudad"
+                            <!-- Teléfono -->
+                            <div class="form-group col-md-6">
+                                <label class="font-weight-bold"><i class="fas fa-phone text-primary mr-1"></i> Teléfono</label>
+                                <input type="text" th:field="*{telefono}" class="form-control" placeholder="Ej: 600123456"
+                                       th:errorclass="'form-control is-invalid'"/>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('telefono')}" th:errors="*{telefono}"></div>
+                            </div>
+                        </div>
+
+                        <!-- Dirección -->
+                        <div class="form-group">
+                            <label class="font-weight-bold"><i class="fas fa-map-marker-alt text-primary mr-1"></i> Dirección</label>
+                            <input type="text" th:field="*{direccion}" class="form-control" placeholder="Dirección completa"
                                    th:errorclass="'form-control is-invalid'"/>
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('direccion')}" th:errors="*{direccion}"></div>
                         </div>
 
-                        <div class="form-group col-md-6">
-                            <label><i class="fas fa-phone"></i> Teléfono</label>
-                            <input type="text" th:field="*{telefono}" class="form-control" placeholder="Ej: +34 600 123 456"
-                                   th:errorclass="'form-control is-invalid'"/>
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('telefono')}" th:errors="*{telefono}"></div>
+                        <hr class="my-4">
+
+                        <div class="form-group d-flex justify-content-end" style="gap: 10px;">
+                            <button type="reset" class="btn btn-outline-secondary">
+                                <i class="fas fa-undo mr-1"></i> Limpiar
+                            </button>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save mr-1"></i> Guardar Cliente
+                            </button>
                         </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label><i class="fas fa-envelope"></i> Email</label>
-                        <input type="email" th:field="*{email}" class="form-control" placeholder="ejemplo@correo.com"
-                               th:errorclass="'form-control is-invalid'"/>
-                        <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
-                    </div>
-
-                    <hr class="my-4">
-
-                    <div class="form-group text-right">
-                        <button type="submit" class="btn btn-success btn-lg mx-1">
-                            <i class="fas fa-save"></i> Guardar
-                        </button>
-                        <button type="reset" class="btn btn-secondary btn-lg mx-1">
-                            <i class="fas fa-undo"></i> Resetear
-                        </button>
-                    </div>
-                </form>
-
+                    </form>
                 </div>
-
-
-            <!-- Se incluye CKEditor para que el textarea de observaciones disponga de una barra de herramientas -->
-            <script src="https://cdn.ckeditor.com/ckeditor5/35.0.1/classic/ckeditor.js"></script>
-
+            </div>
         </section>
+    </div>
+</div>
 
-</body>
+<div layout:fragment="script">
+    <script>
+        // Validación de Bootstrap básica
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+    </script>
+</div>
 </html>

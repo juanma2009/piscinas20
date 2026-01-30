@@ -3,13 +3,16 @@
 	  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
 	  layout:decorate="admin/admin_layout.html">
 
+
 <head>
 	<meta charset="utf-8"/>
 	<title>Listado de Clientes</title>
 
-	<!-- Solo CSS propio (jQuery/Bootstrap/DataTables ya vienen del layout) -->
+	<!-- Solo CSS propio -->
 	<link rel="stylesheet" th:href="@{/css/table.css}"/>
-
+	<!-- AdminLTE CSS puedes dejarlo si NO está ya en el layout; si ya está en admin/shared/style, quítalo -->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 	<style>
 		.card{
 			border-radius:10px;
@@ -70,14 +73,13 @@
 				</div>
 
 				<div class="card-body">
-					<table class="table table-striped table-bordered datatable w-100"
-						   data-dt="auto"
-						   data-dt-hide-mobile="2,3,4">
+					<div class="table-responsive">
+						<table id="tablaClientes" class="table table-striped table-bordered datatable w-100"
+							   data-dt="auto"
+							   data-dt-hide-mobile="2,3,4">
 
-
-					<thead class="table-dark text-center align-middle">
+							<thead class="table-dark text-center align-middle">
 							<tr>
-
 								<th>Detalles</th>
 								<th>Nombre</th>
 								<th class="col-hide-mobile">Email</th>
@@ -90,12 +92,13 @@
 							<!-- ✅ MANTENIDO: datos salen del model (NO AJAX) -->
 							<tbody>
 							<tr th:each="cliente : ${clientes}">
-
-								<td><a class="btn btn-outline-primary btn-sm"
+								<td class="text-center">
+									<a class="btn btn-outline-primary btn-sm"
 									   th:href="@{/ver/} + ${cliente.id}"
 									   title="Ver Detalles">
-									<i class="fas fa-eye"></i>
-								</a></td>
+										<i class="fas fa-eye"></i>
+									</a>
+								</td>
 								<td th:text="${cliente.nombre} + ' ' + ${cliente.apellido}"></td>
 								<td th:text="${cliente.email}"></td>
 								<td th:text="${cliente.telefono}"></td>
@@ -109,11 +112,11 @@
 											<i class="fas fa-plus-circle"></i>
 										</a>
 
-										<a class="btn btn-outline-secondary btn-sm albaran-modal-btn"
-										   data-toggle="modal" data-target="#albaranesModal"
-										   th:data-cliente-id="${cliente.id}" title="Ver Facturas">
-											<i class="fas fa-file-invoice"></i>
-										</a>
+<!--										<a class="btn btn-outline-secondary btn-sm albaran-modal-btn"-->
+<!--										   data-toggle="modal" data-target="#albaranesModal"-->
+<!--										   th:data-cliente-id="${cliente.id}" title="Ver Facturas">-->
+<!--											<i class="fas fa-file-invoice"></i>-->
+<!--										</a>-->
 
 										<a class="btn btn-outline-primary btn-sm"
 										   th:href="@{/form/} + ${cliente.id}" title="Editar Cliente">
@@ -125,7 +128,6 @@
 							</tbody>
 						</table>
 					</div>
-
 				</div><!-- /card-body -->
 			</div><!-- /card -->
 		</section>
