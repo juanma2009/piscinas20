@@ -1,139 +1,105 @@
 <!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="admin/admin_layout">
 
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorator="admin/admin_layout">
-<body>
+<head>
+    <meta charset="utf-8"/>
+    <title th:text="${titulo}">Formulario de Proveedor</title>
+</head>
 
 <div layout:fragment="content">
+    <div class="container-fluid px-2 px-md-3">
+        <section class="content-header">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-truck mr-2"></i> <span th:text="${titulo}"></span>
+                </div>
 
-	<div class="container py-4">
+                <div class="card-body">
+                    <div th:object="${proveedor}" th:remove="tag">
+                        <ul th:if="${#fields.hasErrors('*')}" class="alert alert-danger">
+                            <li th:each="err: ${#fields.errors('*')}" th:text="${err}"></li>
+                        </ul>
+                    </div>
 
-		<div class="card bg-dark text-white">
-			<div class="card-header" th:text="${titulo}"></div>
-			<div class="card-body">
+                    <form th:action="@{/proveedor/form}" th:object="${proveedor}" method="post" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-12 col-md-6 mb-3">
+                                <label for="vnombre" class="form-label font-weight-bold">Nombre</label>
+                                <input type="text" th:field="*{vnombre}" class="form-control"
+                                       th:errorclass="'is-invalid'" placeholder="Nombre del proveedor" />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('vnombre')}" th:errors="*{vnombre}"></div>
+                            </div>
 
-				<div th:object="${proveedor}" th:remove="tag">
-					<ul th:if="${#fields.hasErrors('*')}" class="alert alert-danger">
-						<li th:each="err: ${#fields.errors('*')}" th:text="${err}"></li>
-					</ul>
-				</div>
-				<form th:action="@{/proveedor/form}" th:object="${proveedor}" method="post"
-					enctype="multipart/form-data">
-					<div class="form-group row">
-						<label class="col-sm-2 col-form-label">Nombre</label>
-						<div class="col-sm-6">
-							<input type="text" th:field="*{vnombre}" class="form-control"
-								th:errorclass="'form-control alert-danger'" /> <small
-								class="form-text text-danger"
-								th:if="${#fields.hasErrors('vnombre')}"
-								th:errors="*{vnombre}"></small>
-						</div>
-					</div>
-					<div class="form-group row">
-						<label class="col-sm-2 col-form-label">Teléfono</label>
-						<div class="col-sm-6">
-							<input type="text" th:field="*{ntelefono}" class="form-control"
-								th:errorclass="'form-control alert-danger'" /> <small
-								class="form-text text-danger"
-								th:if="${#fields.hasErrors('ntelefono')}"
-								th:errors="*{ntelefono}"></small>
-						</div>
-					</div>
-					<div class="form-group row">
-						<label class="col-sm-2 col-form-label">Localidad</label>
-						<div class="col-sm-6">
-							<input type="text" th:field="*{vlocalidad}" class="form-control"
-								th:errorclass="'form-control alert-danger'" /> <small
-								class="form-text text-danger"
-								th:if="${#fields.hasErrors('vlocalidad')}"
-								th:errors="*{vlocalidad}"></small>
-						</div>
-					</div>
+                            <div class="col-12 col-md-6 mb-3">
+                                <label for="cif" class="form-label font-weight-bold">CIF / NIF</label>
+                                <input type="text" th:field="*{cif}" class="form-control"
+                                       th:errorclass="'is-invalid'" placeholder="Identificación fiscal" />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('cif')}" th:errors="*{cif}"></div>
+                            </div>
 
-						<div class="form-group row">
-						<label class="col-sm-2 col-form-label">Email</label>
-						<div class="col-sm-6">
-							<input type="text" th:field="*{vemail}" class="form-control"
-								th:errorclass="'form-control alert-danger'" /> <small
-								class="form-text text-danger"
-								th:if="${#fields.hasErrors('vemail')}"
-								th:errors="*{vemail}"></small>
-						</div>
-					</div>
+                            <div class="col-12 col-md-4 mb-3">
+                                <label for="ntelefono" class="form-label font-weight-bold">Teléfono</label>
+                                <input type="text" th:field="*{ntelefono}" class="form-control"
+                                       th:errorclass="'is-invalid'" placeholder="Ej: 912345678" />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('ntelefono')}" th:errors="*{ntelefono}"></div>
+                            </div>
 
-						<div class="form-group row">
-						<label class="col-sm-2 col-form-label">Direccion</label>
-						<div class="col-sm-6">
-							<input type="text" th:field="*{vdireccion}" class="form-control"
-								th:errorclass="'form-control alert-danger'" /> <small
-								class="form-text text-danger"
-								th:if="${#fields.hasErrors('vdireccion')}"
-								th:errors="*{vdireccion}"></small>
-						</div>
-					</div>
+                            <div class="col-12 col-md-8 mb-3">
+                                <label for="vemail" class="form-label font-weight-bold">Email</label>
+                                <input type="email" th:field="*{vemail}" class="form-control"
+                                       th:errorclass="'is-invalid'" placeholder="proveedor@ejemplo.com" />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('vemail')}" th:errors="*{vemail}"></div>
+                            </div>
 
-						<div class="form-group row">
-						<label class="col-sm-2 col-form-label">Pais</label>
-						<div class="col-sm-6">
-							<input type="text" th:field="*{vpais}" class="form-control"
-								th:errorclass="'form-control alert-danger'" /> <small
-								class="form-text text-danger"
-								th:if="${#fields.hasErrors('vpais')}"
-								th:errors="*{vpais}"></small>
-						</div>
-					</div>
+                            <div class="col-12 mb-3">
+                                <label for="vdireccion" class="form-label font-weight-bold">Dirección</label>
+                                <input type="text" th:field="*{vdireccion}" class="form-control"
+                                       th:errorclass="'is-invalid'" placeholder="Calle, número, piso..." />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('vdireccion')}" th:errors="*{vdireccion}"></div>
+                            </div>
 
-						<div class="form-group row">
-						<label class="col-sm-2 col-form-label">Provincia</label>
-						<div class="col-sm-6">
-							<input type="text" th:field="*{vprovincia}" class="form-control"
-								th:errorclass="'form-control alert-danger'" /> <small
-								class="form-text text-danger"
-								th:if="${#fields.hasErrors('vprovincia')}"
-								th:errors="*{vprovincia}"></small>
-						</div>
-					</div>
-						 <div class="form-group row">
-						<label class="col-sm-2 col-form-label">Cif</label>
-						<div class="col-sm-6">
-							<input type="text" th:field="*{cif}" class="form-control"
-								th:errorclass="'form-control alert-danger'" />
-								 <small
-								class="form-text text-danger"
-								th:if="${#fields.hasErrors('cif')}"
-								th:errors="*{cif]"></small>
-						</div>
-					</div>
+                            <div class="col-12 col-md-4 mb-3">
+                                <label for="vlocalidad" class="form-label font-weight-bold">Localidad</label>
+                                <input type="text" th:field="*{vlocalidad}" class="form-control"
+                                       th:errorclass="'is-invalid'" placeholder="Ciudad / Pueblo" />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('vlocalidad')}" th:errors="*{vlocalidad}"></div>
+                            </div>
 
+                            <div class="col-12 col-md-4 mb-3">
+                                <label for="vprovincia" class="form-label font-weight-bold">Provincia</label>
+                                <input type="text" th:field="*{vprovincia}" class="form-control"
+                                       th:errorclass="'is-invalid'" placeholder="Provincia" />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('vprovincia')}" th:errors="*{vprovincia}"></div>
+                            </div>
 
-					<!-- HTML Form (wrapped in a .bootstrap-iso div)
+                            <div class="col-12 col-md-4 mb-3">
+                                <label for="vpais" class="form-label font-weight-bold">País</label>
+                                <input type="text" th:field="*{vpais}" class="form-control"
+                                       th:errorclass="'is-invalid'" placeholder="España" />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('vpais')}" th:errors="*{vpais}"></div>
+                            </div>
+                        </div>
 
-					<div class="form-group row">
-						<label class="col-sm-2 col-form-label" for="date">Fecha</label>
-						<div class="col-sm-6">
-							<input class="form-control" id="date" name="date"
-								placeholder="DD/MM/YYYY" type="text" /> <small
-								class="form-text text-danger"
-								th:if="${#fields.hasErrors('dfecha_fin')}"
-								th:errors="*{dfecha_fin}"></small>
-						</div>
-					</div>
-							-->
+                        <div class="d-flex justify-content-center mt-4 pt-3 border-top" style="gap: 10px;">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save mr-1"></i> Guardar Proveedor
+                            </button>
+                            <button type="reset" class="btn btn-secondary px-4">
+                                <i class="fas fa-undo mr-1"></i> Resetear
+                            </button>
+                            <a th:href="@{/proveedor/listarProveedor}" class="btn btn-outline-primary px-4">
+                                <i class="fas fa-list mr-1"></i> Volver al Listado
+                            </a>
+                        </div>
 
-
-					<div class="form-group row">
-						<div class="col-sm-6">
-							<input type="submit" value="Crear Proveedor"
-								class="btn btn-secondary" />
-							<button type="reset" class="btn btn-secondary">Resetear</button>
-							<a th:href="@{'/proveedor/listarProveedor'}" class="btn btn-secondary">Listar Proveedores</a>
-						</div>
-					</div>
-					<input type="hidden" th:field="*{nproveedor}"/>
-
-				</form>
-			</div>
-		</div>
-	</div>
+                        <input type="hidden" th:field="*{nproveedor}"/>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </div>
 </div>
-</body>
+
 </html>

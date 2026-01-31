@@ -1,90 +1,17 @@
 <!DOCTYPE html>
 <html lang="es"
-      layout:decorator="admin/admin_layout"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="admin/admin_layout">
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-    <meta name="_csrf" th:content="${_csrf.token}" />
-    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
-
     <title>Perfil del Usuario</title>
-
-    <style>
-        .estado-pendiente { background-color: #f8d7da; }
-        .estado-terminado { background-color: #d4edda; }
-
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            margin-bottom: 1.5rem;
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, #0062cc, #004085);
-            color: #fff;
-            padding: 15px;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 1.25rem;
-            border-radius: 8px 8px 0 0;
-            border-bottom: none;
-        }
-
-        /* Toolbar igual que listarpedido */
-        .toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: .5rem;
-            align-items: center;
-            padding: .75rem 1rem;
-        }
-
-        @media (max-width: 768px) {
-            .toolbar .btn {
-                width: auto !important;
-                flex: 1 1 auto;
-            }
-        }
-
-        .invalid-feedback { display: block; }
-
-        /* Quitar los iconos de validación por defecto de Bootstrap */
-        .form-control.is-valid, .form-control.is-invalid {
-            background-image: none !important;
-            padding-right: 0.75rem !important;
-        }
-
-        @media screen and (min-width: 1268px) {
-            html, body {
-                overflow-x: hidden;
-                width: 100%;
-                margin: 0;
-                padding: 0;
-            }
-            .container-fluid {
-                width: 100%;
-                max-width: 100vw;
-                padding: 0;
-                margin: 0 auto;
-                overflow-x: hidden;
-            }
-            .tab-content { margin-top: 20px; }
-        }
-    </style>
 </head>
 
-<body style="overflow-y: auto; scroll-behavior: smooth;">
-    <div layout:fragment="content">
-    <div class="container container-fluid">
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid px-2 px-md-3">
         <div id="globalMessage"></div>
         <section class="content-header">
             <div class="card">
@@ -102,11 +29,8 @@
                     <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-user mr-1"></i> Clientes
                     </a>
-                    <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-user-plus mr-1"></i> Nuevo Cliente
-                    </a>
                     <a th:href="@{/users}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-list mr-1"></i> Usuarios
+                        <i class="fas fa-user-shield mr-1"></i> Usuarios
                     </a>
                 </div>
 
@@ -115,12 +39,12 @@
                     <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
                         <li class="nav-item">
                             <a class="nav-link active" id="perfil-tab" data-toggle="tab" href="#perfil" role="tab" aria-controls="perfil" aria-selected="true">
-                                <i class="fas fa-user-edit"></i> Datos del Perfil
+                                <i class="fas fa-user-edit mr-1"></i> Datos del Perfil
                             </a>
                         </li>
                         <li class="nav-item" th:if="${isAdmin or editingOwnProfile}">
                             <a class="nav-link" id="password-tab" data-toggle="tab" href="#password" role="tab" aria-controls="password" aria-selected="false">
-                                <i class="fas fa-key"></i> Seguridad y Contraseña
+                                <i class="fas fa-key mr-1"></i> Seguridad y Contraseña
                             </a>
                         </li>
                     </ul>
@@ -135,201 +59,213 @@
 
                                 <div class="form-row">
                                     <div class="form-group col-md-6">
-                                        <label><i class="fas fa-user"></i> Username</label>
+                                        <label class="font-weight-bold"><i class="fas fa-user mr-1 text-primary"></i> Username</label>
                                         <input class="form-control" required th:field="*{username}" type="text"/>
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label><i class="fas fa-envelope"></i> Email</label>
+                                        <label class="font-weight-bold"><i class="fas fa-envelope mr-1 text-primary"></i> Email</label>
                                         <input class="form-control" required th:field="*{email}" type="email"/>
                                     </div>
                                 </div>
 
                                 <div class="form-row">
                                     <div class="form-group col-md-6">
-                                        <label><i class="fas fa-id-card"></i> Nombre</label>
+                                        <label class="font-weight-bold"><i class="fas fa-id-card mr-1 text-primary"></i> Nombre</label>
                                         <input class="form-control" th:field="*{nombre}" type="text"/>
                                     </div>
                                     <div class="form-group col-md-6">
-                                        <label><i class="fas fa-id-card-alt"></i> Apellidos</label>
+                                        <label class="font-weight-bold"><i class="fas fa-id-card-alt mr-1 text-primary"></i> Apellidos</label>
                                         <input class="form-control" th:field="*{apellido}" type="text"/>
                                     </div>
                                 </div>
 
                                 <div class="form-row" th:if="${isAdmin}">
                                     <div class="form-group col-md-6">
-                                        <label><i class="fas fa-user-shield"></i> Roles</label>
+                                        <label class="font-weight-bold"><i class="fas fa-user-shield mr-1 text-primary"></i> Roles</label>
                                         <select multiple="true" th:field="*{roles}" class="form-control">
                                             <option th:each="role : ${rolesList}" th:value="${role.id}" th:text="${role.nombre}"></option>
                                         </select>
                                     </div>
-                                    <div class="form-group col-md-6 d-flex align-items-center">
+                                    <div class="form-group col-md-6 d-flex align-items-center mt-md-4">
                                         <div class="custom-control custom-checkbox">
                                             <input type="checkbox" th:field="*{twoFactorEnabled}" class="custom-control-input" id="2fa-checkbox">
-                                            <label class="custom-control-label" for="2fa-checkbox"><i class="fas fa-shield-alt"></i> Verificación en 2 pasos</label>
+                                            <label class="custom-control-label" for="2fa-checkbox">
+                                                <i class="fas fa-shield-alt mr-1 text-primary"></i> Verificación en 2 pasos
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="form-group text-right mt-3">
-                                    <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Actualizar Perfil</button>
+                                <hr class="my-4"/>
+
+                                <div class="form-group text-right">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save mr-1"></i> Actualizar Perfil
+                                    </button>
                                 </div>
                             </form>
                         </div>
 
                         <!-- Pestaña Contraseña -->
                         <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab" th:if="${isAdmin or editingOwnProfile}">
-                            <section>
-                                <div id="changePasswordMessage"></div>
-                                <form method="post" th:action="@{/user/changePassword}" id="changePasswordForm" novalidate>
-                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                    <input type="hidden" name="userId" th:if="${!editingOwnProfile}" th:value="${user.id}" />
+                            <div id="changePasswordMessage"></div>
+                            <form method="post" th:action="@{/user/changePassword}" id="changePasswordForm" novalidate>
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                <input type="hidden" name="userId" th:if="${!editingOwnProfile}" th:value="${user.id}" />
 
-                                    <div class="form-group" th:if="${editingOwnProfile}">
-                                        <label for="currentPassword">Contraseña Actual:</label>
-                                        <div class="input-group">
-                                            <input class="form-control" id="currentPassword" name="currentPassword" type="password" autocomplete="current-password">
-                                            <div class="input-group-append" id="currentPasswordCheck" style="display:none;">
-                                                <span class="input-group-text bg-white text-success border-left-0">
-                                                    <i class="fas fa-check-circle"></i>
-                                                </span>
-                                            </div>
+                                <div class="form-group" th:if="${editingOwnProfile}">
+                                    <label class="font-weight-bold" for="currentPassword">Contraseña Actual:</label>
+                                    <div class="input-group">
+                                        <input class="form-control" id="currentPassword" name="currentPassword" type="password" autocomplete="current-password">
+                                        <div class="input-group-append" id="currentPasswordCheck" style="display:none;">
+                                            <span class="input-group-text bg-white text-success border-left-0">
+                                                <i class="fas fa-check-circle"></i>
+                                            </span>
                                         </div>
-                                        <div class="invalid-feedback"></div>
-                                        <div class="valid-feedback" id="currentPasswordFeedback" style="display:none;">Contraseña verificada correctamente.</div>
                                     </div>
+                                    <div class="invalid-feedback"></div>
+                                    <div class="valid-feedback" id="currentPasswordFeedback" style="display:none;">Contraseña verificada correctamente.</div>
+                                </div>
 
-                                    <div class="form-group">
-                                        <label for="newPassword">Nueva Contraseña:</label>
-                                        <input class="form-control" id="newPassword" name="newPassword" type="password" autocomplete="new-password">
-                                        <small id="passwordStrength" class="form-text text-muted"></small>
-                                        <div class="invalid-feedback"></div>
-                                    </div>
+                                <div class="form-group">
+                                    <label class="font-weight-bold" for="newPassword">Nueva Contraseña:</label>
+                                    <input class="form-control" id="newPassword" name="newPassword" type="password" autocomplete="new-password">
+                                    <small id="passwordStrength" class="form-text text-muted"></small>
+                                    <div class="invalid-feedback"></div>
+                                </div>
 
-                                    <div class="form-group">
-                                        <label for="confirmPassword">Confirmar Nueva Contraseña:</label>
-                                        <input class="form-control" id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password">
-                                        <div id="passwordMatchMessage" class="form-text text-danger" style="display:none;"></div>
-                                    </div>
+                                <div class="form-group">
+                                    <label class="font-weight-bold" for="confirmPassword">Confirmar Nueva Contraseña:</label>
+                                    <input class="form-control" id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password">
+                                    <div id="passwordMatchMessage" class="form-text text-danger" style="display:none;"></div>
+                                </div>
 
-                                    <button class="btn btn-primary" type="submit">Cambiar Contraseña</button>
-                                </form>
-                            </section>
+                                <hr class="my-4"/>
+
+                                <div class="form-group text-right">
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fas fa-key mr-1"></i> Cambiar Contraseña
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
     </div>
+</div>
 
-<script th:inline="javascript">
-    $(document).ready(function () {
-        const csrfToken = $('meta[name="_csrf"]').attr('content');
-        const csrfHeader = $('meta[name="_csrf_header"]').attr('content');
+<div layout:fragment="script">
+    <script th:inline="javascript">
+        $(document).ready(function () {
+            const csrfToken = $('meta[name="_csrf"]').attr('content');
+            const csrfHeader = $('meta[name="_csrf_header"]').attr('content');
 
-        let currentValid = false, newValid = false, confirmValid = false;
-        const requireCurrent = $('#currentPassword').length > 0;
+            let currentValid = false, newValid = false, confirmValid = false;
+            const requireCurrent = $('#currentPassword').length > 0;
 
-        // ====== Validación Contraseña Actual ======
-        let passwordCheckTimeout;
-        $('#currentPassword').on('input', function () {
-            const val = $(this).val();
-            clearTimeout(passwordCheckTimeout);
-            
-            $(this).removeClass('is-valid is-invalid');
-            $('#currentPasswordCheck').hide();
-            $('#currentPasswordFeedback').hide();
-            $(this).closest('.form-group').find('.invalid-feedback').text('');
-            currentValid = false;
+            // ====== Validación Contraseña Actual ======
+            let passwordCheckTimeout;
+            $('#currentPassword').on('input', function () {
+                const val = $(this).val();
+                clearTimeout(passwordCheckTimeout);
+                
+                $(this).removeClass('is-valid is-invalid');
+                $('#currentPasswordCheck').hide();
+                $('#currentPasswordFeedback').hide();
+                $(this).closest('.form-group').find('.invalid-feedback').text('');
+                currentValid = false;
 
-            if (val.length === 0) return;
+                if (val.length === 0) return;
 
-            passwordCheckTimeout = setTimeout(() => {
-                $.ajax({
-                    url: '/user/verifyCurrentPassword',
-                    type: 'POST',
-                    data: { currentPassword: val },
-                    beforeSend: xhr => xhr.setRequestHeader(csrfHeader, csrfToken),
-                    success: function (res) {
-                        currentValid = res.valid;
-                        $('#currentPassword').toggleClass('is-valid', currentValid).toggleClass('is-invalid', !currentValid);
-                        if (currentValid) {
-                            $('#currentPasswordCheck').show();
-                            $('#currentPasswordFeedback').show();
-                        } else {
-                            $('#currentPassword').closest('.form-group').find('.invalid-feedback').text('Contraseña incorrecta.');
+                passwordCheckTimeout = setTimeout(() => {
+                    $.ajax({
+                        url: '/user/verifyCurrentPassword',
+                        type: 'POST',
+                        data: { currentPassword: val },
+                        beforeSend: xhr => xhr.setRequestHeader(csrfHeader, csrfToken),
+                        success: function (res) {
+                            currentValid = res.valid;
+                            $('#currentPassword').toggleClass('is-valid', currentValid).toggleClass('is-invalid', !currentValid);
+                            if (currentValid) {
+                                $('#currentPasswordCheck').show();
+                                $('#currentPasswordFeedback').show();
+                            } else {
+                                $('#currentPassword').closest('.form-group').find('.invalid-feedback').text('Contraseña incorrecta.');
+                            }
                         }
-                    }
-                });
-            }, 500);
-        });
+                    });
+                }, 500);
+            });
 
-        // ====== Validación Nueva Contraseña ======
-        $('#newPassword').on('input', function () {
-            const val = $(this).val();
-            const strengthMsg = $('#passwordStrength');
-            newValid = val.length >= 6;
-            
-            $(this).toggleClass('is-valid', newValid).toggleClass('is-invalid', !newValid && val.length > 0);
-            
-            if (val.length === 0) {
-                strengthMsg.text('');
-            } else if (val.length < 6) {
-                strengthMsg.text('Mínimo 6 caracteres.').removeClass('text-success').addClass('text-danger');
-                $(this).closest('.form-group').find('.invalid-feedback').text('La contraseña debe tener al menos 6 caracteres.');
-            } else {
-                strengthMsg.text('Longitud aceptable.').removeClass('text-danger').addClass('text-success');
+            // ====== Validación Nueva Contraseña ======
+            $('#newPassword').on('input', function () {
+                const val = $(this).val();
+                const strengthMsg = $('#passwordStrength');
+                newValid = val.length >= 6;
+                
+                $(this).toggleClass('is-valid', newValid).toggleClass('is-invalid', !newValid && val.length > 0);
+                
+                if (val.length === 0) {
+                    strengthMsg.text('');
+                } else if (val.length < 6) {
+                    strengthMsg.text('Mínimo 6 caracteres.').removeClass('text-success').addClass('text-danger');
+                    $(this).closest('.form-group').find('.invalid-feedback').text('La contraseña debe tener al menos 6 caracteres.');
+                } else {
+                    strengthMsg.text('Longitud aceptable.').removeClass('text-danger').addClass('text-success');
+                }
+                checkMatch();
+            });
+
+            // ====== Confirmar Contraseña ======
+            $('#confirmPassword').on('input', checkMatch);
+
+            function checkMatch() {
+                const p1 = $('#newPassword').val();
+                const p2 = $('#confirmPassword').val();
+                confirmValid = (p1 === p2 && p2.length >= 6);
+                
+                $('#confirmPassword').toggleClass('is-valid', confirmValid && p2.length > 0)
+                                    .toggleClass('is-invalid', !confirmValid && p2.length > 0);
+                
+                if (p2.length > 0 && !confirmValid) {
+                    $('#passwordMatchMessage').text('Las contraseñas no coinciden.').show();
+                } else {
+                    $('#passwordMatchMessage').hide();
+                }
             }
-            checkMatch();
+
+            // ====== Envío del Formulario ======
+            $('#changePasswordForm').on('submit', function (e) {
+                e.preventDefault();
+                
+                const isCurrentOk = !requireCurrent || currentValid;
+                if (isCurrentOk && newValid && confirmValid) {
+                    const formData = $(this).serialize();
+                    $.ajax({
+                        url: $(this).attr('action'),
+                        type: 'POST',
+                        data: formData,
+                        success: function (response) {
+                            $('#changePasswordMessage').html('<div class="alert alert-success">Contraseña actualizada con éxito.</div>');
+                            $('#changePasswordForm')[0].reset();
+                            $('.is-valid').removeClass('is-valid');
+                            $('#currentPasswordCheck, #currentPasswordFeedback').hide();
+                        },
+                        error: function (xhr) {
+                            const errorMsg = xhr.responseText || 'Error al actualizar la contraseña.';
+                            $('#changePasswordMessage').html('<div class="alert alert-danger">' + errorMsg + '</div>');
+                        }
+                    });
+                } else {
+                    if (requireCurrent && !currentValid) $('#currentPassword').addClass('is-invalid');
+                    if (!newValid) $('#newPassword').addClass('is-invalid');
+                    if (!confirmValid) $('#confirmPassword').addClass('is-invalid');
+                }
+            });
         });
-
-        // ====== Confirmar Contraseña ======
-        $('#confirmPassword').on('input', checkMatch);
-
-        function checkMatch() {
-            const p1 = $('#newPassword').val();
-            const p2 = $('#confirmPassword').val();
-            confirmValid = (p1 === p2 && p2.length >= 6);
-            
-            $('#confirmPassword').toggleClass('is-valid', confirmValid && p2.length > 0)
-                                .toggleClass('is-invalid', !confirmValid && p2.length > 0);
-            
-            if (p2.length > 0 && !confirmValid) {
-                $('#passwordMatchMessage').text('Las contraseñas no coinciden.').show();
-            } else {
-                $('#passwordMatchMessage').hide();
-            }
-        }
-
-        // ====== Envío del Formulario ======
-        $('#changePasswordForm').on('submit', function (e) {
-            e.preventDefault();
-            
-            const isCurrentOk = !requireCurrent || currentValid;
-            if (isCurrentOk && newValid && confirmValid) {
-                const formData = $(this).serialize();
-                $.ajax({
-                    url: $(this).attr('action'),
-                    type: 'POST',
-                    data: formData,
-                    success: function (response) {
-                        $('#changePasswordMessage').html('<div class="alert alert-success">Contraseña actualizada con éxito.</div>');
-                        $('#changePasswordForm')[0].reset();
-                        $('.is-valid').removeClass('is-valid');
-                        $('#currentPasswordCheck, #currentPasswordFeedback').hide();
-                    },
-                    error: function (xhr) {
-                        const errorMsg = xhr.responseText || 'Error al actualizar la contraseña.';
-                        $('#changePasswordMessage').html('<div class="alert alert-danger">' + errorMsg + '</div>');
-                    }
-                });
-            } else {
-                if (requireCurrent && !currentValid) $('#currentPassword').addClass('is-invalid');
-                if (!newValid) $('#newPassword').addClass('is-invalid');
-                if (!confirmValid) $('#confirmPassword').addClass('is-invalid');
-            }
-        });
-    });
-</script>
+    </script>
 </div>
 </body>
 </html>

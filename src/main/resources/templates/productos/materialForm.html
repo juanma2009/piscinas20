@@ -1,169 +1,139 @@
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorator="admin/admin_layout">
 
-<body>
+<head>
+    <meta charset="utf-8"/>
+    <title th:text="${titulo}">Formulario de Material</title>
+</head>
 
 <div layout:fragment="content">
-    <div class="container py-4">
-        <div class="card bg-dark text-white">
-            <div class="card-header" th:text="${titulo}"></div>
-            <div class="card-body">
-
-                <div th:object="${material}" th:remove="tag">
-                    <ul th:if="${#fields.hasErrors('*')}" class="alert alert-danger">
-                        <li th:each="err: ${#fields.errors('*')}" th:text="${err}"></li>
-                    </ul>
+    <div class="container-fluid px-2 px-md-3">
+        <section class="content-header">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-boxes mr-2"></i> <span th:text="${titulo}"></span>
                 </div>
-                <form id="createMaterialForm"  th:action="@{/materiales/form}" th:object="${material}" method="post"
-                      enctype="multipart/form-data">
 
-                    <div class="form-group row">
-                        <label class="col-sm-2 col-form-label">Codigo</label>
-                        <div class="col-sm-6">
-                            <input type="text" th:field="*{codigo}" class="form-control"
-                                   th:errorclass="'form-control alert-danger'" required/> <small
-                                class="form-text text-danger"
-                                th:if="${#fields.hasErrors('codigo')}"
-                                th:errors="*{codigo}"></small>
-                        </div>
+                <div class="card-body">
+                    <div th:object="${material}" th:remove="tag">
+                        <ul th:if="${#fields.hasErrors('*')}" class="alert alert-danger">
+                            <li th:each="err: ${#fields.errors('*')}" th:text="${err}"></li>
+                        </ul>
                     </div>
 
+                    <form id="createMaterialForm" th:action="@{/materiales/form}" th:object="${material}" method="post" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-12 col-md-3 mb-3">
+                                <label for="codigo" class="form-label font-weight-bold">Código</label>
+                                <input type="text" th:field="*{codigo}" class="form-control"
+                                       th:errorclass="'is-invalid'" required placeholder="Ej: MAT001" />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('codigo')}" th:errors="*{codigo}"></div>
+                            </div>
 
-                    <div class="form-group row">
-                        <label class="col-sm-2 col-form-label">Nombre</label>
-                        <div class="col-sm-6">
-                            <input type="text" th:field="*{nombre}" class="form-control"
-                                   th:errorclass="'form-control alert-danger'" required/> <small
-                                class="form-text text-danger"
-                                th:if="${#fields.hasErrors('nombre')}"
-                                th:errors="*{nombre}"></small>
+                            <div class="col-12 col-md-9 mb-3">
+                                <label for="nombre" class="form-label font-weight-bold">Nombre del Material</label>
+                                <input type="text" th:field="*{nombre}" class="form-control"
+                                       th:errorclass="'is-invalid'" required placeholder="Ej: Oro 18k" />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
+                            </div>
+
+                            <div class="col-12 col-md-3 mb-3">
+                                <label for="precioCompra" class="form-label font-weight-bold">Precio Compra (€)</label>
+                                <input type="text" th:field="*{precioCompra}" class="form-control"
+                                       th:errorclass="'is-invalid'" required placeholder="0.00" />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('precioCompra')}" th:errors="*{precioCompra}"></div>
+                            </div>
+
+                            <div class="col-12 col-md-3 mb-3">
+                                <label for="precio" class="form-label font-weight-bold">Precio PVP (€)</label>
+                                <input type="text" th:field="*{precio}" class="form-control"
+                                       th:errorclass="'is-invalid'" required placeholder="0.00" />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('precio')}" th:errors="*{precio}"></div>
+                            </div>
+
+                            <div class="col-12 col-md-3 mb-3">
+                                <label for="cantidad" class="form-label font-weight-bold">Cantidad / Stock</label>
+                                <input type="text" th:field="*{cantidad}" class="form-control"
+                                       th:errorclass="'is-invalid'" required placeholder="0" />
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('cantidad')}" th:errors="*{cantidad}"></div>
+                            </div>
+
+                            <div class="col-12 col-md-3 mb-3">
+                                <label for="nproveedor" class="form-label font-weight-bold">Proveedor</label>
+                                <select class="form-control" th:field="*{nproveedor}" required>
+                                    <option th:each="proveedor:${proveedores}"
+                                            th:value="${proveedor.nproveedor}" th:text="${proveedor.vnombre}"></option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label for="vdetalle" class="form-label font-weight-bold">Detalles / Notas</label>
+                                <textarea th:field="*{vdetalle}" class="form-control" rows="3"
+                                          th:errorclass="'is-invalid'" placeholder="Información adicional..."></textarea>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('vdetalle')}" th:errors="*{vdetalle}"></div>
+                            </div>
                         </div>
-                    </div>
 
-
-                    <div class="form-group row">
-                        <label class="col-sm-2 col-form-label">Precio Compra</label>
-                        <div class="col-sm-6">
-                            <input type="text" th:field="*{precioCompra}" class="form-control" required/> <small
-                                class="form-text text-danger"
-                                th:if="${#fields.hasErrors('precioCompra')}"
-                                th:errors="*{precioCompra}"></small>
+                        <div class="d-flex justify-content-center mt-4 pt-3 border-top" style="gap: 10px;">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save mr-1"></i> Guardar Material
+                            </button>
+                            <button type="reset" class="btn btn-secondary px-4">
+                                <i class="fas fa-undo mr-1"></i> Resetear
+                            </button>
+                            <a th:href="@{/materiales/listarMaterial}" class="btn btn-outline-primary px-4">
+                                <i class="fas fa-list mr-1"></i> Volver al Listado
+                            </a>
                         </div>
-                    </div>
-                    <div class="form-group row">
-                        <label class="col-sm-2 col-form-label">Cantidad</label>
-                        <div class="col-sm-6">
-                            <input type="text" th:field="*{cantidad}" class="form-control" required/> <small
-                                class="form-text text-danger"
-                                th:if="${#fields.hasErrors('cantidad')}"
-                                th:errors="*{cantidad}"></small>
-                        </div>
-                    </div>
 
-
-                    <div class="form-group row">
-                        <label class="col-sm-2 col-form-label">Precio PVP</label>
-                        <div class="col-sm-6">
-                            <input type="text" th:field="*{precio}" class="form-control" required/> <small
-                                class="form-text text-danger"
-                                th:if="${#fields.hasErrors('precio')}"
-                                th:errors="*{precio}"></small>
-                        </div>
-                    </div>
-
-                    <div class="form-group row">
-                        <label class="col-sm-2 col-form-label">Proveedor</label>
-                        <div class="col-sm-6">
-                            <select class="form-control" th:field="*{nproveedor}" required>
-                                <option th:each="proveedor:${proveedores}"
-                                        th:value="${proveedor.nproveedor}" th:text="${proveedor.vnombre}"
-                                        th:selected="false"/>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group row">
-                        <label class="col-sm-2 col-form-label">Detalle</label>
-                        <div class="col-sm-6">
-                            <input type="text" th:field="*{vdetalle}" class="form-control"
-                                   th:errorclass="'form-control alert-danger'"/> <small
-                                class="form-text text-danger"
-                                th:if="${#fields.hasErrors('vdetalle')}"
-                                th:errors="*{vdetalle}"></small>
-                        </div>
-                    </div>
-                    <!-- FALTARA PONER LA FOTO AL FINAL CUANDO TENGAMOS EL MODULO COMPLETO -->
-
-                    <!-- HTML Form (wrapped in a .bootstrap-iso div)
-
-                    <div class="form-group row">
-                        <label class="col-sm-2 col-form-label" for="date">Fecha</label>
-                        <div class="col-sm-6">
-                            <input class="form-control" id="date" name="date"
-                                placeholder="DD/MM/YYYY" type="text" /> <small
-                                class="form-text text-danger"
-                                th:if="${#fields.hasErrors('dfecha_fin')}"
-                                th:errors="*{dfecha_fin}"></small>
-                        </div>
-                    </div>
-                            -->
-
-
-                    <div class="form-group row">
-                        <div class="col-sm-6">
-                            <input type="submit" value="Crear Material"
-                                   class="btn btn-secondary"/>
-                            <button type="reset" class="btn btn-secondary">Resetear</button>
-                            <a th:href="@{/materiales/listarMaterial}" class="btn btn-secondary">Listar Material</a>
-                        </div>
-                    </div>
-                    <input type="hidden" th:field="*{id}"/>
-
-                </form>
+                        <input type="hidden" th:field="*{id}"/>
+                    </form>
+                </div>
             </div>
-        </div>
+        </section>
     </div>
 </div>
-<script>
-    $(document).ready(function () {
-        // Function to fetch notification count
-        function fetchNotificationCount() {
-            $.ajax({
-                url: '/materiales/count',
-                method: 'GET',
-                success: function (data) {
-                    localStorage.setItem('notificationCount', data);
-                },
-                error: function (error) {
-                    console.error('Error fetching notification count:', error);
-                }
-            });
-        }
 
-        // Fetch notification count on page load
-        fetchNotificationCount();
+<div layout:fragment="script">
+    <script>
+        $(document).ready(function () {
+            function fetchNotificationCount() {
+                $.ajax({
+                    url: '/materiales/count',
+                    method: 'GET',
+                    success: function (data) {
+                        localStorage.setItem('notificationCount', data);
+                    }
+                });
+            }
 
-        // Handle form submission
-        $('#createMaterialForm').on('submit', function (e) {
-            e.preventDefault(); // Prevent the default form submission
-            var form = $(this);
-            $.ajax({
-                url: form.attr('action'),
-                method: form.attr('method'),
-                data: form.serialize(),
-                success: function (response) {
-                    // Update notification count
-                    fetchNotificationCount();
-                    // Redirect to the list page or show success message
-                    window.location.href = '/materiales/listarMaterial';
-                },
-                error: function (error) {
-                    console.error('Error submitting form:', error);
-                    // Handle form submission error (show error message, etc.)
-                }
+            fetchNotificationCount();
+
+            $('#createMaterialForm').on('submit', function (e) {
+                // Si el controlador espera una petición AJAX, lo dejamos.
+                // Si no, podríamos simplemente dejar que el form haga el submit normal.
+                // Dado que estaba implementado así, lo respetamos pero aseguramos que funcione.
+                e.preventDefault();
+                var form = $(this);
+                $.ajax({
+                    url: form.attr('action'),
+                    method: form.attr('method'),
+                    data: form.serialize(),
+                    success: function (response) {
+                        fetchNotificationCount();
+                        window.location.href = '/materiales/listarMaterial';
+                    },
+                    error: function (error) {
+                        console.error('Error submitting form:', error);
+                        // Fallback: submit normal si falla el AJAX (opcional)
+                        // form.off('submit').submit();
+                    }
+                });
             });
         });
-    });
-</script>
-</body>
+    </script>
+</div>
+
 </html>

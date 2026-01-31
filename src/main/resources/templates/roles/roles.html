@@ -1,346 +1,125 @@
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="admin/admin_layout.html">
+      layout:decorator="admin/admin_layout">
+
 <head>
-  <meta charset="utf-8" />
-  <title>Gestión de Roles</title>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <style>
-
-
-
-    .estado-pendiente {
-      background-color: #f8d7da; /* Rojo claro */
-    }
-
-    .estado-terminado {
-      background-color: #d4edda; /* Verde claro */
-    }
-    /* se comentan porque no deja ver el contenido
-    tab-content {
-       margin-top: 20cm;
-    }*/
-
-    #fileListContainer {
-      background-color: white;
-      border: 1px solid #ccc;
-      padding: 10px;
-      border-radius: 5px;
-    }
-
-    #fileList {
-      list-style: none;
-      padding: 0;
-    }
-
-    .deleteButton {
-      background-color: transparent;
-      border: none;
-      color: red;
-      cursor: pointer;
-      font-size: 16px;
-      vertical-align: middle;
-      margin-left: 5px;
-    }
-
-    .card-header.bg-white {
-      background-color: white !important;
-    }
-
-    .card-header bg-primary text-white {
-      width: 100%;
-      height: 100px;
-      border-radius: 10px 10px 0 0;
-    }
-    /* Establecer un padding y margen general para todas las secciones internas */
-    .container-fluid,
-    .card,
-    .card-body,
-    .card-header,
-    section.content-header {
-      padding: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    /* Asegura que las tarjetas no queden pegadas entre sí o a los bordes */
-    .card {
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-
-    /* Control uniforme para las tablas */
-    .table {
-      margin-bottom: 1rem;
-    }
-
-    /* Espaciado entre botones */
-    .btn-group .btn {
-      margin-right: 0.5rem;
-    }
-
-    /* Botones pequeños con padding uniforme */
-    .btn-sm {
-      padding: 0.4rem 0.75rem;
-    }
-
-    .card-header {
-      background: linear-gradient(135deg, #0062cc, #004085); /* Gradiente de azul */
-      color: white;
-      padding: 15px;
-      font-weight: bold;
-      text-transform: uppercase; /* Texto en mayúsculas */
-      font-size: 1.25rem; /* Aumentar el tamaño de la fuente */
-      border-radius: 8px 8px 0 0; /* Bordes redondeados */
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra ligera */
-      transition: background-color 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .card-header:hover {
-      background-color: #0056b3; /* Tono más oscuro de azul */
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
-    }
-
-    body {
-      width: 100vw;
-      min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
-      overflow-x: hidden;
-      background-color: #f9f9f9; /* opcional: fondo más suave */
-    }
-    body {
-      width: 100vw;
-      min-height: 100vh; /* hace que el body ocupe al menos toda la altura visible */
-      overflow-x: hidden;
-      background-color: #f9f9f9; /* opcional: fondo más suave */
-    }
-    html, body {
-      height: 100%; /* Asegura que el contenido cubra toda la pantalla */
-      margin: 0; /* Elimina márgenes por defecto */
-      padding: 0; /* Elimina el padding por defecto */
-      overflow: hidden; /* Oculta el scroll si no es necesario */
-    }
-    /* Hace la tabla responsiva */
-    .table-responsive {
-      width: 100%;
-      overflow-x: auto;  /* Permite scroll horizontal si es necesario */
-      -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en móviles */
-    }
-
-    /* Ajuste general de la tabla */
-    .table td, .table th {
-      white-space: nowrap; /* Evita que el contenido de las celdas se corte */
-      font-size: 14px;
-      padding: 8px;
-    }
-
-    .table-responsive {
-      width: 100%;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .table td,
-    .table th {
-      white-space: nowrap;
-      font-size: 14px;
-      padding: 8px;
-    }
-
-    @media screen and (min-width: 1268px) {
-
-      html, body {
-        overflow-x: hidden;
-        width: 100%;
-        margin: 0;
-        padding: 0;
-      }
-
-      .container-fluid {
-        width: 100%;
-        max-width: 100vw;
-        padding: 0;
-        margin: 0 auto;
-        overflow-x: hidden;
-      }
-      .tab-content {
-        margin-top: 20px;
-      }
-
-      /* Contenedor scrollable de la tabla */
-      .dataTables_scrollBody {
-        width: 100% !important;
-        max-width: 100% !important;
-        height: 290px; /* 🔹 Altura fija de la tabla visible */
-
-        overflow-y: scroll; /* 🔹 Scroll vertical SIEMPRE que sea necesario */
-        overflow-x: auto; /* 🔹 Scroll horizontal solo si se necesita */
-        display: block;
-      }
-
-      /* Tabla se ajusta al ancho del contenedor sin crecer verticalmente */
-      .dataTables_scrollBody table {
-        width: 100% !important;
-        max-width: 100%;
-        min-width: auto !important;
-        table-layout: auto;
-
-      }
-
-      .dataTables_scrollBody {
-
-        th, td {
-          padding: 10px;
-          white-space: nowrap;
-        }
-      }
-    }
-
-
-
-  </style>
+    <meta charset="utf-8"/>
+    <title>Gestión de Roles</title>
 </head>
 
-<body>
 <div layout:fragment="content">
-  <div class="container-fluid">
-    <section class="content-header">
-      <div class="card">
-        <div class="card-header bg-primary">
-          <i class="fas fa-user-shield mr-2"></i> Gestión de Roles
-        </div>
-        <!-- Botones de navegación -->
-        <div class="row justify-content-between align-items-center">
-          <div class="col-md-8">
-            <div class="btn-group btn-group-toggle">
-              <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary">
-                <i class="fas fa-list"></i> Pedidos
-              </a>
-              <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary">
-                <i class="fas fa-images"></i> Galería
-              </a>
-              <a th:href="@{/listar}" class="btn btn-outline-primary">
-                <i class="fas fa-user"></i> Clientes
-              </a>
-              <a th:href="@{/form}" class="btn btn-outline-primary">
-                <i class="fas fa-user-plus"></i> Nuevo Cliente
-              </a>
-              <a class="btn btn-outline-primary" th:href="@{/users}">
-                <i class="fas fa-arrow-left"></i> Usuarios
-              </a>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
+    <div class="container-fluid px-2 px-md-3">
+        <section class="content-header">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-user-shield mr-2"></i> Gestión de Roles
+                </div>
 
-          <form th:action="@{/admin/roles}" method="post" th:object="${role}" class="form-inline mb-4 w-100">
-            <div class="form-group mr-3 mb-2">
-              <label class="mr-2">Nombre del rol:</label>
-              <input type="text" th:field="*{nombre}" class="form-control" placeholder="Ej: ROLE_USER" required>
-              <div class="text-danger" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
-            </div>
-
-            <div class="form-group mr-3 mb-2">
-              <label class="mr-2">Descripción:</label>
-              <input type="text" th:field="*{descripcion}" class="form-control" required>
-              <div class="text-danger" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}"></div>
-            </div>
-
-            <div class="form-group mr-3 mb-2 d-flex align-items-center">
-              <label class="mr-2 mb-0">Estado:</label>
-              <input type="checkbox" th:field="*{estado}" class="form-control" style="width:auto; height:auto;">
-            </div>
-            <button type="submit" class="btn btn-primary mb-0">Guardar Rol</button>
-          </form>
-
-          <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
-          <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
-
-          <div class="table-responsive">
-            <table id="rolesTable" class="table table-striped table-bordered mt-2">
-              <thead class="thead-dark text-center align-middle">
-              <tr>
-                <th>Nombre</th>
-                <th>Descripción</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr th:each="role : ${roles}">
-                <td>
-                  <form th:id="${'formUpdate' + role.id}" th:action="@{/admin/roles/update}" method="post" class="d-flex align-items-center">
-                    <input type="hidden" name="id" th:value="${role.id}" />
-                    <input type="text" name="nombre" th:value="${role.nombre}" class="form-control" required />
-                    </form>
-                </td>
-                <td>
-                  <input type="text" name="descripcion" th:value="${role.descripcion}" class="form-control" required />
-                </td>
-                <td class="text-center">
-                  <input type="hidden" name="estado" value="false" />
-                  <input type="checkbox" name="estado" value="true" th:checked="${role.estado}" />
-                </td>
-                <td class="text-center">
-                  <button type="submit" class="btn btn-sm btn-success mr-1" title="Guardar">
-                    <i class="fas fa-save"></i>
-                  </button>
-                  </form>
-
-                  <form th:action="@{/admin/roles/delete}" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este rol?');">
-                    <input type="hidden" name="id" th:value="${role.id}" />
-                    <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
-                      <i class="fas fa-trash-alt"></i>
+                <div class="toolbar">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="toggleNuevoRol">
+                        <i class="fas fa-plus mr-1"></i> Nuevo Rol
                     </button>
-                  </form>
-                </td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
+                    <a class="btn btn-outline-secondary btn-sm" th:href="@{/users}">
+                        <i class="fas fa-users mr-1"></i> Usuarios
+                    </a>
+                </div>
 
-        </div>
-      </div>
-    </section>
-  </div>
+                <div class="card-body">
+                    <!-- Formulario para nuevo rol -->
+                    <div id="formNuevoRol" style="display:none; margin-bottom: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <form th:action="@{/admin/roles}" method="post" th:object="${role}" class="row align-items-end">
+                            <div class="col-12 col-md-4 mb-2">
+                                <label class="form-label font-weight-bold">Nombre del rol</label>
+                                <input type="text" th:field="*{nombre}" class="form-control form-control-sm" placeholder="Ej: ROLE_USER" required>
+                                <div class="text-danger small" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
+                            </div>
+                            <div class="col-12 col-md-4 mb-2">
+                                <label class="form-label font-weight-bold">Descripción</label>
+                                <input type="text" th:field="*{descripcion}" class="form-control form-control-sm" placeholder="Descripción breve" required>
+                                <div class="text-danger small" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}"></div>
+                            </div>
+                            <div class="col-6 col-md-2 mb-2 text-center">
+                                <label class="form-label font-weight-bold d-block">Estado</label>
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" th:field="*{estado}" class="custom-control-input" id="estadoSwitch">
+                                    <label class="custom-control-label" for="estadoSwitch">Activo</label>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-2 mb-2">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                    <i class="fas fa-save mr-1"></i> Guardar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div th:if="${errorMessage}" class="alert alert-danger fade show" th:text="${errorMessage}"></div>
+                    <div th:if="${successMessage}" class="alert alert-success fade show" th:text="${successMessage}"></div>
+
+                    <div class="table-responsive">
+                        <table id="rolesTable" class="table table-striped table-bordered datatable w-100" data-dt="auto">
+                            <thead class="table-dark text-center align-middle">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="role : ${roles}">
+                                <form th:action="@{/admin/roles/update}" method="post">
+                                    <input type="hidden" name="id" th:value="${role.id}" />
+                                    <td>
+                                        <input type="text" name="nombre" th:value="${role.nombre}" class="form-control form-control-sm" required />
+                                    </td>
+                                    <td>
+                                        <input type="text" name="descripcion" th:value="${role.descripcion}" class="form-control form-control-sm" required />
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="hidden" name="estado" value="false" />
+                                            <input type="checkbox" name="estado" value="true" th:checked="${role.estado}" class="custom-control-input" th:id="'check' + ${role.id}" />
+                                            <label class="custom-control-label" th:for="'check' + ${role.id}"></label>
+                                        </div>
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <div class="btn-group">
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Actualizar">
+                                                <i class="fas fa-save"></i>
+                                            </button>
+                                </form>
+                                            <form th:action="@{/admin/roles/delete}" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este rol?');">
+                                                <input type="hidden" name="id" th:value="${role.id}" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
 </div>
 
-<script>
-  $(document).ready(function() {
-    $('#rolesTable').DataTable({
-      language: {
-        lengthMenu: "Mostrar _MENU_ registros por página",
-        zeroRecords: "No se encontraron resultados",
-        info: "Mostrando página _PAGE_ de _PAGES_",
-        infoEmpty: "No hay registros disponibles",
-        infoFiltered: "(filtrado de _MAX_ registros totales)",
-        search: "Buscar:",
-        paginate: {
-          first: "Primero",
-          last: "Último",
-          next: "Siguiente",
-          previous: "Anterior"
-        }
-      },
-      paging: true,
-      searching: true,
-      ordering: true,
-      lengthMenu: [5, 10, 15, 25],
-      pageLength: 5,
-      scrollY: "290px",
-      scrollCollapse: true,
-      responsive: true
-    });
+<div layout:fragment="script">
+    <script>
+        $(document).ready(function() {
+            $('#toggleNuevoRol').click(function() {
+                $('#formNuevoRol').slideToggle();
+            });
 
-    setTimeout(() => {
-      $('.alert-danger').fadeOut();
-      $('.alert-success').fadeOut();
-    }, 2000);
-  });
-</script>
+            setTimeout(() => {
+                $('.alert').fadeOut();
+            }, 3000);
+        });
+    </script>
+</div>
 
-</body>
 </html>

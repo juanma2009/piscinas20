@@ -1,26 +1,55 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="admin/admin_layout">
 <head>
-    <title>Assign Role</title>
+    <meta charset="UTF-8">
+    <title>Asignar Rol</title>
 </head>
 <body>
-<h1>Assign Role</h1>
-<form method="post" th:action="@{/users/assignRole}">
-    <div>
-        <label>Select User:</label>
-        <select name="userId">
-            <option th:each="user : ${users}" th:text="${user.username}" th:value="${user.id}"></option>
-        </select>
+<div layout:fragment="content">
+    <div class="container-fluid px-2 px-md-3">
+        <section class="content-header">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-user-tag mr-2"></i> Asignar Rol a Usuario
+                </div>
+
+                <div class="toolbar">
+                    <a th:href="@{/users}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user-shield mr-1"></i> Usuarios
+                    </a>
+                </div>
+
+                <div class="card-body">
+                    <form method="post" th:action="@{/users/assignRole}">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label class="font-weight-bold">Seleccionar Usuario:</label>
+                                <select name="userId" class="form-control">
+                                    <option th:each="user : ${users}" th:text="${user.username}" th:value="${user.id}"></option>
+                                </select>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label class="font-weight-bold">Seleccionar Rol:</label>
+                                <select name="roleId" class="form-control">
+                                    <option th:each="role : ${roles}" th:text="${role.nombre}" th:value="${role.id}"></option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr class="my-4"/>
+
+                        <div class="form-group text-right">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check-circle mr-1"></i> Asignar Rol
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
     </div>
-    <div>
-        <label>Select Role:</label>
-        <select name="roleId">
-            <option th:each="role : ${roles}" th:text="${role.nombre}" th:value="${role.id}"></option>
-        </select>
-    </div>
-    <div>
-        <button type="submit">Assign Role</button>
-    </div>
-</form>
+</div>
 </body>
 </html>

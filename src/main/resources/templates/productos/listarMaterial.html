@@ -1,103 +1,108 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorator="admin/admin_layout">
+
 <head>
-
-
-    <link rel="stylesheet"
-          href="cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js">
-    <link rel="stylesheet"
-          href="cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
-
-    <!-- Plugin Leaflet.awesome-markers  -->
-    <link rel="stylesheet" href="../dist/leaflet.awesome-markers.css">
-    <script src="../dist/leaflet.awesome-markers.js">
-
-    </script>
-
-    <!-- Plugin Leaflet.awesome-markers  -->
-    <link rel="stylesheet" href="../dist/leaflet.awesome-markers.css">
-    <script src="../dist/leaflet.awesome-markers.js"></script>
-
-
+    <meta charset="utf-8"/>
+    <title>Inventario de Materiales</title>
 </head>
-<body>
 
 <div layout:fragment="content">
-    <div class="container py-4">
-        <div class="card bg-light">
-            <div class="card-header" th:text="${titulo}"></div>
-            <div class="card-body">
-                <div class="form-group row">
-                    <h4 class="card-title">
-                        <a th:href="@{/materiales/form}" class="btn btn-primary btn-sm">Crear
-                            Material</a>
-                    </h4>
-                    <div class="col-sm-10">
-                        <form th:action="@{/materiales/buscar}" method="post">
-                            <label for="nombre" th:text="'Material'"></label>
+    <div class="container-fluid px-2 px-md-3">
+        <section class="content-header">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-boxes mr-2"></i> Inventario de Materiales
+                </div>
 
-                            <input type="text" id="nombre" name="nombre">
+                <div class="toolbar">
+                    <a th:href="@{/materiales/form}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-plus mr-1"></i> Crear Material
+                    </a>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="toggleBusqueda">
+                        <i class="fas fa-search mr-1"></i> Filtros
+                    </button>
+                </div>
 
-                            <label for="n_proveedor" th:text="'Proveedor'"></label>
-                            <input type="text" id="n_proveedor" name="n_proveedor"> <input
-                                type="submit" class="btn btn-primary btn-sm" value="Buscar">
+                <div class="card-body">
+                    <div id="formBusqueda" style="display:none; margin-bottom: 1.5rem;">
+                        <form th:action="@{/materiales/buscar}" method="post" class="row">
+                            <div class="col-12 col-md-4 mb-2">
+                                <label for="nombre" class="form-label">Material</label>
+                                <input type="text" id="nombre" name="nombre" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-12 col-md-4 mb-2">
+                                <label for="n_proveedor" class="form-label">Proveedor</label>
+                                <input type="text" id="n_proveedor" name="n_proveedor" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-12 col-md-4 d-flex align-items-end mb-2">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">Buscar</button>
+                            </div>
                         </form>
-
                     </div>
 
-                    <table id="MyTable" class="table table-striped">
-                        <thead class="thead-dark">
-                        <tr>
-                            <th>Id</th>
-                            <th>Código</th>
-                            <th>Nombre</th>
-                            <th>Precio Compra</th>
-                            <th>Precio PVP</th>
-                            <th>Proveedor</th>
-                            <th>Stock</th>
-                            <th>Editar</th>
-                            <th>Eliminar</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="materiales:${material}">
-                            <td th:text="${materiales.id}"></td>
-                            <td th:text="${materiales.codigo}"></td>
-                            <td th:text="${materiales.nombre}"></td>
-                            <td th:text="${materiales.precioCompra}"></td>
-                            <td th:text="${#numbers.formatDecimal(materiales.precio, 0, 'DEFAULT', 2, 'DEFAULT')}+' €'"></td>
-                            <!--	<td
-                                    th:text="${materiales.descuento}+' %'"></td>-->
-                            <td th:text="${materiales.nproveedor.vnombre}"></td>
-                            <td th:text="${materiales.cantidad}"></td>
-
-
-                            <!--hasta que no tenga el modulo completo no se vera con el tema de genera factura al los clientes
-                        <td><a class="btn btn-success btn-sm"
-                            th:href="@{'/factura/form/' + ${clientes.ncliente}}"
-                            th:text="'crear factura'"></a></td>
-                            -->
-                            <td><a class="btn btn-primary btn-sm"
-                                   th:href="@{/materiales/form/} + ${materiales.id}">Editar</a></td>
-
-                            <td><a class="btn btn-danger btn-sm"
-                                   th:href="@{/materiales/eliminar/} + ${materiales.id}"
-                                   onclick="return confirm('Est�s seguro que quieres eliminar el material?');">Eliminar</a>
-                            </td>
-                        </tr>
-                        </tbody>
-
-                    </table>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered datatable w-100"
+                               id="tablaMateriales"
+                               data-dt="auto">
+                            <thead class="table-dark text-center align-middle">
+                            <tr>
+                                <th>Id</th>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Precio Compra</th>
+                                <th>PVP</th>
+                                <th>Proveedor</th>
+                                <th>Stock</th>
+                                <th>Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="materiales:${material}">
+                                <td th:text="${materiales.id}"></td>
+                                <td th:text="${materiales.codigo}"></td>
+                                <td th:text="${materiales.nombre}"></td>
+                                <td class="text-right" th:text="${materiales.precioCompra} + ' €'"></td>
+                                <td class="text-right font-weight-bold" th:text="${#numbers.formatDecimal(materiales.precio, 0, 'DEFAULT', 2, 'DEFAULT')}+' €'"></td>
+                                <td th:text="${materiales.nproveedor.vnombre}"></td>
+                                <td class="text-center">
+                                    <span class="badge" th:classappend="${materiales.cantidad > 5} ? 'badge-success' : 'badge-danger'" th:text="${materiales.cantidad}"></span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group">
+                                        <a class="btn btn-outline-primary btn-sm"
+                                           th:href="@{/materiales/form/} + ${materiales.id}" title="Editar">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </a>
+                                        <a class="btn btn-outline-danger btn-sm"
+                                           th:href="@{/materiales/eliminar/} + ${materiales.id}"
+                                           onclick="return confirm('¿Estás seguro que quieres eliminar el material?');" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                 <label th:if="${cantidad != null}" class="btn btn-primary"
-                               th:text="${textoR}+${cantidad}">Resultados encontrados"</label>
-                <nav th:replace="paginator-nav ::paginator"></nav>
+                <div class="card-footer py-2" th:if="${cantidad != null}">
+                    <span class="badge badge-info p-2" th:text="${textoR}+${cantidad}">Resultados encontrados</span>
+                </div>
             </div>
-        </div>
+        </section>
     </div>
 </div>
 
-</body>
+<div layout:fragment="script">
+    <script>
+        $(document).ready(function() {
+            $('#toggleBusqueda').click(function() {
+                $('#formBusqueda').slideToggle();
+            });
+        });
+    </script>
+</div>
 
 </html>
