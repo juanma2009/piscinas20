@@ -79,14 +79,7 @@ public class ProveedoresController {
 		
 	
 
-	@RequestMapping(value = "/layout", method = RequestMethod.GET)
-	public String count(Model model) {
-		
-		model.addAttribute("countProveedor", proveedorService.count());
-		
-		return "layoutMcompras";
-	}
-	
+
 	@RequestMapping(value = "/form")
 	public String crear( Map<String, Object> model) {
 		

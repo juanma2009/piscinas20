@@ -6,154 +6,179 @@
     <meta charset="utf-8"/>
     <title th:text="${titulo}"></title>
     <style>
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,.08);
-            overflow: hidden;
+        .nav-tabs {
+            padding: 0 20px;
+            border-bottom: 1px solid #dee2e6;
         }
-        .card-header {
-            background: linear-gradient(135deg, #0062cc, #004085);
-            color: #fff;
+        .nav-link {
+            color: #495057;
+            border: none !important;
+            padding: 10px 15px;
+        }
+        .nav-link.active {
+            color: #007bff !important;
+            border-bottom: 2px solid #007bff !important;
+            background: transparent !important;
+        }
+        .form-group label {
             font-weight: 700;
-            text-transform: uppercase;
-            padding: 15px;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
         }
-        .toolbar {
+        .btn-action-central {
             display: flex;
-            flex-wrap: wrap;
-            gap: .5rem;
-            align-items: center;
-            padding: .75rem 1rem 0 1rem;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .footer-buttons {
+            padding: 20px;
+            display: flex;
+            gap: 10px;
         }
     </style>
 </head>
 <body>
 
 <div layout:fragment="content">
-    <div class="container-fluid px-2 px-md-3">
-        <section class="content-header">
+    <div id="messege"></div>
+
+    <section class="content">
+        <div class="container-fluid pt-3">
             <div class="card">
                 <div class="card-header">
-                    <i class="fas fa-truck mr-2"></i>
-                    <span th:text="${titulo}"></span>
+                    <i class="fas fa-truck mr-2"></i> <span th:text="${titulo}"></span>
                 </div>
 
                 <div class="toolbar">
-                    <a th:href="@{'/ver/' + ${albaran.cliente.id}}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left mr-1"></i> Volver al Cliente
+                    <a th:href="@{'/ver/' + ${albaran.cliente.id}}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-left mr-1"></i> Volver
                     </a>
                     <a th:href="@{/albaranes/listarAlbaranes}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-list mr-1"></i> Listar Albaranes
+                        <i class="fas fa-list mr-1"></i> Albaranes
                     </a>
                 </div>
 
-                <div class="card-body">
-                    <form th:action="@{/albaranes/form/}" enctype="multipart/form-data" th:object="${albaran}" method="post">
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label font-weight-bold">Cliente</label>
-                                <input name="cliente" th:value="${albaran.cliente.nombre} + ' ' + ${albaran.cliente.apellido}" class="form-control" disabled />
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label font-weight-bold">Obra / Lugar</label>
-                                <input type="text" th:field="*{lugar}" class="form-control" th:errorclass="is-invalid" />
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('lugar')}" th:errors="*{lugar}"></div>
-                            </div>
-                        </div>
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-toggle="tab" href="#general" role="tab">Informacion General</a>
+                    </li>
+                </ul>
 
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label font-weight-bold">Fecha del Albarán</label>
-                                <input class="form-control" id="date" name="dfechavenci" type="date" th:errorclass="is-invalid" />
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('dfechavenci')}" th:errors="*{dfechavenci}"></div>
+                <form th:action="@{/albaranes/form/}" enctype="multipart/form-data" th:object="${albaran}" method="post">
+                    <div class="tab-content p-4">
+                        <div class="tab-pane fade show active" id="general" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Cliente</label>
+                                        <input th:value="${albaran.cliente.nombre} + ' ' + ${albaran.cliente.apellido}" class="form-control" disabled />
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Obra / Lugar</label>
+                                        <input type="text" th:field="*{lugar}" class="form-control" th:errorclass="is-invalid" />
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('lugar')}" th:errors="*{lugar}"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Fecha Albarán</label>
+                                        <input class="form-control" id="date" name="dfechavenci" type="date" th:errorclass="is-invalid" />
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label font-weight-bold">Nº Albarán</label>
-                                <input type="text" th:field="*{numeroAlbaran}" class="form-control" th:errorclass="is-invalid" />
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('numeroAlbaran')}" th:errors="*{numeroAlbaran}"></div>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label font-weight-bold">Proveedor</label>
-                                <select class="form-control" th:field="*{proveedor}" th:errorclass="is-invalid">
-                                    <option th:each="p : ${proveedores}" th:value="${p.id}" th:text="${p.vnombre}"></option>
-                                </select>
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('proveedor')}" th:errors="*{proveedor}"></div>
-                            </div>
-                        </div>
 
-                        <hr>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Nº Albarán</label>
+                                        <input type="text" th:field="*{numeroAlbaran}" class="form-control" th:errorclass="is-invalid" />
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Proveedor</label>
+                                        <select class="form-control" th:field="*{proveedor}">
+                                            <option th:each="p : ${proveedores}" th:value="${p.id}" th:text="${p.vnombre}"></option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-8">
-                                <label class="form-label font-weight-bold">Buscar Material / Producto</label>
-                                <div class="input-group">
+                            <!-- Botón de Acción Estilo Pedido -->
+                            <div class="btn-action-central">
+                                <div class="input-group col-md-8 px-0">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-search"></i></span>
                                     </div>
-                                    <input type="text" name="buscar_producto" id="buscar_producto" class="form-control" placeholder="Escriba el nombre del producto..." />
+                                    <input type="text" name="buscar_producto" id="buscar_producto" class="form-control" placeholder="Buscar material para añadir..." />
+                                </div>
+                            </div>
+
+                            <table th:replace="albaran/plantilla-items :: itemsFactura"></table>
+
+                            <div class="table-responsive mt-3">
+                                <table id="cargarItemProductos" class="table table-sm table-striped table-bordered table-hover">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th width="100">Cantidad</th>
+                                            <th width="40"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+
+                            <div class="d-flex justify-content-end mt-2">
+                                <div class="h5 font-weight-bold">Total: <span id="gran_total" class="text-primary">0</span></div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-md-8">
+                                    <div class="form-group">
+                                        <label>Observación</label>
+                                        <textarea th:field="*{observacion}" class="form-control" rows="2"></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Foto Adjunta</label>
+                                        <div class="custom-file">
+                                            <input type="file" name="file" class="custom-file-input" id="customFile">
+                                            <label class="custom-file-label" for="customFile">Elegir...</label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <table th:replace="albaran/plantilla-items :: itemsFactura"></table>
-
-                        <div class="table-responsive">
-                            <table id="cargarItemProductos" class="table table-sm table-striped table-bordered">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th width="120">Cantidad</th>
-                                        <th width="50">E</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-
-                        <div class="d-flex justify-content-end mt-2">
-                            <h5>Total: <span class="badge badge-primary p-2" id="gran_total">0</span></h5>
-                        </div>
-
-                        <div class="row mt-4">
-                            <div class="col-md-8 mb-3">
-                                <label class="form-label font-weight-bold">Observación</label>
-                                <textarea th:field="*{observacion}" class="form-control" rows="3"></textarea>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label font-weight-bold">Adjuntar Foto</label>
-                                <div class="custom-file">
-                                    <input type="file" name="file" class="custom-file-input" id="customFile">
-                                    <label class="custom-file-label" for="customFile">Elegir archivo...</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-end mt-4" style="gap: .5rem;">
-                            <button type="reset" class="btn btn-secondary">
-                                <i class="fas fa-undo mr-1"></i> Limpiar
-                            </button>
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-save mr-1"></i> Guardar Albarán
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <div class="footer-buttons">
+                        <button type="submit" class="btn btn-primary px-4">
+                            Guardar Albarán
+                        </button>
+                        <button type="reset" class="btn btn-secondary px-4" style="background-color: #4b545c; border: none;">
+                            Resetear
+                        </button>
+                    </div>
+                </form>
             </div>
-        </section>
-    </div>
+        </div>
+    </section>
 </div>
 
 <div layout:fragment="script">
     <script th:replace="factura/js/listarproductos :: javascript"></script>
     <script>
-        // Actualizar el nombre del archivo en el input custom-file
-        $(".custom-file-input").on("change", function() {
-          var fileName = $(this).val().split("\\").pop();
-          $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+        $(document).ready(function() {
+            $(".custom-file-input").on("change", function() {
+                var fileName = $(this).val().split("\\").pop();
+                $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+            });
         });
     </script>
 </div>
-
 </body>
 </html>

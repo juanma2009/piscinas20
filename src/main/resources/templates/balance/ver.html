@@ -1,27 +1,38 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-	  layout:decorator="admin/admin_layout">
-
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="admin/admin_layout">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${titulo}">Balance</title>
+</head>
 <body>
-
 <div layout:fragment="content">
+    <div class="container-fluid px-2 px-md-3">
+        <section class="content-header">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-line mr-2"></i> <span th:text="${titulo}">Balance</span>
+                </div>
 
-	<div class="container py-8">
+                <div class="toolbar">
+                    <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list mr-1"></i> Pedidos
+                    </a>
+                    <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-users mr-1"></i> Clientes
+                    </a>
+                </div>
 
-		<div class="card bg-light">
-			<div class="card-header text-center"  th:text="${titulo}" ></div>
-			<div class="card-body">
-
-				
-				
-
-
-
-			</div>
-		</div>
-
-	</div>
-
+                <div class="card-body">
+                    <!-- Contenido del balance -->
+                    <div class="alert alert-info">
+                        Sección en desarrollo. Aquí se mostrará el balance general.
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
 </div>
 </body>
 </html>

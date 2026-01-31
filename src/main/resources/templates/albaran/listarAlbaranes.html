@@ -1,105 +1,96 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorator="/admin/admin_layout">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="admin/admin_layout">
 
-
-<head >
-<meta charset="utf-8" />
-
-<title>Lista Albaranes</title>
-	<link rel="stylesheet" href="../css/table.css">
-	<!--  Bootstrap  -->
-	<link rel="stylesheet"
-		  href="cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js">
-	<link rel="stylesheet"
-		  href="cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
-	<!-- Plugin Leaflet.awesome-markers  -->
-	<link rel="stylesheet" href="../dist/leaflet.awesome-markers.css">
-
+<head>
+    <meta charset="utf-8"/>
+    <title>Lista de Albaranes</title>
 </head>
-<body>
 
 <div layout:fragment="content">
+    <div class="container-fluid px-2 px-md-3">
+        <section class="content-header">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-file-invoice mr-2"></i> Listado de Albaranes
+                </div>
 
-	<div class="container py-4">
+                <div class="toolbar">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="toggleBusqueda">
+                        <i class="fas fa-search mr-1"></i> Filtros
+                    </button>
+                </div>
 
-		<div class="card bg-light">
-			<div class="card-header" th:text="${titulo}"></div>
-			<div class="card-body">
-				<div class="form-group row">
-					<div class="col-sm-12">
-						<form th:action="@{/albaranes/buscar}" method="post">
-							<label for="cliente"  th:text="'Cliente'"></label>
-							 <input type="text" id="cliente" name="cliente">
-							 
-							 <label for="tipo"  th:text="'Tipo de Pedido'"></label>
-							 <input type="text" id="tipo" name="tipo">
-							 
+                <div class="card-body">
+                    <!-- Buscador opcional similar a pedidos -->
+                    <div id="formBusqueda" style="display:none; margin-bottom: 1rem;">
+                        <form th:action="@{/albaranes/buscar}" method="post" class="row">
+                            <div class="col-12 col-md-4 mb-2">
+                                <label for="cliente" class="form-label">Cliente</label>
+                                <input type="text" id="cliente" name="cliente" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-12 col-md-4 mb-2">
+                                <label for="tipo" class="form-label">Tipo de Pedido</label>
+                                <input type="text" id="tipo" name="tipo" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-12 col-md-4 d-flex align-items-end mb-2">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">Buscar</button>
+                            </div>
+                        </form>
+                    </div>
 
-							 
-							 <input type="submit" class="btn btn-primary btn-sm" value="Buscar">							
-						</form>
-					</div>				
-					<div class="table-responsive">
-					<table id="table" class="table mt-2">
-						<thead class="thead-dark">
-							<tr>
-								<th>#</th>
-								<th>Cliente</th>
-								<th>Proveedor</th>
-								<th>F.Albaran</th>
-								<th>Lugar</th>
-								<th>Nº Albaran</th>
-								<th>Ver</th>
-							
-							</tr>
-						</thead>
-						 <tbody>
-							<tr th:each="albaranes:${albaranes}">
-								<td th:text="${albaranes.id}"></td>
-								<td th:text="${albaranes.cliente.nombre}"></td>
-								<td th:text="${albaranes.proveedor.vnombre}"></td>								
-								<td th:text="${albaranes.dfechavenci}"></td>								
-								<td th:text="${albaranes.lugar}"></td>
-								<td th:text="${albaranes.numeroAlbaran}"></td>
-						<td><a class="btn btn-primary btn-sm" th:href="@{'/albaranes/ver/' + ${albaranes.id}}" th:text="'detalle'"></a></td>							</tr>
-						</tbody>
-
-					</table>
-					</div>
-				</div>
-			</div>
-			<nav th:replace="paginator-nav ::paginator"></nav>
-		</div>
-	</div>
-
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered datatable w-100"
+                               id="tablaAlbaranes"
+                               data-dt="auto">
+                            <thead class="table-dark text-center align-middle">
+                            <tr>
+                                <th>#</th>
+                                <th>Cliente</th>
+                                <th>Proveedor</th>
+                                <th>F.Albaran</th>
+                                <th>Lugar</th>
+                                <th>Nº Albaran</th>
+                                <th>Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="albaranes:${albaranes}">
+                                <td th:text="${albaranes.id}"></td>
+                                <td th:text="${albaranes.cliente.nombre}"></td>
+                                <td th:text="${albaranes.proveedor.vnombre}"></td>
+                                <td th:text="${albaranes.dfechavenci}"></td>
+                                <td th:text="${albaranes.lugar}"></td>
+                                <td th:text="${albaranes.numeroAlbaran}"></td>
+                                <td class="text-center">
+                                    <a class="btn btn-outline-primary btn-sm"
+                                       th:href="@{'/albaranes/ver/' + ${albaranes.id}}"
+                                       title="Ver Detalle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Si el paginador es necesario con DataTables auto, a veces choca,
+                     pero si es para el fallback de spring data JPA, lo dejamos -->
+                <nav th:if="${paginator != null}" th:replace="paginator-nav ::paginator"></nav>
+            </div>
+        </section>
+    </div>
 </div>
-</body>
 
-<!-- ordenar la tabla poner en un archivo par poder luego llamar -->
-<script type="text/javascript">
-	
-</script>
-
-<style>
-table tr th {
-	cursor: pointer;
-	-webkit-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	user-select: none;
-}
-
-.sorting {
-	background-color: #D4D4D4;
-}
-
-.asc:after {
-	content: ' ↑';
-}
-
-.desc:after {
-	content: " ↓";
-}
-</style>
+<div layout:fragment="script">
+    <script>
+        $(document).ready(function() {
+            $('#toggleBusqueda').click(function() {
+                $('#formBusqueda').slideToggle();
+            });
+        });
+    </script>
+</div>
 
 </html>
