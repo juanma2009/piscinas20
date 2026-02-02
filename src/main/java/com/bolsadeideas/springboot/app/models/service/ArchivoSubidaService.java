@@ -2,7 +2,6 @@ package com.bolsadeideas.springboot.app.models.service;
 
 import com.bolsadeideas.springboot.app.models.entity.ArchivoAdjunto;
 import com.bolsadeideas.springboot.app.models.entity.Pedido;
-import com.bolsadeideas.springboot.app.models.service.redis.RedisQueueProducer;
 import com.cloudinary.utils.ObjectUtils;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -32,8 +31,7 @@ public class ArchivoSubidaService {
                                 ArchivoAdjuntoService archivoAdjuntoService,
                                 CloudinaryService cloudinaryService,
                                 GoogleDriveApiService googleDriveApiService,
-                                RedisTemplate<String, String> redisTemplate,
-                                RedisQueueProducer redisQueueProducer) {
+                                RedisTemplate<String, String> redisTemplate) {
         this.pedidoService = pedidoService;
         this.archivoAdjuntoService = archivoAdjuntoService;
         this.cloudinaryService = cloudinaryService;
