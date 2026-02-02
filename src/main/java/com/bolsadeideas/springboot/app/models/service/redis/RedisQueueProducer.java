@@ -3,6 +3,7 @@ package com.bolsadeideas.springboot.app.models.service.redis;
 import com.bolsadeideas.springboot.app.models.service.ArchivoSubidaService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 public class RedisQueueProducer {
 
         private final StringRedisTemplate redisTemplate;
+    @Lazy
     @Autowired
     private ArchivoSubidaService archivoSubidaService;
 
