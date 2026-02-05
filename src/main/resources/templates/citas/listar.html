@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/admin_layout}">
+<head>
+    <title th:text="${titulo}"></title>
+    <style>
+        .card{
+            border-radius:10px;
+            box-shadow:0 2px 6px rgba(0,0,0,.08);
+            overflow:hidden;
+        }
+        .card-header{
+            background: linear-gradient(135deg, #0062cc, #004085);
+            color:#fff;
+            font-weight:700;
+            text-transform:uppercase;
+            padding:15px;
+        }
+        .toolbar{
+            display:flex;
+            flex-wrap:wrap;
+            gap:.5rem;
+            align-items:center;
+            padding: .75rem 1rem 0 1rem;
+        }
+        .table-responsive{
+            width:100%;
+            overflow-x:auto;
+            -webkit-overflow-scrolling:touch;
+        }
+        .table td, .table th{
+            white-space:nowrap;
+            font-size:14px;
+            padding:8px;
+        }
+        .dt-actions{
+            display: inline-flex;
+            gap: .35rem;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <div class="container-fluid px-2 px-md-3">
+        <section class="content-header">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-calendar-alt mr-2"></i> <span th:text="${titulo}"></span>
+                </div>
+
+                <div class="toolbar">
+                    <a th:href="@{/citas/form}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-plus mr-1"></i> Nueva Cita
+                    </a>
+                    <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list mr-1"></i> Listado de Trabajos
+                    </a>
+                    <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user mr-1"></i> Clientes
+                    </a>
+                </div>
+
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped datatable w-100" data-dt="auto">
+                            <thead class="table-dark">
+                            <tr>
+                                <th>Fecha y Hora</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Pedido</th>
+                                <th>Estado</th>
+                                <th>Observaciones</th>
+                                <th>Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="cita : ${citas}">
+                                <td th:text="${#temporals.format(cita.fechaCita, 'dd/MM/yyyy HH:mm')}"></td>
+                                <td>
+                                    <a th:if="${cita.cliente != null}" th:href="@{'/ver/' + ${cita.cliente.id}}" th:text="${cita.cliente.nombre + ' ' + cita.cliente.apellido}"></a>
+                                </td>
+                                <td>
+                                    <span th:if="${cita.tipo != null and cita.tipo.name() == 'ENTREGA_TRABAJO'}" class="badge badge-info">Entrega</span>
+                                    <span th:if="${cita.tipo != null and cita.tipo.name() == 'RECOGIDA_PEDIDO'}" class="badge badge-success">Recogida</span>
+                                </td>
+                                <td>
+                                    <a th:if="${cita.pedido != null}" th:href="@{'/pedidos/ver/' + ${cita.pedido.npedido}}" th:text="'#' + ${cita.pedido.npedido}"></a>
+                                    <span th:if="${cita.pedido == null}">-</span>
+                                </td>
+                                <td>
+                                    <span th:if="${cita.estado != null}"
+                                          th:classappend="${cita.estado.name() == 'PROGRAMADA' ? 'badge-primary' : 
+                                                          (cita.estado.name() == 'COMPLETADA' ? 'badge-success' : 'badge-danger')}"
+                                          class="badge" th:text="${cita.estado}"></span>
+                                </td>
+                                <td th:text="${cita.observacion}"></td>
+                                <td>
+                                    <div class="dt-actions">
+                                        <a th:if="${cita.cliente != null}" th:href="@{'/ver/' + ${cita.cliente.id}}" class="btn btn-info btn-sm" title="Ver Cliente">
+                                            <i class="fas fa-user"></i>
+                                        </a>
+                                        <a th:if="${cita.pedido != null}" th:href="@{'/pedidos/ver/' + ${cita.pedido.npedido}}" class="btn btn-primary btn-sm" title="Ver Pedido">
+                                            <i class="fas fa-box"></i>
+                                        </a>
+                                        <a th:href="@{'/citas/form/editar/' + ${cita.id}}" class="btn btn-warning btn-sm" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a th:href="@{'/citas/eliminar/' + ${cita.id}}" class="btn btn-danger btn-sm" title="Eliminar"
+                                           onclick="return confirm('¿Seguro que desea eliminar esta cita?');">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+</body>
+</html>

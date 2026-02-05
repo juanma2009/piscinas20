@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="admin/admin_layout">
+<head>
+    <title>Checklist de Taller - Pedido #[[${pedido.npedido}]]</title>
+    <style>
+        .card { border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,.08); overflow:hidden; }
+        .card-header { background: linear-gradient(135deg, #0062cc, #004085); color:#fff; font-weight:700; text-transform:uppercase; padding:15px; }
+        .nav-tabs .nav-link.active { color: #007bff !important; font-weight: bold; border-bottom: 3px solid #007bff; }
+        .checklist-item { padding: 10px; border-bottom: 1px solid #eee; }
+        .checklist-item:last-child { border-bottom: none; }
+        .checklist-item.required .label::after { content: " *"; color: red; }
+        .item-notes { font-size: 0.85rem; color: #666; margin-top: 5px; }
+        .completed-info { font-size: 0.75rem; color: #999; margin-top: 2px; }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid px-2 px-md-3">
+        <section class="content-header">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-tasks mr-2"></i> Checklist de Taller - Pedido #<span th:text="${pedido.npedido}"></span>
+                </div>
+                <div class="toolbar p-3">
+                    <a th:href="@{/pedidos/ver/} + ${pedido.npedido}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-eye mr-1"></i> Ver Pedido
+                    </a>
+                    <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list mr-1"></i> Listado
+                    </a>
+                    <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-images mr-1"></i> Galería
+                    </a>
+                    <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-users mr-1"></i> Clientes
+                    </a>
+                    <a th:href="@{/pedidos/form/} + ${pedido.cliente.id}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-plus mr-1"></i> Nuevo Pedido
+                    </a>
+                </div>
+
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <strong>Cliente:</strong> <span th:text="${pedido.cliente.nombre + ' ' + pedido.cliente.apellido}"></span><br>
+                            <strong>Referencia:</strong> <span th:text="${pedido.ref}"></span>
+                        </div>
+                        <div class="col-md-6 text-right">
+                            <strong>Tipo:</strong> <span th:text="${pedido.tipoPedido}"></span><br>
+                            <strong>Estado:</strong> <span class="badge badge-info" th:text="${pedido.estado}"></span>
+                        </div>
+                    </div>
+
+                    <ul class="nav nav-tabs" id="checklistTabs" role="tablist">
+                        <li class="nav-item" th:each="instance, stat : ${checklists}">
+                            <a class="nav-link" th:classappend="${stat.first} ? 'active'"
+                               th:id="${instance.template.code + '-tab'}" data-toggle="tab"
+                               th:href="${'#' + instance.template.code}" role="tab"
+                               th:aria-controls="${instance.template.code}"
+                               th:aria-selected="${stat.first}"
+                               th:text="${#strings.replace(#strings.substring(instance.template.code, 2), '_', ' ')}"></a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content p-3" id="checklistTabContent">
+                        <div class="tab-pane fade" th:each="instance, stat : ${checklists}"
+                             th:classappend="${stat.first} ? 'show active'"
+                             th:id="${instance.template.code}" role="tabpanel"
+                             th:aria-labelledby="${instance.template.code + '-tab'}"
+                             th:data-section-code="${instance.template.code}">
+                            
+                            <div th:each="item : ${instance.items}" class="checklist-item" th:data-id="${item.id}">
+                                <div class="d-flex align-items-start">
+                                    <div class="mr-3 pt-1">
+                                        <input type="checkbox" th:if="${item.inputType.name() == 'CHECKBOX'}" 
+                                               th:checked="${item.checked}" class="item-check">
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="label font-weight-bold" th:classappend="${item.required} ? 'required'" th:text="${item.label}"></div>
+                                        
+                                        <div class="input-container mt-2">
+                                            <input type="text" th:if="${item.inputType.name() == 'TEXT'}" 
+                                                   th:value="${item.valueText}" class="form-control form-control-sm item-value">
+                                            
+                                            <input type="number" th:if="${item.inputType.name() == 'NUMBER'}" 
+                                                   th:value="${item.valueText}" class="form-control form-control-sm item-value">
+                                            
+                                            <input type="date" th:if="${item.inputType.name() == 'DATE'}" 
+                                                   th:value="${item.valueText}" class="form-control form-control-sm item-value">
+                                            
+                                            <textarea th:if="${item.inputType.name() == 'TEXTAREA'}" 
+                                                      class="form-control form-control-sm item-value" th:text="${item.valueText}"></textarea>
+                                            
+                                            <select th:if="${item.inputType.name() == 'SELECT'}" class="form-control form-control-sm item-value">
+                                                <option value="">Seleccione...</option>
+                                                <option th:each="opt : ${#strings.arraySplit(item.options, '|')}" 
+                                                        th:value="${opt}" th:text="${opt}" 
+                                                        th:selected="${opt == item.valueText}"></option>
+                                            </select>
+
+                                            <div th:if="${item.inputType.name() == 'MULTISELECT'}" class="mt-1">
+                                                <div th:each="opt : ${#strings.arraySplit(item.options, '|')}" class="form-check form-check-inline">
+                                                    <input class="form-check-input item-multi" type="checkbox" th:value="${opt}"
+                                                           th:checked="${#strings.contains(item.valueText ?: '', opt)}">
+                                                    <label class="form-check-label" th:text="${opt}"></label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-2">
+                                            <input type="text" placeholder="Notas adicionales..." 
+                                                   th:value="${item.notes}" class="form-control form-control-sm item-notes-input">
+                                        </div>
+
+                                        <div class="completed-info mt-1" th:if="${item.completedAt != null}">
+                                            Completado por <span th:text="${item.completedBy}"></span> el <span th:text="${#dates.format(item.completedAt, 'dd/MM/yyyy HH:mm')}"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 text-center border-top pt-3">
+                                <button type="button" class="btn btn-primary save-section-btn" th:data-section="${instance.template.code}">
+                                    <i class="fas fa-save mr-2"></i> Guardar Sección
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-center border-top pt-3">
+                        <button type="button" class="btn btn-success btn-lg" id="saveAllBtn">
+                            <i class="fas fa-save mr-2"></i> Guardar Todos los Cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal de opciones después de guardar checklist -->
+    <div class="modal fade" id="opcionesChecklistModal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle mr-2"></i>¡Checklist Guardado con Éxito!
+                    </h5>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="mb-4">¿Qué deseas hacer ahora?</p>
+                    <div class="d-flex flex-column" style="gap: 1rem;">
+                        <a th:href="@{/pedidos/form/} + ${pedido.cliente.id}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus-circle mr-2"></i>Crear Nuevo Pedido
+                        </a>
+                        <a th:href="@{/pedidos/listarPedidos}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-list mr-2"></i>Lista de Pedidos
+                        </a>
+                        <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-info btn-lg">
+                            <i class="fas fa-images mr-2"></i>Galería
+                        </a>
+                        <a th:href="@{/listar}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-users mr-2"></i>Clientes
+                        </a>
+                        <a th:href="@{/citas/form/pedido/} + ${pedido.npedido}" class="btn btn-warning btn-lg">
+                            <i class="fas fa-calendar-plus mr-2"></i>Crear Cita para este Pedido
+                        </a>
+                        <button type="button" class="btn btn-light btn-lg" data-dismiss="modal">
+                            <i class="fas fa-times mr-2"></i>Continuar Editando
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div layout:fragment="script">
+    <script>
+        $(document).ready(function() {
+            function saveBatch(itemsSelector, $button, originalText) {
+                $button.prop('disabled', true);
+                $button.html('<i class="fas fa-spinner fa-spin mr-2"></i> Guardando...');
+
+                const token = $("meta[name='_csrf']").attr("content");
+                const header = $("meta[name='_csrf_header']").attr("content");
+                
+                const batchUpdates = [];
+
+                $(itemsSelector).each(function() {
+                    const container = $(this);
+                    const itemId = container.data('id');
+                    
+                    if (!itemId) {
+                        return;
+                    }
+
+                    const updates = {};
+
+                    const checkbox = container.find('.item-check');
+                    if (checkbox.length) {
+                        updates.checked = checkbox.is(':checked');
+                    }
+
+                    const valueInput = container.find('.item-value');
+                    if (valueInput.length) {
+                        updates.valueText = valueInput.val();
+                    }
+
+                    const multiChecks = container.find('.item-multi');
+                    if (multiChecks.length) {
+                        const selected = [];
+                        multiChecks.filter(':checked').each(function() {
+                            selected.push($(this).val());
+                        });
+                        updates.valueText = selected.join('|');
+                    }
+
+                    const notesInput = container.find('.item-notes-input');
+                    if (notesInput.length) {
+                        updates.notes = notesInput.val();
+                    }
+
+                    batchUpdates.push({
+                        itemId: itemId,
+                        updates: updates
+                    });
+                });
+
+                if (batchUpdates.length === 0) {
+                    toastr.info('ℹ️ No hay items para guardar en esta sección', 'Información', {
+                        timeOut: 2500,
+                        progressBar: true,
+                        closeButton: true
+                    });
+                    $button.prop('disabled', false);
+                    $button.html(originalText);
+                    return;
+                }
+
+                $.ajax({
+                    url: '/api/workshop/checklist-items/batch',
+                    type: 'PATCH',
+                    contentType: 'application/json',
+                    data: JSON.stringify(batchUpdates),
+                    beforeSend: function(xhr) {
+                        if (header && token) {
+                            xhr.setRequestHeader(header, token);
+                        }
+                    },
+                    success: function(response) {
+                        $button.removeClass('btn-primary').addClass('btn-success');
+                        $button.html('<i class="fas fa-check mr-2"></i> Guardado Exitoso');
+                        
+                        setTimeout(function() {
+                            $button.removeClass('btn-success').addClass('btn-primary');
+                            $button.html(originalText);
+                            $button.prop('disabled', false);
+                        }, 2000);
+
+                        response.items.forEach(function(item) {
+                            const container = $(itemsSelector).filter('[data-id="' + item.id + '"]');
+                            
+                            if (item.completedAt && container.length) {
+                                const date = new Date(item.completedAt);
+                                const dateStr = date.getDate().toString().padStart(2, '0') + '/' + 
+                                              (date.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                                              date.getFullYear() + ' ' + 
+                                              date.getHours().toString().padStart(2, '0') + ':' + 
+                                              date.getMinutes().toString().padStart(2, '0');
+                                
+                                let infoDiv = container.find('.completed-info');
+                                if (!infoDiv.length) {
+                                    infoDiv = $('<div class="completed-info mt-1"></div>');
+                                    container.find('.flex-grow-1').append(infoDiv);
+                                }
+                                infoDiv.html('Completado por ' + item.completedBy + ' el ' + dateStr);
+                            }
+                        });
+
+                        toastr.success('✅ Sección guardada exitosamente<br>Se guardaron <strong>' + response.totalUpdated + '/' + response.totalRequested + '</strong> items correctamente', 'Guardado Exitoso', {
+                            timeOut: 3000,
+                            progressBar: true,
+                            closeButton: true,
+                            escapeHtml: false
+                        });
+                        
+                        if (itemsSelector === '.checklist-item') {
+                            setTimeout(function() {
+                                $('#opcionesChecklistModal').modal('show');
+                            }, 1500);
+                        }
+                    },
+                    error: function(xhr) {
+                        $button.prop('disabled', false);
+                        $button.html(originalText);
+                        console.error(xhr);
+                        
+                        let errorMsg = '❌ Error al guardar la sección';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg += '<br><small>' + xhr.responseJSON.message + '</small>';
+                        }
+                        
+                        toastr.error(errorMsg, 'Error de Guardado', {
+                            timeOut: 5000,
+                            progressBar: true,
+                            closeButton: true,
+                            escapeHtml: false
+                        });
+                    }
+                });
+            }
+
+            function saveItems(itemsSelector, $button, originalText) {
+                $button.prop('disabled', true);
+                $button.html('<i class="fas fa-spinner fa-spin mr-2"></i> Guardando...');
+
+                const token = $("meta[name='_csrf']").attr("content");
+                const header = $("meta[name='_csrf_header']").attr("content");
+                
+                const items = [];
+                let totalItems = 0;
+                let savedItems = 0;
+                let failedItems = 0;
+
+                $(itemsSelector).each(function() {
+                    const container = $(this);
+                    const itemId = container.data('id');
+                    
+                    if (!itemId) {
+                        return;
+                    }
+
+                    totalItems++;
+                    const updates = {};
+
+                    const checkbox = container.find('.item-check');
+                    if (checkbox.length) {
+                        updates.checked = checkbox.is(':checked');
+                    }
+
+                    const valueInput = container.find('.item-value');
+                    if (valueInput.length) {
+                        updates.valueText = valueInput.val();
+                    }
+
+                    const multiChecks = container.find('.item-multi');
+                    if (multiChecks.length) {
+                        const selected = [];
+                        multiChecks.filter(':checked').each(function() {
+                            selected.push($(this).val());
+                        });
+                        updates.valueText = selected.join('|');
+                    }
+
+                    const notesInput = container.find('.item-notes-input');
+                    if (notesInput.length) {
+                        updates.notes = notesInput.val();
+                    }
+
+                    items.push({
+                        id: itemId,
+                        updates: updates,
+                        container: container
+                    });
+                });
+
+                if (items.length === 0) {
+                    toastr.info('ℹ️ No hay items para guardar', 'Información', {
+                        timeOut: 2500,
+                        progressBar: true,
+                        closeButton: true
+                    });
+                    $button.prop('disabled', false);
+                    $button.html(originalText);
+                    return;
+                }
+
+                const savePromises = items.map(function(item) {
+                    return $.ajax({
+                        url: '/api/workshop/checklist-items/' + item.id,
+                        type: 'PATCH',
+                        contentType: 'application/json',
+                        data: JSON.stringify(item.updates),
+                        beforeSend: function(xhr) {
+                            if (header && token) {
+                                xhr.setRequestHeader(header, token);
+                            }
+                        }
+                    }).then(function(response) {
+                        savedItems++;
+                        if (response.completedAt) {
+                            const date = new Date(response.completedAt);
+                            const dateStr = date.getDate().toString().padStart(2, '0') + '/' + 
+                                          (date.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                                          date.getFullYear() + ' ' + 
+                                          date.getHours().toString().padStart(2, '0') + ':' + 
+                                          date.getMinutes().toString().padStart(2, '0');
+                            
+                            let infoDiv = item.container.find('.completed-info');
+                            if (!infoDiv.length) {
+                                infoDiv = $('<div class="completed-info mt-1"></div>');
+                                item.container.find('.flex-grow-1').append(infoDiv);
+                            }
+                            infoDiv.html('Completado por ' + response.completedBy + ' el ' + dateStr);
+                        }
+                    }).fail(function() {
+                        failedItems++;
+                    });
+                });
+
+                Promise.all(savePromises).finally(function() {
+                    if (failedItems === 0) {
+                        $button.removeClass('btn-success').addClass('btn-success');
+                        $button.html('<i class="fas fa-check-circle mr-2"></i> Guardado Completo');
+                        
+                        setTimeout(function() {
+                            $button.html(originalText);
+                            $button.prop('disabled', false);
+                        }, 2500);
+                        
+                        toastr.success('✅ Todos los cambios guardados exitosamente<br>Se guardaron <strong>' + savedItems + '/' + totalItems + '</strong> items en todas las secciones', 'Guardado Completo', {
+                            timeOut: 4000,
+                            progressBar: true,
+                            closeButton: true,
+                            escapeHtml: false
+                        });
+                    } else {
+                        $button.prop('disabled', false);
+                        $button.html(originalText);
+                        
+                        toastr.warning('⚠️ Guardado parcial completado<br>Guardados: <strong>' + savedItems + '</strong> items<br>Fallaron: <strong>' + failedItems + '</strong> items', 'Atención', {
+                            timeOut: 5000,
+                            progressBar: true,
+                            closeButton: true,
+                            escapeHtml: false
+                        });
+                    }
+                });
+            }
+
+            $('.save-section-btn').click(function() {
+                const $btn = $(this);
+                const sectionCode = $btn.data('section');
+                const itemsSelector = '#' + sectionCode + ' .checklist-item';
+                const originalText = '<i class="fas fa-save mr-2"></i> Guardar Sección';
+                
+                saveBatch(itemsSelector, $btn, originalText);
+            });
+
+            $('#saveAllBtn').click(function() {
+                const $btn = $(this);
+                const itemsSelector = '.checklist-item';
+                const originalText = '<i class="fas fa-save mr-2"></i> Guardar Todos los Cambios';
+                
+                saveItems(itemsSelector, $btn, originalText);
+            });
+        });
+    </script>
+</div>
+</body>
+</html>

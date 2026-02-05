@@ -2,6 +2,7 @@ package com.bolsadeideas.springboot.app.models.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -25,12 +26,14 @@ import javax.validation.constraints.NotEmpty;
 
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
+@Data
 @Table(name = "clientes")
 public class Cliente implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String nombre;
 
     private String apellido;

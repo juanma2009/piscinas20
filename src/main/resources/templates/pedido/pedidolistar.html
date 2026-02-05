@@ -385,10 +385,22 @@
               onclick="return confirm('¿Reactivar?\\n\\nReferencia: ${ref}\\nCliente: ${cliente}\\nNúmero: ${npedido}')">
               <i class="fas fa-check-circle"></i></a>`;
 
+                            const btnCita = isActivo
+                                ? `<a href="/citas/form/pedido/${npedido}" class="btn btn-outline-info btn-sm" title="Programar Cita"><i class="far fa-calendar-plus"></i></a>`
+                                : "";
+
+                            const isFacturado = row.facturado === true || row.facturado === "true";
+                            const btnFactura = (isActivo && !isFacturado)
+                                ? `<a href="/facturas/form/${npedido}" class="btn btn-outline-success btn-sm" title="Generar Factura"><i class="fas fa-file-invoice-dollar"></i></a>`
+                                : (isFacturado ? `<button class="btn btn-success btn-sm" title="Ya facturado" disabled><i class="fas fa-check-double"></i></button>` : "");
+
                             return `
           <div class="dt-actions" style="display:flex; gap:.35rem; flex-wrap:wrap; justify-content:center;">
             <a href="/pedidos/ver/${npedido}" class="btn btn-info btn-sm" title="Ver"><i class="fas fa-eye"></i></a>
+            <a href="/workshop/checklist/${npedido}" class="btn btn-outline-dark btn-sm" title="Checklist Taller"><i class="fas fa-clipboard-list"></i></a>
             ${btnEditar}
+            ${btnCita}
+            ${btnFactura}
             ${btnEstado}
           </div>
         `;

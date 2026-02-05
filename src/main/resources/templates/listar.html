@@ -67,7 +67,7 @@
 								<td th:text="${cliente.direccion}"></td>
 
 								<td class="text-center">
-									<div class="btn-group gap-1 flex-wrap" role="group" aria-label="Acciones Cliente">
+									<div style="display:flex; gap:.35rem; flex-wrap:wrap; justify-content:center;">
 										<a class="btn btn-outline-success btn-sm"
 										   th:href="@{'/pedidos/form/' + ${cliente.id}}"
 										   title="Nuevo Pedido">

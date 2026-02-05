@@ -1,9 +1,7 @@
 package com.bolsadeideas.springboot.app.controllers;
 
-import com.bolsadeideas.springboot.app.models.dao.IFacturaDao;
-import com.bolsadeideas.springboot.app.models.dto.FacturaDto;
 import com.bolsadeideas.springboot.app.models.entity.Factura;
-import com.bolsadeideas.springboot.app.models.service.PedidoServiceImpl;
+import com.bolsadeideas.springboot.app.models.service.IClienteService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -26,8 +24,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/factura/")
 public class RestFacturaController {
 
-        @Autowired
-     IFacturaDao facturaDao;
+    @Autowired
+    private IClienteService clienteService;
 
     @RequestMapping(value = {"/listarPorCliente"}, method = RequestMethod.GET)
     @ResponseBody
@@ -36,19 +34,18 @@ public class RestFacturaController {
             @RequestParam(name = "page", defaultValue = "0") int page) {
 
         Pageable pageRequest = PageRequest.of(page, Integer.MAX_VALUE);
-        PedidoServiceImpl facturaService;
-        Page<Factura> facturas = facturaDao.findFacturaByClientid(clienteId, pageRequest);
+        Page<Factura> facturas = clienteService.findFacturaByIdPage(clienteId, pageRequest);
 
         List<Map<String, Object>> facturasData = facturas.getContent().stream().map(f -> {
             Map<String, Object> facturaData = new HashMap<>();
             facturaData.put("id", f.getId());
             facturaData.put("dfechaAlbaran", f.getDfechaAlbaran());
-            facturaData.put("cliente", Map.of("nombre", f.getCliente().getNombre()));
+            facturaData.put("cliente", Map.of("nombre", f.getCliente() != null ? f.getCliente().getNombre() : "---"));
             facturaData.put("tipoPedido", f.getTipoPedido());
             facturaData.put("subTotal", f.getSubTotal());
             return facturaData;
         }).collect(Collectors.toList());
-        log.info(String.valueOf(facturasData));
+
         Map<String, Object> response = new HashMap<>();
         response.put("recordsTotal", facturas.getTotalElements());
         response.put("recordsFiltered", facturas.getTotalElements());
