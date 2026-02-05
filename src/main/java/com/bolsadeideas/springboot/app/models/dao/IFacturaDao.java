@@ -20,7 +20,8 @@ public interface IFacturaDao extends PagingAndSortingRepository<Factura, Long>{
 	@Query("select p from Factura p where p.enviadoagestor='SI'")
 	public Page<Factura> findByvenviadoagestorS(Pageable pageable);
 
-	@Query("select p from Factura p where p.cliente.id = ?1")
+	@Query(value = "select f from Factura f join fetch f.cliente where f.cliente.id = ?1",
+           countQuery = "select count(f) from Factura f where f.cliente.id = ?1")
 	public Page<Factura> findFacturaByClientid(Long id, Pageable pageable);
 
 	@Query("select p from Factura p where p.cliente like %?1% and p.nproveedor like %?2% and  p.vlugar like %?3%")

@@ -4,9 +4,9 @@ package com.bolsadeideas.springboot.app.models.service;
 import com.bolsadeideas.springboot.app.models.dao.PedidoDao;
 import com.bolsadeideas.springboot.app.models.entity.Cliente;
 import com.bolsadeideas.springboot.app.models.entity.Pedido;
+import lombok.extern.log4j.Log4j2;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
-import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.domain.Page;
@@ -24,11 +24,9 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static antlr.build.ANTLR.root;
-
+@Log4j2
 @Service
 public class PedidoServiceImpl implements PedidoService {
 
@@ -43,8 +41,6 @@ public class PedidoServiceImpl implements PedidoService {
 	
 	@Autowired
 	private PedidoDao pedidoDao;
-
-	Logger log = Logger.getLogger(PedidoServiceImpl.class.getName());
 
 	@Override
 	@Transactional(readOnly=true)
@@ -237,7 +233,7 @@ public class PedidoServiceImpl implements PedidoService {
 	 */
 	@Override
 	public Page<Pedido> findAllByCliente(Long idcliente, Pageable pageable) {
-		return  pedidoDao.findPedidoById(idcliente, pageable);
+		return  pedidoDao.findByClienteId(idcliente, pageable);
 	}
 
 
@@ -246,7 +242,7 @@ public class PedidoServiceImpl implements PedidoService {
 
 	public Page<Pedido> getPedidosById(Long id, Pageable pageable) {
 		// Obtener los pedidos paginados
-		Page<Pedido> pedidos = pedidoDao.findPedidoById(id, pageable);
+		Page<Pedido> pedidos = pedidoDao.findByClienteId(id, pageable);
 
 		// Obtener el conteo de los pedidos
 		long totalPedidos = pedidoDao.countPedidoById(id);
@@ -327,7 +323,7 @@ public class PedidoServiceImpl implements PedidoService {
 						.atZone(ZoneId.systemDefault())
 						.toLocalDate().getYear())
 				.distinct()
-				.sorted()
+				.sorted(Comparator.reverseOrder())
 				.collect(Collectors.toList());
 	}
 
@@ -494,8 +490,7 @@ public class PedidoServiceImpl implements PedidoService {
 		 * para asociar fotos antes de completar el pedido.
 		 */
 		public Pedido crearPedidoTemporal(Long idcliente) {
-			log.info("Creando pedido temporal para cliente ID: {}"+idcliente);
-			log.info("Creando pedido temporal para cliente ID: {}"+idcliente);
+			log.info("Creando pedido temporal para cliente ID: {}");
 
 			Pedido pedido = new Pedido();
 
@@ -523,8 +518,7 @@ public class PedidoServiceImpl implements PedidoService {
 			// Guardar en base de datos
 			Pedido pedidoGuardado = pedidoDao.save(pedido);
 
-			log.info("Número temporal generado: {}"+pedidoGuardado.getNpedido());
-			log.info("Pedido temporal creado con ID: {} y número: {}");
+			log.info("Pedido temporal creado con éxito. Número: {}");
 			return pedidoGuardado;
 		}
 

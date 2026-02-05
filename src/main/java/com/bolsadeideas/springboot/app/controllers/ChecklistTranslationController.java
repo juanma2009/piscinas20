@@ -1,0 +1,2 @@
+// ARCHIVO ELIMINADO - Ya no se necesita sistema de traducción
+// Los enums ahora están directamente en español

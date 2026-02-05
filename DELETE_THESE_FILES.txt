@@ -1,0 +1,7 @@
+ARCHIVOS A ELIMINAR MANUALMENTE:
+
+1. C:\Users\Juanma\IdeaProjects\joyeria\src\main\java\com\bolsadeideas\springboot\app\models\service\workshop\ChecklistTranslationService.java
+2. C:\Users\Juanma\IdeaProjects\joyeria\src\main\java\com\bolsadeideas\springboot\app\controllers\ChecklistTranslationController.java
+3. C:\Users\Juanma\IdeaProjects\joyeria\src\main\resources\db\migration\translate_checklist_items_to_spanish.sql
+
+Estos archivos ya no son necesarios ya que los enums ahora están directamente en español.

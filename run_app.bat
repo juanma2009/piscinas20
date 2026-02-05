@@ -1,0 +1,21 @@
+@echo off
+set JAVA_HOME=C:\Program Files\Java\jdk-17
+set SPRING_PROFILES_ACTIVE=local
+set SPRING_DATASOURCE_URL=jdbc:postgresql://cav8p52l9arddb.cluster-czz5s0kz4scl.eu-west-1.rds.amazonaws.com/d7eqemnbnvs0nc
+set SPRING_DATASOURCE_USERNAME=u23rhcjba9hrh5
+set SPRING_DATASOURCE_PASSWORD=paaf9ba258781995e4d2eb7a7b3b7d01d6984c73bc6555bad43865dc478766b4b
+set CLOUDINARY_CLOUD_NAME=dgzkapydr
+set CLOUDINARY_API_KEY=412669254654562
+set CLOUDINARY_API_SECRET=QxD2rDRUTp4L36mTcpc-5BIrNJI
+set CLOUDINARY_UPLOAD_PRESET=dgzkapydr_unsigned
+set GOOGLE_OAUTH_CLIENT_ID=828501898797-66mt3fps426me6smm5u2macr0ca5d721.apps.googleusercontent.com
+set GOOGLE_OAUTH_CLIENT_SECRET=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
+set MAIL_USER=tallerjoyeria2025@gmail.com
+set MAIL_PASS=ftlvqmjmnlzbaznd
+set INFOBIP_AUTH_TOKEN=App efc3679e93e05d97f6b5c9e092314160-c41b87f9-028f-4b4b-af79-254186d92089
+set INFOBIP_APPLICATION_ID=2FA
+set INFOBIP_MESSAGE_ID=insect el pin de verificacion para autenticacion segura
+set INFOBIP_FROM=34957870425
+set INFOBIP_TO=34699354730
+
+mvn spring-boot:run

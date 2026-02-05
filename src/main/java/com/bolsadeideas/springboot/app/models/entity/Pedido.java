@@ -13,6 +13,8 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString(exclude = {"archivosAdjuntos", "comentarios"})
+@EqualsAndHashCode(exclude = {"archivosAdjuntos", "comentarios"})
 @Table(name = "PEDIDO")
 public class Pedido implements Serializable {
     private static final long serialVersionUID = 1456456L;

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="admin/admin_layout">
+<head>
+    <title>Checklist - [[${instance.template.name}]]</title>
+    <style>
+        .card { border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,.08); overflow:hidden; }
+        .card-header { background: linear-gradient(135deg, #0062cc, #004085); color:#fff; font-weight:700; text-transform:uppercase; padding:15px; }
+        .checklist-item { padding: 10px; border-bottom: 1px solid #eee; }
+        .checklist-item:last-child { border-bottom: none; }
+        .checklist-item.required .label::after { content: " *"; color: red; }
+        .item-notes { font-size: 0.85rem; color: #666; margin-top: 5px; }
+        .completed-info { font-size: 0.75rem; color: #999; margin-top: 2px; }
+        .readonly-badge { font-size: 0.7rem; color: #6c757d; margin-left: 8px; background: #e9ecef; padding: 2px 6px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid px-2 px-md-3">
+        <section class="content-header">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-tasks mr-2"></i> [[${instance.template.name}]] - Pedido #<span th:text="${pedido.npedido}"></span>
+                </div>
+                <div class="toolbar p-3">
+                    <a th:href="@{/workshop/checklist/} + ${pedido.npedido}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-left mr-1"></i> Volver al Checklist
+                    </a>
+                    <a th:href="@{/pedidos/ver/} + ${pedido.npedido}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-eye mr-1"></i> Ver Pedido
+                    </a>
+                    <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list mr-1"></i> Listado
+                    </a>
+                </div>
+
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <strong>Cliente:</strong> <span th:text="${pedido.cliente.nombre + ' ' + pedido.cliente.apellido}"></span><br>
+                            <strong>Referencia:</strong> <span th:text="${pedido.ref}"></span>
+                        </div>
+                        <div class="col-md-6 text-right">
+                            <strong>Tipo:</strong> <span th:text="${pedido.tipoPedido}"></span><br>
+                            <strong>Estado:</strong> <span class="badge badge-info" th:text="${pedido.estado}"></span>
+                        </div>
+                    </div>
+
+                    <div th:each="item : ${instance.items}" class="checklist-item" th:data-id="${item.id}">
+                        <div class="d-flex align-items-start">
+                            <div class="mr-3 pt-1">
+                                <input type="checkbox" th:if="${item.inputType.name() == 'CHECKBOX'}" 
+                                       th:checked="${item.checked}" class="item-check">
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="label font-weight-bold" th:classappend="${item.required} ? 'required'">
+                                    <span th:text="${item.label}"></span>
+                                    <span th:if="${item.readOnly}" class="readonly-badge">
+                                        <i class="fas fa-lock"></i> Auto-rellenado
+                                    </span>
+                                </div>
+                                
+                                <div class="input-container mt-2">
+                                    <input type="text" th:if="${item.inputType.name() == 'TEXT'}" 
+                                           th:value="${item.valueText}" 
+                                           th:readonly="${item.readOnly}" 
+                                           th:classappend="${item.readOnly} ? 'bg-light'" 
+                                           class="form-control form-control-sm item-value">
+                                    
+                                    <input type="number" th:if="${item.inputType.name() == 'NUMBER'}" 
+                                           th:value="${item.valueText}" 
+                                           th:readonly="${item.readOnly}" 
+                                           th:classappend="${item.readOnly} ? 'bg-light'" 
+                                           class="form-control form-control-sm item-value">
+                                    
+                                    <input type="date" th:if="${item.inputType.name() == 'DATE'}" 
+                                           th:value="${item.valueText}" 
+                                           th:readonly="${item.readOnly}" 
+                                           th:classappend="${item.readOnly} ? 'bg-light'" 
+                                           class="form-control form-control-sm item-value">
+                                    
+                                    <textarea th:if="${item.inputType.name() == 'TEXTAREA'}" 
+                                              th:readonly="${item.readOnly}" 
+                                              th:classappend="${item.readOnly} ? 'bg-light'" 
+                                              class="form-control form-control-sm item-value" th:text="${item.valueText}"></textarea>
+                                    
+                                    <select th:if="${item.inputType.name() == 'SELECT'}" 
+                                            th:disabled="${item.readOnly}" 
+                                            th:classappend="${item.readOnly} ? 'bg-light'" 
+                                            class="form-control form-control-sm item-value">
+                                        <option value="">Seleccione...</option>
+                                        <option th:each="opt : ${#strings.arraySplit(item.options, '|')}" 
+                                                th:value="${opt}" th:text="${opt}" 
+                                                th:selected="${opt == item.valueText}"></option>
+                                    </select>
+
+                                    <div th:if="${item.inputType.name() == 'MULTISELECT'}" class="mt-1">
+                                        <div th:each="opt : ${#strings.arraySplit(item.options, '|')}" class="form-check form-check-inline">
+                                            <input class="form-check-input item-multi" type="checkbox" th:value="${opt}"
+                                                   th:checked="${#strings.contains(item.valueText ?: '', opt)}"
+                                                   th:disabled="${item.readOnly}">
+                                            <label class="form-check-label" th:text="${opt}"></label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-2" th:if="${!item.readOnly}">
+                                    <input type="text" placeholder="Notas adicionales..." 
+                                           th:value="${item.notes}" class="form-control form-control-sm item-notes-input">
+                                </div>
+
+                                <div class="completed-info mt-1" th:if="${item.completedAt != null}">
+                                    Completado por <span th:text="${item.completedBy}"></span> el <span th:text="${#dates.format(item.completedAt, 'dd/MM/yyyy HH:mm')}"></span>
+                                </div>
+                            </div>
+                            <div class="ml-2" th:if="${!item.readOnly}">
+                                <button class="btn btn-success btn-sm save-item" title="Guardar cambios">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<div layout:fragment="script">
+    <script>
+        $(document).ready(function() {
+            $('.save-item').click(function() {
+                const $btn = $(this);
+                const container = $(this).closest('.checklist-item');
+                const itemId = container.data('id');
+                const updates = {};
+
+                const checkbox = container.find('.item-check');
+                if (checkbox.length) {
+                    updates.checked = checkbox.is(':checked');
+                }
+
+                const valueInput = container.find('.item-value');
+                if (valueInput.length) {
+                    updates.valueText = valueInput.val();
+                }
+
+                const multiChecks = container.find('.item-multi');
+                if (multiChecks.length) {
+                    const selected = [];
+                    multiChecks.filter(':checked').each(function() {
+                        selected.push($(this).val());
+                    });
+                    updates.valueText = selected.join('|');
+                }
+
+                const notesInput = container.find('.item-notes-input');
+                if (notesInput.length) {
+                    updates.notes = notesInput.val();
+                }
+
+                const token = $("meta[name='_csrf']").attr("content");
+                const header = $("meta[name='_csrf_header']").attr("content");
+
+                $btn.prop('disabled', true);
+                $btn.html('<i class="fas fa-spinner fa-spin"></i>');
+
+                $.ajax({
+                    url: '/api/workshop/checklist-items/' + itemId,
+                    type: 'PATCH',
+                    contentType: 'application/json',
+                    data: JSON.stringify(updates),
+                    beforeSend: function(xhr) {
+                        if (header && token) {
+                            xhr.setRequestHeader(header, token);
+                        }
+                    },
+                    success: function(response) {
+                        $btn.removeClass('btn-success').addClass('btn-success');
+                        $btn.html('<i class="fas fa-check"></i>');
+                        
+                        setTimeout(function() {
+                            $btn.html('<i class="fas fa-save"></i>');
+                            $btn.prop('disabled', false);
+                        }, 1500);
+                        
+                        toastr.success('✅ Item actualizado correctamente', 'Guardado Exitoso', {
+                            timeOut: 2000,
+                            progressBar: true,
+                            closeButton: true
+                        });
+                        
+                        if (response.completedAt) {
+                            const date = new Date(response.completedAt);
+                            const dateStr = date.getDate().toString().padStart(2, '0') + '/' + 
+                                          (date.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                                          date.getFullYear() + ' ' + 
+                                          date.getHours().toString().padStart(2, '0') + ':' + 
+                                          date.getMinutes().toString().padStart(2, '0');
+                            
+                            let infoDiv = container.find('.completed-info');
+                            if (!infoDiv.length) {
+                                infoDiv = $('<div class="completed-info mt-1"></div>');
+                                container.find('.flex-grow-1').append(infoDiv);
+                            }
+                            infoDiv.html('Completado por ' + response.completedBy + ' el ' + dateStr);
+                        }
+                    },
+                    error: function(xhr) {
+                        $btn.html('<i class="fas fa-save"></i>');
+                        $btn.prop('disabled', false);
+                        
+                        console.error(xhr);
+                        
+                        let errorMsg = '❌ Error al actualizar el item';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg += '<br><small>' + xhr.responseJSON.message + '</small>';
+                        }
+                        
+                        toastr.error(errorMsg, 'Error de Guardado', {
+                            timeOut: 4000,
+                            progressBar: true,
+                            closeButton: true,
+                            escapeHtml: false
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</div>
+</body>
+</html>

@@ -165,46 +165,30 @@ public class Factura implements Serializable {
     }
 
     public Double getTotal() {
-        Double total = 0.0;
-        Double resultado = 0.0;
-        int size = items.size();
-
-        for (int i = 0; i < size; i++) {
-            total += items.get(i).calcularImporte();
-          //  total -= nanticipo;
-            resultado = total * 21 / 100 + total;
-            return resultado;
+        Double subtotal = getSubTotal();
+        Double ivaPercent = (this.iva != null) ? this.iva.doubleValue() : 21.0;
+        
+        if (!items.isEmpty()) {
+            return subtotal * (1.0 + (ivaPercent / 100.0));
         }
 
-        return null;
+        return 0.0;
     }
+
     public Double getTotalIva() {
-        Double total = 0.0;
-        Double resultado = 0.0;
-        int size = items.size();
+        Double subtotal = getSubTotal();
+        Double ivaPercent = (this.iva != null) ? this.iva.doubleValue() : 21.0;
 
-        for (int i = 0; i < size; i++) {
-            total += items.get(i).calcularImporte();
-
-            resultado = total * 21 / 100;
-            return resultado;
-
+        if (!items.isEmpty()) {
+            return subtotal * (ivaPercent / 100.0);
         }
-        return null;
-
+        return 0.0;
     }
+
     public Double getSubTotal() {
-        Double total = 0.0;
-        int size = items.size();
-
-        for (int i = 0; i < size; i++) {
-            total += items.get(i).calcularImporte();
-
-            return total;
-
-        }
-        return null;
-
+        return items.stream()
+                .mapToDouble(ItemFactura::calcularImporte)
+                .sum();
     }
 
     public String getNpersonal() {

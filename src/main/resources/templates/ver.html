@@ -3,13 +3,7 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="admin/admin_layout" lang="es">
 <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <link rel="stylesheet" href="../css/table.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
-    <link rel="stylesheet" href="../css/table.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         /* ✅ No toques html/body aquí (lo controla el layout) */
 
@@ -137,6 +131,21 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" id="pedidos-tab" data-toggle="tab" href="#pedidos" role="tab" aria-controls="pedidos" aria-selected="false">
+                                <i class="fas fa-tasks mr-1"></i> Pedidos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="citas-tab" data-toggle="tab" href="#citas" role="tab" aria-controls="citas" aria-selected="false">
+                                <i class="fas fa-calendar-alt mr-1"></i> Citas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="albaranes-tab" data-toggle="tab" href="#albaranes" role="tab" aria-controls="albaranes" aria-selected="false">
+                                <i class="fas fa-file-invoice mr-1"></i> Facturas
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" id="analisis-tab" data-toggle="tab" href="#analisis" role="tab" aria-controls="analisis" aria-selected="false">
                                 <i class="fas fa-chart-pie mr-1"></i> Análisis Financiero
                             </a>
@@ -172,6 +181,45 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Pedidos -->
+                        <div class="tab-pane fade" id="pedidos" role="tabpanel" aria-labelledby="pedidos-tab">
+                            <div class="table-responsive mt-3">
+                                <table id="table" class="table table-striped table-bordered w-100">
+                                    <thead class="table-dark"></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Citas -->
+                        <div class="tab-pane fade" id="citas" role="tabpanel" aria-labelledby="citas-tab">
+                            <div class="table-responsive mt-3">
+                                <table id="tableCitas" class="table table-striped table-bordered w-100">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Fecha y Hora</th>
+                                            <th>Tipo</th>
+                                            <th>Pedido</th>
+                                            <th>Estado</th>
+                                            <th>Observaciones</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Facturas -->
+                        <div class="tab-pane fade" id="albaranes" role="tabpanel" aria-labelledby="albaranes-tab">
+                            <div class="table-responsive mt-3">
+                                <table id="tableAlbaran" class="table table-striped table-bordered w-100">
+                                    <thead class="table-dark"></thead>
+                                    <tbody></tbody>
+                                </table>
                             </div>
                         </div>
 
@@ -233,80 +281,57 @@
         </section>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-</body>
-</html>
-<script>
+<th:block layout:fragment="script">
+<script th:inline="none">
     const clienteId = $('#clienteId').val();
 
 
-    // Variable global para el chart (asumo que la tienes declarada fuera)
+    // Variables globales para los gráficos
     let myChart = null;
+    let chartFacturacionMensual = null;
 
-    // Arreglo con nombres de meses (o los meses que usas)
+    // Arreglo con nombres de meses
     const todosLosMeses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-    // Variable clienteId, debe estar definida en tu contexto, por ejemplo:
-    // const clienteId = 123;
+    // --- CARGA DE DATOS ESTADÍSTICOS ---
 
     function cargarAnios() {
-        // Llamada GET para obtener los años disponibles para un cliente (como haces con facturas)
         fetch(`/api/pedido/estadisticas/anios-disponibles?clienteId=${clienteId}`)
-            .then(response => {
-                if (!response.ok) throw new Error('Error en la respuesta del servidor');
-                return response.json();
-            })
+            .then(response => response.ok ? response.json() : Promise.reject('Error en red'))
             .then(anios => {
                 const select = document.getElementById('anioPedidosSelect');
-                select.innerHTML = '';
-
-                if (anios.length === 0) {
+                $(select).empty();
+                if (!anios || anios.length === 0) {
                     const option = document.createElement('option');
-                    option.text = 'Sin datos';
+                    option.value = new Date().getFullYear();
+                    option.text = new Date().getFullYear();
                     select.appendChild(option);
-                    return;
+                } else {
+                    anios.forEach(anio => {
+                        const option = document.createElement('option');
+                        option.value = anio;
+                        option.text = anio;
+                        select.appendChild(option);
+                    });
                 }
-
-                anios.forEach(anio => {
-                    const option = document.createElement('option');
-                    option.value = anio;
-                    option.text = anio;
-                    select.appendChild(option);
-                });
-
-                // Seleccionamos el primer año y cargamos sus datos
-                select.value = anios[0];
-                cargarDatosEstadistica(anios[0]);
+                const anioDefault = select.value;
+                cargarDatosEstadistica(anioDefault);
             })
-            .catch(error => {
-                console.error('Error al cargar años:', error);
-            });
+            .catch(err => console.error('Error al cargar años de pedidos:', err));
     }
 
     function cargarDatosEstadistica(anio) {
-        // Llamada GET para obtener datos de pedidos por mes para un año y cliente dados
         fetch(`/api/pedido/estadisticas/pedidos-por-mes?clienteId=${clienteId}&anio=${anio}`)
-            .then(response => {
-                if (!response.ok) throw new Error('Error en la respuesta del servidor');
-                return response.json();
-            })
+            .then(response => response.ok ? response.json() : Promise.reject('Error en red'))
             .then(data => {
-                // Obtenemos los valores para cada mes, si no hay datos, ponemos 0
                 const valores = todosLosMeses.map(mes => data[mes] || 0);
                 const total = valores.reduce((a, b) => a + b, 0);
-
-                // Actualizamos campo total (input o span, según como tengas en tu HTML)
-                document.getElementById('totalPedidosMensual').value = total;
+                $('#totalPedidosMensual').val(total);
 
                 const ctx = document.getElementById('chartPedidosMensual').getContext('2d');
+                if (myChart) myChart.destroy();
 
-                // Si ya hay gráfico, lo destruimos para volver a pintar
-                if (myChart) {
-                    myChart.destroy();
-                }
-
-                // Creamos el gráfico con Chart.js
                 myChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -321,422 +346,251 @@
                     },
                     options: {
                         responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true } }
                     }
                 });
             })
-            .catch(error => {
-                console.error('Error al cargar datos del gráfico:', error);
-            });
+            .catch(err => console.error('Error al cargar datos del gráfico de pedidos:', err));
     }
 
-    // Evento cambio año: carga datos del año seleccionado
-    document.getElementById('anioPedidosSelect').addEventListener('change', function () {
-        const anioSeleccionado = this.value;
-        cargarDatosEstadistica(anioSeleccionado);
-    });
+    function inicializarFacturacionAnual() {
+        fetch(`/api/pedido/estadisticas/anios?clienteId=${clienteId}`)
+            .then(response => response.ok ? response.json() : Promise.reject('Error en red'))
+            .then(anios => {
+                const select = $('#anioSelect');
+                select.empty();
+                if (anios && anios.length > 0) {
+                    anios.forEach(anio => {
+                        select.append(`<option value="${anio}">${anio}</option>`);
+                    });
+                    const anioDefault = anios[anios.length - 1];
+                    select.val(anioDefault);
+                    cargarFacturacionMensual(anioDefault);
+                } else {
+                    const currentYear = new Date().getFullYear();
+                    select.append(`<option value="${currentYear}">${currentYear}</option>`);
+                    cargarFacturacionMensual(currentYear);
+                }
+            })
+            .catch(err => console.error('Error al cargar años de facturación:', err));
+    }
 
-    // Inicializamos la carga de años al cargar la página
-    cargarAnios();
-
-
-
-    //factuarción mensual
-    let chartFacturacionMensual; // referencia al gráfico para actualizarlo luego
-
-    // 1. Obtener lista de años con facturación (una sola vez al cargar)
-    $.get(`/api/pedido/estadisticas/anios`, { clienteId }, function (anios) {
-        const select = $('#anioSelect');
-
-        anios.forEach(anio => {
-            select.append(`<option value="${anio}">${anio}</option>`);
-        });
-
-        // Cargar por defecto el último año
-        const anioDefault = anios[anios.length - 1];
-        select.val(anioDefault);
-        cargarFacturacionMensual(anioDefault);
-    });
-
-    // 2. Al cambiar el año, volver a cargar la facturación
-    $('#anioSelect').on('change', function () {
-        const anioSeleccionado = $(this).val();
-        cargarFacturacionMensual(anioSeleccionado);
-    });
-
-    // 3. Función para cargar facturación mensual y dibujar/actualizar el gráfico
     function cargarFacturacionMensual(anio) {
-        $.get(`/api/pedido/estadisticas/facturacion-mensual`, { clienteId, anio }, function (data) {
-            const labels = Object.keys(data);   // Meses abreviados: Ene, Feb, ...
-            const valores = Object.values(data); // Valores de facturación
+        fetch(`/api/pedido/estadisticas/facturacion-mensual?clienteId=${clienteId}&anio=${anio}`)
+            .then(response => response.ok ? response.json() : Promise.reject('Error en red'))
+            .then(data => {
+                const labels = Object.keys(data);
+                const valores = Object.values(data);
+                const total = valores.reduce((acc, val) => acc + val, 0);
+                $('#totalFacturacionMensual').val(total.toFixed(2) + ' €');
 
-            // Calcular total facturado
-            const total = valores.reduce((acc, val) => acc + val, 0);
-            $('#totalFacturacionMensual').val(total.toFixed(2) + ' €');
-
-            // Si el gráfico ya existe, actualizarlo
-            if (chartFacturacionMensual) {
-                chartFacturacionMensual.data.labels = labels;
-                chartFacturacionMensual.data.datasets[0].data = valores;
-                //chartFacturacionMensual.options.plugins.title.text = `Facturación mensual (${anio})`;
-                chartFacturacionMensual.update();
-            } else {
-                // Crear gráfico por primera vez
-                chartFacturacionMensual = new Chart(document.getElementById('chartFacturacionMensual'), {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: `Facturación Mensual en (€) del ${anio}`,
-                            data: valores,
-                            backgroundColor: 'rgba(54, 162, 235, 0.6)'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            title: {
-                                display: false,
-                                // text: `Facturación mensual (${anio})`
-                            }
+                if (chartFacturacionMensual) {
+                    chartFacturacionMensual.data.labels = labels;
+                    chartFacturacionMensual.data.datasets[0].data = valores;
+                    chartFacturacionMensual.data.datasets[0].label = `Facturación Mensual en (€) del ${anio}`;
+                    chartFacturacionMensual.update();
+                } else {
+                    chartFacturacionMensual = new Chart(document.getElementById('chartFacturacionMensual'), {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: `Facturación Mensual en (€) del ${anio}`,
+                                data: valores,
+                                backgroundColor: 'rgba(40, 167, 69, 0.6)',
+                                borderColor: 'rgba(40, 167, 69, 1)',
+                                borderWidth: 1
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: { y: { beginAtZero: true } }
                         }
-                    }
-                });
-            }
-        });
-    }
-
-
-    <!-- inicio de graficos analis-->
-    function cargarEstadisticas() {
-        // Pedidos por Mes
-        $.get('/api/pedido/estadisticas/pedidos-por-mes', { clienteId }, function (data) {
-            const labels = Object.keys(data);
-            const valores = Object.values(data);
-            new Chart(document.getElementById('chartPedidosMes'), {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Pedidos',
-                        data: valores,
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)'
-                    }]
+                    });
                 }
-            });
-        });
-
-        // Facturación por Año
-        $.get(`/api/pedido/estadisticas/facturacionanual`, { clienteId }, function (data) {
-            const labels = Object.keys(data);
-            const valores = Object.values(data);
-
-            // Total de todos los años
-            const total = valores.reduce((acc, val) => acc + val, 0);
-
-            // Mostrar el total en la casilla
-            $('#totalFacturacion').val(total.toFixed(2) + ' €');
-
-            new Chart(document.getElementById('chartFacturacionAnual'), {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Facturación (€)',
-                        data: valores,
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)'
-                    }]
-                }
-            });
-        });
+            })
+            .catch(err => console.error('Error al cargar facturación mensual:', err));
     }
 
-    function cargarPedidosMensuales(clienteId) {
-        const select = document.getElementById('anioPedidosSelect');
-        const anio = select.value;
 
-        $.get(`/api/pedido/estadisticas/pedidos-por-mes`, { clienteId, anio }, function (data) {
-            const labels = Object.keys(data);
-            const valores = Object.values(data);
+    // --- CARGA DE TABLAS (DataTables) ---
 
-            const total = valores.reduce((acc, val) => acc + val, 0);
-            $('#totalPedidosMensual').val(total);
+    let tablaFacturasCargada = false;
+    let tablaCitasCargada = false;
+    let tablaPedidosCargada = false;
 
-            if (window.pedidosChart) {
-                window.pedidosChart.destroy();
-            }
-
-            const ctx = document.getElementById('chartPedidosMensual').getContext('2d');
-            window.pedidosChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Pedidos',
-                        data: valores,
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    return `Pedidos: ${context.parsed.y}`;
-                                }
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: `Pedidos por mes (${anio})`
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        });
-    }
-    function llenarAniosPedidos(clienteId) {
-        $.get(`/api/pedido/estadisticas/anios-disponibles`, { clienteId }, function (anios) {
-            const select = $('#anioPedidosSelect');
-            select.empty();
-            anios.forEach(anio => {
-                select.append(`<option value="${anio}">${anio}</option>`);
-            });
-            cargarPedidosMensuales(clienteId);
-        });
-    }
-
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        if ($(e.target).attr("href") === '#analisis') {
-            cargarEstadisticas();
-        }
-    });
-
-
-        let tablaFacturasCargada = true;
-
-        function cargarTablaFacturas() {
-            $('#tableAlbaran').DataTable({
-                ajax: {
-                    url: '/api/factura/listarPorCliente',
-                    type: 'GET',
-                    data: function (d) {
-                        d.clienteId = $('#clienteId').val(); // Aseguramos que sea "clienteId"
-                        console.log("Enviando clienteId:", d.clienteId); // Log para depuración
-                    },
-                    dataSrc: function (json) {
-                        console.log("Facturas del cliente:", json);
-                        if (json.data) return json.data;
-                        if (json.factura?.content) return json.factura.content;
-                        return [];
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("Error al cargar facturas:", error);
-                        console.error("Respuesta del servidor:", xhr.responseText);
+    function cargarTablaCitas() {
+        $('#tableCitas').DataTable({
+            ajax: {
+                url: '/api/citas/listarPorCliente',
+                type: 'GET',
+                data: { clienteId: clienteId },
+                dataSrc: 'data'
+            },
+            columns: [
+                { data: 'fechaCita' },
+                { 
+                    data: 'tipo',
+                    render: function(data) {
+                        if (data === 'ENTREGA_TRABAJO') return '<span class="badge badge-info">Entrega</span>';
+                        if (data === 'RECOGIDA_PEDIDO') return '<span class="badge badge-success">Recogida</span>';
+                        return data || '';
                     }
                 },
-                columns: [
-                    { data: 'id', title: 'N° Factura' },
-                    {
-                        data: 'dfechaAlbaran',
-                        title: 'F. Factura',
-                        render: function (data) {
-                            if (!data) return '';
-                            const date = new Date(data);
-                            return date.toLocaleDateString('es-ES'); // dd/mm/yyyy
-                        }
-                    },
-                    { data: 'tipoPedido', title: 'Tipo de Pedido' },
-                    {
-                        data: 'subTotal',
-                        title: 'Total',
-                        render: function (data) {
-                            return parseFloat(data).toFixed(2) + ' €';
-                        }
-                    },
-                    {
-                        data: 'id',
-                        title: 'Acciones',
-                        orderable: false,
-                        searchable: false,
-                        className: 'text-center',
-                        render: function (data) {
-                            return `
-
-          <a href="/facturas/ver/${data}" class="btn btn-info btn-sm" title="Ver factura">
-            <i class="fas fa-eye"></i>
-          </a>
-          <a href="/facturas/formEditar/${data}" class="btn btn-warning btn-sm" title="Editar factura">
-            <i class="fas fa-pencil-alt"></i>
-          </a>
-
-      `;
-                        }
+                { 
+                    data: 'pedidoId',
+                    render: function(data) {
+                        return data ? '<a href="/pedidos/ver/' + data + '">#' + data + '</a>' : '-';
                     }
-                ],
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
                 },
-                paging: true,
-                searching: true,
-                ordering: true,
-                lengthMenu: [5, 10, 15, 25],
-                pageLength: 5,
-                displayLength: 5,
-                fixedHeader: true,
-                scrollY: "300px",
-                scrollCollapse: true,
-                responsive: true
-            });
-        }
+                { 
+                    data: 'estado',
+                    render: function(data) {
+                        let cls = 'badge-primary';
+                        if (data === 'COMPLETADA') cls = 'badge-success';
+                        if (data === 'CANCELADA' || data === 'AUSENTE') cls = 'badge-danger';
+                        return '<span class="badge ' + cls + '">' + (data || '') + '</span>';
+                    }
+                },
+                { data: 'observacion' },
+                {
+                    data: 'id',
+                    render: function(data) {
+                        return `
+                            <div class="dt-actions">
+                                <a href="/citas/form/editar/${data}" class="btn btn-warning btn-sm" title="Editar"><i class="fas fa-edit"></i></a>
+                                <a href="/citas/eliminar/${data}?clienteId=${clienteId}" class="btn btn-danger btn-sm" title="Eliminar" onclick="return confirm('¿Seguro?')"><i class="fas fa-trash"></i></a>
+                            </div>
+                        `;
+                    }
+                }
+            ],
+            language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json' },
+            responsive: true,
+            order: [[0, 'desc']]
+        });
+    }
 
+    function cargarTablaFacturas() {
+        $('#tableAlbaran').DataTable({
+            ajax: {
+                url: '/api/factura/listarPorCliente',
+                type: 'GET',
+                data: { clienteId: clienteId },
+                dataSrc: json => json.data ?? json.factura?.content ?? []
+            },
+            columns: [
+                { data: 'id', title: 'N° Factura' },
+                {
+                    data: 'dfechaAlbaran',
+                    title: 'F. Factura',
+                    render: data => data ? new Date(data).toLocaleDateString('es-ES') : ''
+                },
+                { data: 'tipoPedido', title: 'Tipo de Pedido' },
+                {
+                    data: 'subTotal',
+                    title: 'Total',
+                    render: data => parseFloat(data).toFixed(2) + ' €'
+                },
+                {
+                    data: 'id',
+                    title: 'Acciones',
+                    orderable: false,
+                    render: data => `
+                        <a href="/facturas/ver/${data}" class="btn btn-info btn-sm" title="Ver"><i class="fas fa-eye"></i></a>
+                        <a href="/facturas/formEditar/${data}" class="btn btn-warning btn-sm" title="Editar"><i class="fas fa-pencil-alt"></i></a>
+                    `
+                }
+            ],
+            language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json' },
+            pageLength: 5,
+            responsive: true,
+            order: [[0, 'desc']]
+        });
+    }
 
+    function cargarTablaPedidos() {
+        $('#table').DataTable({
+            ajax: {
+                url: '/api/pedido/listarPedidosClientes',
+                type: 'GET',
+                data: { idCliente: clienteId },
+                dataSrc: json => json.data ?? json.pedido?.content ?? []
+            },
+            columns: [
+                {"data": "ref", "title": "N° Ref"},
+                {"data": "tipoPedido", "title": "T.Pedido"},
+                {"data": "estado", "title": "Estado"},
+                {
+                    "data": "fechaEntrega",
+                    "title": "F.Entrega",
+                    "render": function (data) {
+                        if (!data) return "";
+                        const fecha = new Date(data);
+                        return `${String(fecha.getDate()).padStart(2, '0')}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${fecha.getFullYear()}`;
+                    }
+                },
+                {"data": "metal", "title": "Metal"},
+                {"data": "pieza", "title": "Pieza"},
+                {
+                    "data": "npedido",
+                    "title": "Acciones",
+                    "render": function (data, type, row) {
+                        const isFacturado = row.facturado === true || row.facturado === "true";
+                        const btnFactura = !isFacturado 
+                            ? `<a href="/facturas/form/${data}" class="btn btn-outline-success btn-sm" title="Generar Factura"><i class="fas fa-file-invoice-dollar"></i></a>`
+                            : `<button class="btn btn-success btn-sm" title="Ya facturado" disabled><i class="fas fa-check-double"></i></button>`;
+                        return `
+                            <a href="/pedidos/ver/${data}" class="btn btn-info btn-sm" title="Ver"><i class="fas fa-eye"></i></a>
+                            <a href="/pedidos/formEditar/${data}" class="btn btn-warning btn-sm" title="Editar"><i class="fas fa-pencil-alt"></i></a>
+                            ${btnFactura}
+                        `;
+                    }
+                }
+            ],
+            language: { "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json" },
+            pageLength: 5,
+            responsive: true,
+            order: [[0, 'desc']]
+        });
+    }
 
+    // --- EVENTOS ---
+
+    $(document).ready(function() {
+        // Manejador de tabs
         $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        const target = $(e.target).attr("href");
-        if (target === '#albaranes' && !tablaFacturasCargada) {
-        cargarTablaFacturas();
-        tablaFacturasCargada = true;
-    }
+            const target = $(e.target).attr("href");
+            
+            if (target === '#analisis') {
+                if (!myChart) cargarAnios();
+                if (!chartFacturacionMensual) inicializarFacturacionAnual();
+            } else if (target === '#albaranes' && !tablaFacturasCargada) {
+                cargarTablaFacturas();
+                tablaFacturasCargada = true;
+            } else if (target === '#citas' && !tablaCitasCargada) {
+                cargarTablaCitas();
+                tablaCitasCargada = true;
+            } else if (target === '#pedidos' && !tablaPedidosCargada) {
+                cargarTablaPedidos();
+                tablaPedidosCargada = true;
+            }
+            
+            // Re-ajustar columnas de DataTables
+            $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+        });
+
+        // Eventos de cambios en selects de estadísticas
+        $('#anioPedidosSelect').on('change', function () {
+            cargarDatosEstadistica($(this).val());
+        });
+
+        $('#anioSelect').on('change', function () {
+            cargarFacturacionMensual($(this).val());
+        });
     });
-
-
-        $(document).ready(function() {
-            const idcliente = $('#clienteId').val();
-
-            $('#table').DataTable({
-                ajax: {
-                    url: '/api/pedido/listarPedidosClientes',
-                    type: 'GET',
-                    data: d => {
-                        d.idCliente = idcliente;
-                    },
-                    dataSrc: json => json.data
-                        ?? json.pedido?.content
-                        ?? [],
-                },
-                "columns": [
-                    {"data": "ref", "title": "N° Ref"},
-
-                    {"data": "tipoPedido", "title": "T.Pedido"},
-                    {"data": "estado", "title": "Estado"},
-                    {
-                        "data": "fechaEntrega",
-                        "title": "F.Entrega",
-
-                        "render": function (data, type, row) {
-                            if (!data) return ""; // Evitar errores si la fecha es nula
-                            const fecha = new Date(data);
-                            const dia = String(fecha.getDate()).padStart(2, '0');
-                            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-                            const anio = fecha.getFullYear();
-                            return `${dia}-${mes}-${anio}`;
-                        }
-                    },
-                    {
-                        "data": "fechaFinalizado",
-                        "title": "F.Finalizado",
-                        "render": function (data, type, row) {
-                            if (!data) return "";
-                            const fecha = new Date(data);
-                            const dia = String(fecha.getDate()).padStart(2, '0');
-                            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-                            const anio = fecha.getFullYear();
-                            return `${dia}-${mes}-${anio}`;
-                        }
-                    }
-                    ,
-
-
-                    {"data": "metal", "title": "Metal"},
-                    {"data": "pieza", "title": "Pieza"},
-                    {"data": "tipo", "title": "Tipo"},
-                    {"data": "cobrado", "title": "Cobrado"},
-                    /* {
-                         "data": "imageUrl",
-                         "title": "Imagen",
-                        /* "render": function(data) {
-                             return `<img src="${data}" width="50" height="50" onerror="this.src='/img/default.jpg'">`;
-                         }
-                     },*/
-                    {
-                        "data": "npedido",
-                        "title": "Acciones",
-                        "render": function (data) {
-                            return `
-            <a href="/pedidos/ver/${data}" class="btn btn-info btn-sm" title="Ver pedido">
-                <i class="fas fa-eye"></i>
-            </a>
-            <a href="/pedidos/formEditar/${data}" class="btn btn-warning btn-sm" title="Editar pedido">
-                <i class="fas fa-pencil-alt"></i>
-            </a>
-        `;
-                        }
-                    }
-
-
-                ],
-                "language": {
-                    "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
-                }, //la cabezer se mueve tambien con el scroll
-                paging: true,
-                searching: true,
-                ordering: true,
-                lengthMenu: [5, 10, 15, 25],
-                pageLength: 5,
-                scrollY: "300px",          // Scroll vertical
-                scrollX: true,             // 🔹 Scroll horizontal sincroniza <thead> y <tbody>
-                scrollCollapse: true,
-                fixedHeader: false,        // Asegúrate de que no esté activo si no quieres cabecera fija al hacer scroll vertical
-                responsive: false
-            });
-        });
-        $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
-            table.columns.adjust().draw();
-        });
-
-        // Chart Pedidos por Mes (últimos 12 meses)
-        const pedidosMesChart = new Chart(document.getElementById(' '), {
-            type: 'bar',
-            data: {
-                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-                datasets: [{
-                    label: 'Pedidos',
-                    data: data, // Reemplaza por datos reales
-                    backgroundColor: 'rgba(54, 162, 235, 0.6)'
-                }]
-            }
-        });
-
-        // Chart Facturación Anual
-        const facturacionAnualChart = new Chart(document.getElementById('chartFacturacionAnual'), {
-            type: 'line',
-            data: {
-                labels: ['2021', '2022', '2023', '2024'],
-                datasets: [{
-                    label: 'Total Facturado (€)',
-                    data: data ,// Reemplaza por datos reales
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    fill: false
-                }]
-            }
-        });
-
-
 </script>
+</th:block>
 
