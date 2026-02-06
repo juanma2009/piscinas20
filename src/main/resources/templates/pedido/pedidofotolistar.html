@@ -56,8 +56,9 @@
     .card-img-container img{
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     transition: transform .3s;
+    background: #f8f9fa;
     }
 
     .card-img-container img:hover{
@@ -98,9 +99,10 @@
     .pedido-card img{
     width:100%;
     height:180px;
-    object-fit:cover;
+    object-fit:contain;
     border-radius:8px;
     cursor:pointer;
+    background: #f8f9fa;
     }
 
     /* ========= Tabla ========= */
@@ -114,7 +116,8 @@
     width:80px;
     height:80px;
     border-radius:5px;
-    object-fit:cover;
+    object-fit:contain;
+    background: #f8f9fa;
     }
 
     /* ========= Info ========= */
@@ -370,10 +373,8 @@
                                     </a>
                                     <div class="pedido-info">
                                         <div><b>Cliente:</b> [[${p.cliente.nombre}]] [[${p.cliente.apellido}]]</div>
-                                        <div><b>Ref:</b> [[${p.ref}]]</div>
                                         <div><b>Cobrado:</b> [[${p.cobrado}]]</div>
                                         <div><b>Pieza:</b> [[${p.pieza}]] - [[${p.tipo}]]</div>
-                                        <div><b>F.Finalizado:</b> [[${#dates.format(p.fechaFinalizado, 'dd/MM/yyyy')}]]</div>
                                         <div class="badge-status"
                                              th:classappend="${p.estado == 'Terminado' ? 'bg-success' : (p.estado == 'Pendiente' ? 'bg-danger' : 'bg-warning')}"
                                              th:text="${p.estado}">
@@ -393,7 +394,6 @@
                              style="height: 100px;">
                             <p class="text-muted text-center mb-0">No se han encontrado fotos con estos filtros</p>
                         </div>
-                    </div>
                 </div><!-- /card-body -->
             </div><!-- /card -->
         </section>
