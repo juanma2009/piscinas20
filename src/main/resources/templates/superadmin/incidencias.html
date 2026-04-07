@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="/admin/admin_layout">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${titulo}">Gestión de Incidencias</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <div class="content-header">
+        <div class="container-fluid">
+            <h1 class="m-0 text-dark">Gestión de Incidencias de Clientes</h1>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Incidencias Reportadas</h3>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th>Asunto</th>
+                                <th>Prioridad</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="inc : ${incidencias}">
+                                <td th:text="${#dates.format(inc.fecha, 'dd/MM/yyyy HH:mm')}"></td>
+                                <td th:text="${inc.empresa.nombre}"></td>
+                                <td th:text="${inc.asunto}"></td>
+                                <td>
+                                    <span th:class="${inc.prioridad == 'Alta'} ? 'badge badge-danger' : 'badge badge-info'"
+                                          th:text="${inc.prioridad}">
+                                    </span>
+                                </td>
+                                <td>
+                                    <span th:class="${inc.estado == 'PENDIENTE'} ? 'badge badge-warning' : 'badge badge-success'"
+                                          th:text="${inc.estado}">
+                                    </span>
+                                </td>
+                                <td>
+                                    <form th:action="@{/superadmin/incidencias/cambiar-estado}" method="post" style="display:inline;">
+                                        <input type="hidden" name="id" th:value="${inc.id}"/>
+                                        <select name="estado" class="form-control-sm" onchange="this.form.submit()">
+                                            <option th:selected="${inc.estado == 'PENDIENTE'}" value="PENDIENTE">PENDIENTE</option>
+                                            <option th:selected="${inc.estado == 'PROCESO'}" value="PROCESO">EN PROCESO</option>
+                                            <option th:selected="${inc.estado == 'CERRADO'}" value="CERRADO">CERRADO</option>
+                                        </select>
+                                    </form>
+                                    <button class="btn btn-info btn-sm ml-2" th:title="${inc.descripcion}" onclick="alert(this.title)">Ver Detalle</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+</body>
+</html>

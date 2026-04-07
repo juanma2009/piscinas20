@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="/admin/admin_layout">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${titulo}">Gestión de Clientes</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0 text-dark">Gestión de Clientes / Empresas</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+            <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Listado de Empresas Registradas</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>CIF</th>
+                                <th>Email</th>
+                                <th>Licencia</th>
+                                <th>Fecha Registro</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="empresa : ${empresas}">
+                                <td th:text="${empresa.id}"></td>
+                                <td th:text="${empresa.nombre}"></td>
+                                <td th:text="${empresa.cif}"></td>
+                                <td th:text="${empresa.email}"></td>
+                                <td th:text="${empresa.licencia}"></td>
+                                <td th:text="${#dates.format(empresa.createAt, 'dd/MM/yyyy HH:mm')}"></td>
+                                <td>
+                                    <span th:if="${empresa.activo}" class="badge badge-success">Activo</span>
+                                    <span th:if="${!empresa.activo}" class="badge badge-danger">Inactivo / Suspendido</span>
+                                </td>
+                                <td>
+                                    <form th:action="@{/superadmin/empresas/toggle-status}" method="post" style="display:inline;">
+                                        <input type="hidden" name="id" th:value="${empresa.id}"/>
+                                        <button type="submit" 
+                                                th:class="${empresa.activo} ? 'btn btn-warning btn-sm' : 'btn btn-success btn-sm'"
+                                                th:text="${empresa.activo} ? 'Desactivar' : 'Activar'">
+                                        </button>
+                                    </form>
+                                    <a href="#" class="btn btn-info btn-sm">Ver Ingresos</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+</body>
+</html>

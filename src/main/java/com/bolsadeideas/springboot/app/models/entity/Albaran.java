@@ -4,26 +4,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Filter;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.PrePersist;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
@@ -32,6 +20,7 @@ import javax.validation.constraints.NotNull;
 @Getter
 @Setter
 @Table(name = "ALBARAN")
+@Filter(name = "tenantFilter", condition = "empresa_id = :tenantId")
 public class Albaran implements Serializable {
     private static final long serialVersionUID = 1456456L;
 
@@ -46,6 +35,10 @@ public class Albaran implements Serializable {
     @ManyToOne
     @JoinColumn(name = "NPROVEEDOR")
     private Proveedor proveedor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
 
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "albaran_id")
@@ -73,6 +66,11 @@ public class Albaran implements Serializable {
     @PrePersist
     public void prePersit() {
         dfecha = new Date();
+        if (this.empresa == null && com.bolsadeideas.springboot.app.util.TenantContext.getCurrentTenant() != null) {
+            Empresa e = new Empresa();
+            e.setId(com.bolsadeideas.springboot.app.util.TenantContext.getCurrentTenant());
+            this.empresa = e;
+        }
     }
 
     public void addItemAlbaran(ItemAlbaran item) {

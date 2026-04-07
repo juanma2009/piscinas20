@@ -55,6 +55,25 @@ public class GoogleOAuthTokenClient {
         return postForm(form);
     }
 
+    /**
+     * Obtiene información del perfil del usuario (email) para mostrar qué cuenta está vinculada.
+     */
+    public Map<String, Object> getUserInfo(String accessToken) {
+        String userInfoUri = "https://www.googleapis.com/oauth2/v3/userinfo";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<Void> req = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<Map> resp = restTemplate.exchange(userInfoUri, HttpMethod.GET, req, Map.class);
+            //noinspection unchecked
+            return (Map<String, Object>) resp.getBody();
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo obtener userinfo de Google: {}", e.getMessage());
+            return null;
+        }
+    }
+
     private Map<String, Object> postForm(MultiValueMap<String, String> form) {
         String tokenUri = sanitizeUri(props.getTokenUri());
 

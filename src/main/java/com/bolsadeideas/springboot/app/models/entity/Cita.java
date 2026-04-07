@@ -43,6 +43,10 @@ public class Cita implements Serializable {
     @JoinColumn(name = "pedido_id")
     private Pedido pedido;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
+
     public enum TipoCita {
         ENTREGA_TRABAJO,  // El cliente trae algo
         RECOGIDA_PEDIDO   // El cliente se lleva algo

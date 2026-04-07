@@ -3,21 +3,12 @@ package com.bolsadeideas.springboot.app.models.entity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Filter;
 
 import java.io.Serializable;
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.PrePersist;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
@@ -27,12 +18,16 @@ import javax.validation.constraints.NotNull;
 @NoArgsConstructor
 @Entity
 @Table(name = "productos")
+@Filter(name = "tenantFilter", condition = "empresa_id = :tenantId")
 public class Producto implements Serializable {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "empresa_id")
+	private Empresa empresa;
 
 	@ManyToOne
 	@JoinColumn(name="NPROVEEDOR")
@@ -68,6 +63,11 @@ public class Producto implements Serializable {
 	@PrePersist
 	public void prePersist() {
 		createAt = new Date();
+		if (this.empresa == null && com.bolsadeideas.springboot.app.util.TenantContext.getCurrentTenant() != null) {
+			Empresa e = new Empresa();
+			e.setId(com.bolsadeideas.springboot.app.util.TenantContext.getCurrentTenant());
+			this.empresa = e;
+		}
 	}
 
 	public Long getId() {

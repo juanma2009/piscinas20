@@ -1,6 +1,5 @@
 package com.bolsadeideas.springboot.app.controllers;
 
-import com.bolsadeideas.springboot.app.apigoogledrice.GoogleDriveService;
 import com.bolsadeideas.springboot.app.apisms.AppSms;
 import com.bolsadeideas.springboot.app.models.entity.*;
 import com.bolsadeideas.springboot.app.models.service.*;
@@ -62,9 +61,6 @@ public class PedidoController {
 
     @Autowired
     private IUploadFileService uploadFileService;
-
-    @Autowired
-    private GoogleDriveService googleDriveService;
 
     @Autowired
     private ArchivoAdjuntoService archivoAdjuntoService;

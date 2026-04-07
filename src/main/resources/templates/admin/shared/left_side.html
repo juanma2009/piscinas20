@@ -45,6 +45,34 @@
                         Balances
                     </a>
                 </li>
+                <li class="nav-item" sec:authorize="hasRole('SUPER_ADMIN')">
+                    <a class="nav-link special-link" th:href="@{'/superadmin/dashboard'}">
+                        <i class="nav-icon fas fa-user-shield"></i> CRM Super Admin
+                        <i class="right fas fa-angle-left"></i>
+                    </a>
+                    <ul class="nav item nav-treeview">
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/superadmin/empresas'}">
+                                <i class="fas fa-building nav-icon"></i> Gestión de Clientes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/superadmin/ingresos'}">
+                                <i class="fas fa-hand-holding-usd nav-icon"></i> Control Ingresos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/superadmin/gastos'}">
+                                <i class="fas fa-server nav-icon"></i> Gastos App
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/superadmin/incidencias'}">
+                                <i class="fas fa-bug nav-icon"></i> Incidencias CRM
+                            </a>
+                        </li>
+                    </ul>
+                </li>
                 <li class="nav-item" sec:authorize="hasRole('ADMIN')">
                     <a class="nav-link special-link">
                         <i class="nav-icon fas fa-users"></i>Administracion

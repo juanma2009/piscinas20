@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.servlet.http.Cookie;
@@ -18,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.PostMapping;
 
 @Controller
 public class  LoginController {
@@ -26,6 +28,23 @@ public class  LoginController {
 
     @Autowired
     private UserService userService;
+
+    @GetMapping("/signup")
+    public String signupForm(Model model) {
+        model.addAttribute("user", new User());
+        model.addAttribute("titulo", "Registro de Nueva Empresa");
+        return "signup";
+    }
+
+    @PostMapping("/signup")
+    public String signup(@ModelAttribute User user, @RequestParam String nombreEmpresa, @RequestParam String licencia, Model model) {
+        if (userService.userExists(user.getUsername())) {
+            model.addAttribute("errorMessage", "El nombre de usuario ya existe");
+            return "signup";
+        }
+        userService.registerUserWithEmpresa(user, nombreEmpresa, licencia);
+        return "redirect:/login?success";
+    }
 
     @GetMapping("/logout")
     public String logout() {

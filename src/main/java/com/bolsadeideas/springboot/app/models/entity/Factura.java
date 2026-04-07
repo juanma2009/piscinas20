@@ -27,6 +27,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.Filter;
 
 
 @Entity
@@ -34,6 +35,7 @@ import org.hibernate.annotations.ColumnDefault;
 @Getter
 @Setter
 @Table(name = "facturas")
+@Filter(name = "tenantFilter", condition = "empresa_id = :tenantId")
 public class Factura implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -41,6 +43,10 @@ public class Factura implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long Id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
 
     private String npersonal;
   //  private String dfechaFactura;
@@ -98,6 +104,11 @@ public class Factura implements Serializable {
     @PrePersist
     public void prePersist() {
         createAt = new Date();
+        if (this.empresa == null && com.bolsadeideas.springboot.app.util.TenantContext.getCurrentTenant() != null) {
+            Empresa e = new Empresa();
+            e.setId(com.bolsadeideas.springboot.app.util.TenantContext.getCurrentTenant());
+            this.empresa = e;
+        }
     }
 
  //   public String getFechavencimiento() {
