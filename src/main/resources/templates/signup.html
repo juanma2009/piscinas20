@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro - Nueva Empresa</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+  <style>
+    body, html {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+      background-color: rgba(0, 0, 0, 0.7);
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100%;
+      padding: 20px;
+    }
+    .signup-container {
+      text-align: center;
+      width: 450px;
+      padding: 30px;
+      border-radius: 10px;
+      background-color: #ffffff;
+      box-shadow: 0px 0px 10px rgba(208, 186, 38, 0.5);
+    }
+    .logo-container {
+      margin-bottom: 20px;
+    }
+    .form-group {
+      position: relative;
+      margin-bottom: 15px;
+      text-align: left;
+    }
+    label {
+      color: #111110;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    input.form-control {
+      background-color: #f4f4f4;
+      color: #333;
+      padding-left: 40px;
+    }
+    .form-control-icon {
+      position: absolute;
+      left: 12px;
+      top: 38px;
+      color: #888;
+      z-index: 10;
+    }
+    button.btn-primary {
+      background-color: #28a745;
+      border-color: #28a745;
+      width: 100%;
+      margin-top: 10px;
+    }
+    button.btn-primary:hover {
+      background-color: #218838;
+    }
+    .footer-links {
+      margin-top: 20px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="signup-container">
+    <div class="logo-container">
+      <img src="/images/logoTallerJoyeria.png" alt="Logo" width="100" height="100">
+    </div>
+    <h3>Registro de Empresa</h3>
+    <p class="text-muted">Crea una cuenta para tu taller</p>
+
+    <div class="alert alert-danger" id="error-message" role="alert" th:if="${errorMessage}">
+      <span th:text="${errorMessage}"></span>
+    </div>
+
+    <form th:action="@{/signup}" th:object="${user}" method="post">
+      
+      <div class="form-group">
+        <label for="nombreEmpresa">Nombre de la Empresa / Taller</label>
+        <i class="fas fa-building form-control-icon"></i>
+        <input class="form-control" id="nombreEmpresa" name="nombreEmpresa" placeholder="Ej: Joyería Pérez" required type="text"/>
+      </div>
+
+      <div class="form-group">
+        <label for="licencia">Clave de Licencia</label>
+        <i class="fas fa-key form-control-icon"></i>
+        <input class="form-control" id="licencia" name="licencia" placeholder="Introduce tu clave de licencia" required type="text"/>
+      </div>
+
+      <hr>
+
+      <div class="form-group">
+        <label for="nombre">Nombre del Administrador</label>
+        <i class="fas fa-user-tag form-control-icon"></i>
+        <input class="form-control" th:field="*{nombre}" id="nombre" placeholder="Tu nombre" required type="text"/>
+      </div>
+
+      <div class="form-group">
+        <label for="usuario">Usuario de acceso</label>
+        <i class="fas fa-user form-control-icon"></i>
+        <input class="form-control" th:field="*{username}" id="usuario" placeholder="Username" required type="text"/>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email de contacto</label>
+        <i class="fas fa-envelope form-control-icon"></i>
+        <input class="form-control" th:field="*{email}" id="email" placeholder="email@ejemplo.com" required type="email"/>
+      </div>
+
+      <div class="form-group">
+        <label for="contraseña">Contraseña</label>
+        <i class="fas fa-lock form-control-icon"></i>
+        <input class="form-control" th:field="*{password}" id="contraseña" placeholder="Mínimo 6 caracteres" required type="password"/>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Registrar Empresa y Cuenta</button>
+    </form>
+
+    <div class="footer-links">
+      ¿Ya tienes cuenta? <a th:href="@{/login}">Inicia sesión aquí</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

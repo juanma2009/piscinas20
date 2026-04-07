@@ -2,24 +2,18 @@ package com.bolsadeideas.springboot.app.models.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Filter;
 
 import java.io.Serializable;
 import java.util.Date;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.PrePersist;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 
 @Getter
 @Setter
 @Entity
 @Table(name="PROVEEDOR")
+@Filter(name = "tenantFilter", condition = "empresa_id = :tenantId")
 public class Proveedor implements Serializable{
 
 
@@ -32,6 +26,10 @@ public class Proveedor implements Serializable{
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "IDENTIFICADOR")
     @SequenceGenerator(sequenceName = "proveedor_seq", allocationSize = 1, name = "IDENTIFICADOR")
 	private Long nproveedor;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "empresa_id")
+	private Empresa empresa;
 	
 	private String 	vnombre;
 	private String 	vdireccion;
@@ -50,6 +48,11 @@ public class Proveedor implements Serializable{
 	@PrePersist
 	public void prePersit() {
 		dfecha_alta =new Date();
+		if (this.empresa == null && com.bolsadeideas.springboot.app.util.TenantContext.getCurrentTenant() != null) {
+			Empresa e = new Empresa();
+			e.setId(com.bolsadeideas.springboot.app.util.TenantContext.getCurrentTenant());
+			this.empresa = e;
+		}
 	}
 	
 

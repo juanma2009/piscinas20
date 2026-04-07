@@ -3,24 +3,14 @@ package com.bolsadeideas.springboot.app.models.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
+import org.hibernate.annotations.Filter;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.PrePersist;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
 
@@ -28,6 +18,7 @@ import javax.validation.constraints.NotEmpty;
 @Entity
 @Data
 @Table(name = "clientes")
+@Filter(name = "tenantFilter", condition = "empresa_id = :tenantId")
 public class Cliente implements Serializable {
 
     @Id
@@ -51,9 +42,18 @@ public class Cliente implements Serializable {
     @Temporal(TemporalType.DATE)
     private Date createAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
+
     @PrePersist
     public void prePersist() {
         createAt = new Date();
+        if (this.empresa == null && com.bolsadeideas.springboot.app.util.TenantContext.getCurrentTenant() != null) {
+            Empresa e = new Empresa();
+            e.setId(com.bolsadeideas.springboot.app.util.TenantContext.getCurrentTenant());
+            this.empresa = e;
+        }
     }
 
     @JsonIgnore

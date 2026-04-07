@@ -111,4 +111,36 @@ public class GoogleOAuthService {
         log.info("✅ Access token renovado correctamente para usuario {}", userId);
         return newAccessToken;
     }
+
+    /**
+     * Obtiene información de la cuenta de Google vinculada.
+     */
+    public Map<String, Object> getLinkedAccountInfo(String userId) {
+        if (repo.findByUserId(userId).isEmpty()) {
+            return null; // El usuario no tiene NADA vinculado en BD
+        }
+
+        try {
+            String accessToken = getValidAccessTokenOrRefresh(userId);
+            Map<String, Object> info = tokenClient.getUserInfo(accessToken);
+            if (info == null) {
+                // Existe en BD pero no pudimos obtener perfil (ej. token revocado)
+                return Map.of("linked", true, "email", "Desconocido (Token inválido)");
+            }
+            return info;
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo obtener userinfo para {}: {}", userId, e.getMessage());
+            // Devolvemos algo para que el UI sepa que ALGO hay vinculado aunque esté roto
+            return Map.of("linked", true, "email", "Error de conexión con Google");
+        }
+    }
+
+    /**
+     * Elimina los tokens de Google Drive para el usuario.
+     */
+    @Transactional
+    public void disconnect(String userId) {
+        log.info("🗑️ Desvinculando Google Drive para el usuario {}", userId);
+        repo.findByUserId(userId).ifPresent(repo::delete);
+    }
 }

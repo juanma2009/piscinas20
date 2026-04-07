@@ -160,10 +160,10 @@ public class GoogleDriveApiService {
 
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 switch (responseCode) {
-                    case 401 -> throw new RuntimeException("GDRIVE_401_TOKEN_EXPIRED");
-                    case 403 -> throw new RuntimeException("GDRIVE_403_ACCESS_DENIED");
-                    case 404 -> throw new RuntimeException("GDRIVE_404_NOT_FOUND");
-                    default -> throw new RuntimeException("GDRIVE_HTTP_ERROR_" + responseCode);
+                    case 401 -> throw new RuntimeException("GDRIVE_401_TOKEN_EXPIRED: El token ha expirado. Intente reconectar su cuenta de Google.");
+                    case 403 -> throw new RuntimeException("GDRIVE_403_ACCESS_DENIED: No tiene permisos para este archivo o la cuenta de Google vinculada no coincide.");
+                    case 404 -> throw new RuntimeException("GDRIVE_404_NOT_FOUND: El archivo no existe en la cuenta de Google vinculada.");
+                    default -> throw new RuntimeException("GDRIVE_HTTP_ERROR_" + responseCode + ": Error al acceder a Google Drive.");
                 }
             }
 

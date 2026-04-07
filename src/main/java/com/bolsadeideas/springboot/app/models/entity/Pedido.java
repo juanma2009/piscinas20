@@ -1,6 +1,9 @@
 package com.bolsadeideas.springboot.app.models.entity;
 
 import lombok.*;
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
@@ -16,6 +19,7 @@ import java.util.List;
 @ToString(exclude = {"archivosAdjuntos", "comentarios"})
 @EqualsAndHashCode(exclude = {"archivosAdjuntos", "comentarios"})
 @Table(name = "PEDIDO")
+@Filter(name = "tenantFilter", condition = "empresa_id = :tenantId")
 public class Pedido implements Serializable {
     private static final long serialVersionUID = 1456456L;
 
@@ -66,6 +70,10 @@ public class Pedido implements Serializable {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date fechaEntrega;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
+
     //fecha de envio de sms
     @Temporal(TemporalType.DATE)
     private Date fechaEnvioSms;
@@ -85,6 +93,11 @@ public class Pedido implements Serializable {
     @PrePersist
     public void prePersist() {
         dfecha = new Date();
+        if (this.empresa == null && com.bolsadeideas.springboot.app.util.TenantContext.getCurrentTenant() != null) {
+            Empresa e = new Empresa();
+            e.setId(com.bolsadeideas.springboot.app.util.TenantContext.getCurrentTenant());
+            this.empresa = e;
+        }
     }
 
     // Relación con Comentario

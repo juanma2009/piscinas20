@@ -1,5 +1,6 @@
 package com.bolsadeideas.springboot.app;
 import com.bolsadeideas.springboot.app.apisms.d2fa.TwoFactorAuthenticationFilter;
+import com.bolsadeideas.springboot.app.util.TenantFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,11 +25,12 @@ public class SecurityConfig {
                 .and()
                 .authorizeRequests()
                 .antMatchers("/css/**", "/js/**", "/images/**", "/admin/**", "/style.css", "/sw.js", "/favicon.ico").permitAll()
-                .antMatchers("/login", "/logout").permitAll()
+                .antMatchers("/login", "/logout", "/signup").permitAll()
                 .antMatchers("/workshop/**").permitAll()
                 .antMatchers("/pedidos/**").permitAll()
                 .antMatchers("/api/**").permitAll() // Permitir acceso temporal a la API
                 .antMatchers("/verify_2fa").permitAll()
+                .antMatchers("/superadmin/**").hasRole("SUPER_ADMIN")
                 .antMatchers("/roles/**").hasRole("ADMIN")
                 .antMatchers(HttpMethod.GET, "/api/google/drive/preview/**").authenticated()
                 .anyRequest().authenticated()
@@ -67,7 +69,8 @@ public class SecurityConfig {
                     response.addHeader("X-XSS-Protection", "1; mode=block");
                 })
                 .and()
-                .addFilterBefore(twoFactorAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(twoFactorAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new TenantFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

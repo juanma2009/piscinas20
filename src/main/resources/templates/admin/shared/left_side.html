@@ -45,6 +45,19 @@
                         Balances
                     </a>
                 </li>
+                <li class="nav-item" sec:authorize="hasRole('SUPER_ADMIN')">
+                    <a class="nav-link special-link" th:href="@{'/superadmin/dashboard'}">
+                        <i class="nav-icon fas fa-cogs"></i> Panel Super Admin
+                        <i class="right fas fa-angle-left"></i>
+                    </a>
+                    <ul class="nav item nav-treeview">
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/superadmin/empresas'}">
+                                <i class="far fa-circle nav-icon"></i> Gestión de Clientes
+                            </a>
+                        </li>
+                    </ul>
+                </li>
                 <li class="nav-item" sec:authorize="hasRole('ADMIN')">
                     <a class="nav-link special-link">
                         <i class="nav-icon fas fa-users"></i>Administracion

@@ -3,9 +3,9 @@ package com.bolsadeideas.springboot.app.models.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Filter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 @Table(name = "users")
 @Getter
 @Setter
+@Filter(name = "tenantFilter", condition = "empresa_id = :tenantId")
 public class User {
 
     @Id
@@ -37,6 +38,10 @@ public class User {
 
     @Column(unique = true)
     private String email;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id")
+    private Empresa empresa;
 
     /**
      * Relación muchos a muchos con la tabla roles
@@ -60,6 +65,11 @@ public class User {
     public void prePersist() {
         this.active = true;
         this.intentos = 0;
+        if (this.empresa == null && com.bolsadeideas.springboot.app.util.TenantContext.getCurrentTenant() != null) {
+            Empresa e = new Empresa();
+            e.setId(com.bolsadeideas.springboot.app.util.TenantContext.getCurrentTenant());
+            this.empresa = e;
+        }
     }
 
     /**

@@ -73,38 +73,28 @@ public class UserController {
      * @return
      */
     @PostMapping("/register")
-    public String registerUser(@ModelAttribute("user") User user, Model model, @RequestParam List<Long> roles) {
+    public String registerUser(@ModelAttribute("user") User user, Model model, @RequestParam List<Long> roles, Principal principal) {
+        // Obtener el administrador logueado para saber su empresa
+        User admin = userRepository.findByUsername(principal.getName());
+
         // Verificar si el nombre de usuario ya existe
         if (userService.userExists(user.getUsername())) {
             log.info("El usuario ya existe.");
             model.addAttribute("errorMessage", "El usuario ya existe.");
-
-            // Recargar la lista de roles para la vista
-            List<Role> rolesList = roleRepository.findAll();
-            model.addAttribute("rolesList", rolesList);
-
+            model.addAttribute("rolesList", roleRepository.findAll());
             return "user/create_user_with_role";
         }
 
-        // Verificar si el email ya existe
-        if (userRepository.existsByEmail(user.getEmail())) {
-            log.info("El email ya existe.");
-            model.addAttribute("errorMessage", "El email ya existe.");
-
-            // Recargar la lista de roles para la vista
-            List<Role> rolesList = roleRepository.findAll();
-            model.addAttribute("rolesList", rolesList);
-
-            return "user/create_user_with_role";
+        // Asignar la misma empresa que el administrador
+        if (admin != null) {
+            user.setEmpresa(admin.getEmpresa());
         }
-
-        // Obtener los roles correspondientes y convertirlos a un Set
 
         Set<Role> userRoles = new HashSet<>(roleRepository.findAllById(roles));
-        user.setRoles(userRoles); // Asigna el Set de roles al usuario
+        user.setRoles(userRoles); 
 
         // Registrar el usuario
-        userService.registerUser(user); // Aquí puedes incluir la lógica de codificación y guardado del usuario
+        userService.registerUser(user); 
 
         return "redirect:/users";
     }

@@ -416,7 +416,12 @@
                                             <i class="fas fa-cloud"></i> <span>Elegir archivos</span>
                                         </button>
 
-                                        <span id="driveAuthStatus" class="ml-2"></span>
+                                        <!-- Botón para cambiar cuenta -->
+                                        <button type="button" class="btn btn-outline-danger btn-modern ml-2" id="disconnectDriveBtn" style="display:none;" onclick="disconnectGoogle()">
+                                            <i class="fas fa-sign-out-alt"></i> <span>Cambiar cuenta</span>
+                                        </button>
+
+                                        <div id="driveAuthStatus" class="mt-2"></div>
                                     </div>
 
                                     <hr>
@@ -524,7 +529,7 @@
             const GOOGLE_CLIENT_ID = '828501898797-66mt3fps426me6smm5u2macr0ca5d721.apps.googleusercontent.com';
             const GOOGLE_PROJECT_ID = '828501898797';  // Project ID para Picker
 
-            const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
+            const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
 
             // ✅ Ajusta si tu backend usa rutas distintas
             const BACKEND_CODE_URL  = '/api/google/oauth/code';
@@ -534,12 +539,50 @@
             let gsi_initialized = false;
             let googleDriveToken = null; // ✅ UNA sola variable
 
-            function updateAuthStatus(conectado) {
+            async function checkGoogleStatus() {
+                try {
+                    const r = await fetch('/api/google/oauth/status');
+                    if (r.ok) {
+                        const info = await r.json();
+                        updateAuthStatus(info.linked, info.email);
+                    }
+                } catch (e) {
+                    console.error("Error comprobando status Google:", e);
+                }
+            }
+
+            async function disconnectGoogle() {
+                if (!confirm("¿Deseas desvincular la cuenta actual de Google Drive para usar otra?")) return;
+                
+                const csrfToken = document.querySelector("meta[name='_csrf']")?.content;
+                const csrfHeader = document.querySelector("meta[name='_csrf_header']")?.content;
+                const headers = { 'X-Requested-With': 'XmlHttpRequest' };
+                if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+
+                try {
+                    const r = await fetch('/api/google/oauth/disconnect', { method: 'POST', headers });
+                    if (r.ok) {
+                        googleDriveToken = null;
+                        updateAuthStatus(false);
+                        alert("Cuenta desvinculada. Ahora puedes elegir archivos con otra cuenta.");
+                    }
+                } catch (e) {
+                    console.error("Error al desvincular:", e);
+                }
+            }
+
+            function updateAuthStatus(conectado, email = null) {
                 const statusEl = document.getElementById('driveAuthStatus');
+                const disconnectBtn = document.getElementById('disconnectDriveBtn');
                 if (!statusEl) return;
-                statusEl.innerHTML = conectado
-                    ? '<span class="badge badge-success">✅ Conectado a Google</span>'
-                    : '<span class="badge badge-secondary">⏳ No conectado</span>';
+                
+                if (conectado) {
+                    statusEl.innerHTML = `<span class="badge badge-success">✅ Conectado: ${email || 'Google Drive'}</span>`;
+                    if (disconnectBtn) disconnectBtn.style.display = 'inline-block';
+                } else {
+                    statusEl.innerHTML = '<span class="badge badge-secondary">⏳ No conectado / Usar otra cuenta</span>';
+                    if (disconnectBtn) disconnectBtn.style.display = 'none';
+                }
             }
 
             // Inicializar Google Identity Services - Code Model (1ª vez popup, luego silencioso)
@@ -553,6 +596,8 @@
                     client_id: GOOGLE_CLIENT_ID,
                     scope: DRIVE_SCOPE,
                     ux_mode: 'popup',
+                    select_account: true, 
+                    prompt: 'select_account', // 👈 Forzar a Google a mostrar la lista de cuentas
                     callback: async (resp) => {
                         if (resp.error) {
                             console.error("OAuth error:", resp);
@@ -562,6 +607,7 @@
                         try {
                             await enviarCodeAlBackend(resp.code);
                             await obtenerTokenBackendYAbrirPicker();
+                            await checkGoogleStatus(); // Actualizar el email mostrado
                         } catch (e) {
                             console.error("Error OAuth backend:", e);
                             updateAuthStatus(false);
@@ -571,7 +617,7 @@
                 });
 
                 gsi_initialized = true;
-                updateAuthStatus(false);
+                checkGoogleStatus(); // Cargar estado inicial
                 console.log("✅ Code Client listo");
             }
 
@@ -609,7 +655,7 @@
                 if (!accessToken) return false;
 
                 googleDriveToken = accessToken;
-                updateAuthStatus(true);
+                checkGoogleStatus(); // Obtener email y actualizar UI
 
                 cargarPickerAPI(() => abrirPickerConToken(accessToken));
                 return true;
@@ -624,7 +670,8 @@
                 // 1) intenta token silencioso desde backend
                 if (await obtenerTokenBackendYAbrirPicker()) return;
 
-                // 2) si no hay refresh_token todavía, popup SOLO esta vez
+                // 2) si no hay refresh_token todavía o queremos cambiar, popup forzado
+                console.log("🟡 Solicitando código de autorización con selector de cuenta...");
                 codeClient.requestCode();
             }
 

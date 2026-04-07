@@ -40,6 +40,41 @@ public class GoogleOAuthController {
         String token = oauthService.getValidAccessTokenOrRefresh(principal.getName());
         return ResponseEntity.ok(Map.of("accessToken", token));
     }
+
+    /**
+     * Devuelve el email de la cuenta de Google vinculada si existe.
+     * Útil para detectar qué cuenta estamos usando.
+     */
+    @GetMapping("/status")
+    public ResponseEntity<?> getStatus(Principal principal) {
+        Map<String, Object> info = oauthService.getLinkedAccountInfo(principal.getName());
+        if (info == null) {
+            return ResponseEntity.ok(Map.of("linked", false));
+        }
+        
+        // Si el mapa ya tiene el flag 'linked' es que viene de un catch/error en el service
+        boolean isLinked = info.containsKey("linked") ? (Boolean) info.get("linked") : true;
+
+        return ResponseEntity.ok(Map.of(
+                "linked", isLinked,
+                "email", info.getOrDefault("email", "unknown"),
+                "name", info.getOrDefault("name", "unknown"),
+                "picture", info.getOrDefault("picture", "")
+        ));
+    }
+
+    /**
+     * Permite al usuario desvincular su cuenta actual para entrar con otra.
+     */
+    @PostMapping("/disconnect")
+    public ResponseEntity<?> disconnect(HttpServletRequest request, Principal principal) {
+        String xrw = request.getHeader("X-Requested-With");
+        if (xrw == null || !xrw.equalsIgnoreCase("XmlHttpRequest")) {
+            return ResponseEntity.status(403).body(Map.of("error", "CSRF_CHECK_FAILED"));
+        }
+        oauthService.disconnect(principal.getName());
+        return ResponseEntity.ok(Map.of("success", true));
+    }
 }
 
 
