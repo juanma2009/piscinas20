@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="/admin/admin_layout">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${titulo}">Gestión de Gastos App</title>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <div class="content-header">
+        <div class="container-fluid">
+            <h1 class="m-0 text-dark">Gastos de Mantenimiento (Servidor, Dominio)</h1>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+            <div class="card card-warning">
+                <div class="card-header">
+                    <h3 class="card-title">Registrar Nuevo Gasto de la Aplicación</h3>
+                </div>
+                <form th:action="@{/superadmin/gastos/guardar}" method="post" class="card-body">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <label>Descripción / Concepto</label>
+                            <input type="text" name="descripcion" class="form-control" placeholder="Ej. Pago VPS Mensual DigitalOcean" required/>
+                        </div>
+                        <div class="col-md-3">
+                            <label>Importe (€)</label>
+                            <input type="number" step="0.01" name="importe" class="form-control" placeholder="0.00" required/>
+                        </div>
+                        <div class="col-md-2">
+                            <label>Fecha</label>
+                            <input type="date" name="fecha" class="form-control" th:value="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}" required/>
+                        </div>
+                        <div class="col-md-2">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-warning btn-block">Registrar Gasto</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3 class="card-title">Historial de Gastos</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Concepto</th>
+                                <th>Importe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="gasto : ${gastos}">
+                                <td th:text="${gasto.id}"></td>
+                                <td th:text="${#dates.format(gasto.fecha, 'dd/MM/yyyy')}"></td>
+                                <td th:text="${gasto.descripcion}"></td>
+                                <td th:text="${#numbers.formatDecimal(gasto.importe, 0, 'COMMA', 2, 'POINT')} + '€'"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+</body>
+</html>
