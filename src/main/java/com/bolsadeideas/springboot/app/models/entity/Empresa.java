@@ -37,6 +37,7 @@ public class Empresa implements Serializable {
 
     private String licencia; // Código de licencia vendido
 
+    @Column(nullable = true)
     private boolean activo = true; // Para poder suspender empresas si no pagan
 
     @Temporal(TemporalType.TIMESTAMP)
