@@ -110,6 +110,13 @@ public class ArchivoSubidaService {
                 continue;
             }
 
+            // [SENIOR OPTIMIZATION] Comprobar si ya existe antes de subir a Cloudinary
+            if (archivoAdjuntoService.findArchivosAdjuntosByPedidoIdOne(nombreOriginal, npedido).isPresent()) {
+                log.info("⏩ Archivo local ya existe en BD para este pedido: {}. Saltando upload.", nombreOriginal);
+                procesados++; // Lo contamos como procesado (ya está allí)
+                continue;
+            }
+
             if (!validarTipoMime(contentType, nombreOriginal)) {
                 errores.append("• Tipo de archivo no soportado: ").append(nombreOriginal).append("\n");
                 continue;
@@ -159,6 +166,15 @@ public class ArchivoSubidaService {
         for (String fileId : googleDriveFileIds) {
             if (fileId == null || fileId.trim().isEmpty()) continue;
 
+            String nombreDisplay = "Google Drive - " + fileId;
+
+            // [SENIOR OPTIMIZATION] Comprobar si ya existe antes de descargar de Drive
+            if (archivoAdjuntoService.findArchivosAdjuntosByPedidoIdOne(nombreDisplay, npedido).isPresent()) {
+                log.info("⏩ Archivo de Drive ya existe en BD para este pedido: {}. Saltando descarga.", fileId);
+                procesados++;
+                continue;
+            }
+
             try {
                 String cloudinaryUrl = hasFrontToken
                         ? downloadAndUploadToCloudinaryFromDrive(fileId, googleDriveToken, npedido)
@@ -170,7 +186,6 @@ public class ArchivoSubidaService {
                 }
 
                 String cacheKey = "gdrive_" + npedido + "_" + fileId;
-                String nombreDisplay = "Google Drive - " + fileId;
 
                 cachearYGuardarAdjunto(npedido, nombreDisplay, cloudinaryUrl, cacheKey);
 
@@ -188,6 +203,14 @@ public class ArchivoSubidaService {
 
     // ==================== COMÚN: CACHE + BD ====================
     private void cachearYGuardarAdjunto(Long npedido, String nombreDisplay, String cloudinaryUrl, String cacheKey) {
+        log.info("🔍 Comprobando si el archivo ya existe: {} para pedido {}", nombreDisplay, npedido);
+        
+        // Verificamos si ya existe el adjunto en la BD para evitar duplicados
+        if (archivoAdjuntoService.findArchivosAdjuntosByPedidoIdOne(nombreDisplay, npedido).isPresent()) {
+            log.info("⏩ El archivo ya existe en la BD. Saltando guardado redundante.");
+            return;
+        }
+
         redisTemplate.opsForValue().set(cacheKey, cloudinaryUrl, Duration.ofDays(30));
         log.info("📦 URL cacheada en Redis (30 días) con clave: {}", cacheKey);
 

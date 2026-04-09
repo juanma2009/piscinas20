@@ -421,7 +421,14 @@ public class PedidoController {
                     response.put("info", "Pedido actualizado con éxito");
                     response.put("npedido", pedidoExistente.getNpedido());
                     response.put("clienteId", pedidoExistente.getCliente().getId());
-                    response.put("tieneArchivos", files != null && files.length > 0 || googleDriveFileIds != null && googleDriveFileIds.length > 0);
+                    
+                    // Detectamos si hay archivos para el procesamiento en segundo plano
+                    boolean hayArchivosDrive = googleDriveFileIds != null && googleDriveFileIds.length > 0;
+                    response.put("tieneArchivos", (files != null && files.length > 0) || hayArchivosDrive);
+
+                    if (hayArchivosDrive) {
+                        encolarArchivosDrive(pedidoExistente.getNpedido(), principal, googleDriveFileIds, googleDriveToken);
+                    }
 
                     return ResponseEntity.ok(response);
                 }
@@ -455,27 +462,11 @@ public class PedidoController {
             response.put("tieneArchivos", hayArchivos);
 
             if (hayArchivos) {
-                // Obtenemos el userId del usuario autenticado
-                String userId = (principal != null && principal.getName() != null)
-                        ? principal.getName()
-                        : "anonymous";
-
-                // Serializamos los IDs de Google Drive
-                String googleDriveIdsSerializados = googleDriveFileIds != null
-                        ? String.join(",", googleDriveFileIds)
-                        : "";
-
-                // Formato de la tarea: npedido|userId|googleDriveIds|googleDriveToken
-                String tarea = npedidoGenerado + "|" +
-                        userId + "|" +
-                        googleDriveIdsSerializados + "|" +
-                        (googleDriveToken != null ? googleDriveToken : "");
-
-                // Encolamos en Redis
-                redisTemplate.opsForList().leftPush("cola:procesar-archivos", tarea);
-
-                log.info("📤 Tarea encolada en Redis para pedido {} - Usuario: {} - Drive files: {}",
-                        npedidoGenerado, userId, googleDriveFileIds != null ? googleDriveFileIds.length : 0);
+                boolean hayArchivosDrive = googleDriveFileIds != null && googleDriveFileIds.length > 0;
+                
+                if (hayArchivosDrive) {
+                    encolarArchivosDrive(npedidoGenerado, principal, googleDriveFileIds, googleDriveToken);
+                }
 
                 response.put("archivosASubir",
                         (files != null ? files.length : 0) +
@@ -498,6 +489,30 @@ public class PedidoController {
 
             return ResponseEntity.status(500).body(errorResponse);
         }
+    }
+
+    private void encolarArchivosDrive(Long npedido, Principal principal, String[] googleDriveFileIds, String googleDriveToken) {
+        // Obtenemos el userId del usuario autenticado
+        String userId = (principal != null && principal.getName() != null)
+                ? principal.getName()
+                : "anonymous";
+
+        // Serializamos los IDs de Google Drive
+        String googleDriveIdsSerializados = googleDriveFileIds != null
+                ? String.join(",", googleDriveFileIds)
+                : "";
+
+        // Formato de la tarea: npedido|userId|googleDriveIds|googleDriveToken
+        String tarea = npedido + "|" +
+                userId + "|" +
+                googleDriveIdsSerializados + "|" +
+                (googleDriveToken != null ? googleDriveToken : "");
+
+        // Encolamos en Redis
+        redisTemplate.opsForList().leftPush("cola:procesar-archivos", tarea);
+
+        log.info("📤 Tarea encolada en Redis para pedido {} - Usuario: {} - Drive files: {}",
+                npedido, userId, googleDriveFileIds != null ? googleDriveFileIds.length : 0);
     }
 
 // -------------------------------------------------------------------------

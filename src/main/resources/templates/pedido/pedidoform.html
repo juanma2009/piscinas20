@@ -1205,9 +1205,10 @@
 
             // Manejar el envío del formulario principal (#pedidoForm)
             $(document).on('submit', '#pedidoForm', function(event) {
-
-
                 event.preventDefault();
+                
+                const submitBtn = $(this).find('input[type="submit"]');
+                submitBtn.prop('disabled', true).val('Guardando...');
 
                 $("#spinnerGuardado").show();
 
@@ -1324,13 +1325,8 @@
                                     });
                                 }
 
-                                if (googleDriveFiles.length > 0) {
-                                    googleDriveFiles.forEach(function(item) {
-                                        uploadFormData.append('googleDriveFileIds', item.id);
-                                    });
-
-                                    // ✅ IMPORTANTE: ya NO se envía googleDriveToken al backend
-                                }
+                                    // ✅ NOTA: Drive se procesa EXCLUSIVAMENTE por la cola de Redis (PASO 1).
+                                    // Esto evita duplicados y mejora la velocidad de respuesta.
 
                                 $.ajax({
                                     type: 'POST',
@@ -1427,7 +1423,8 @@
                             detalleError = "Error desconocido: " + xhr.statusText;
                         }
 
-                        console.log("Detalle completo del error en PASO 1:", detalleError);
+                        const submitBtn = $('#pedidoForm').find('input[type="submit"]');
+                        submitBtn.prop('disabled', false).val(submitBtn.attr('data-original-val') || 'Guardar Pedido');
 
                         $("#spinnerGuardado").hide();
                        // alert(errorMessage + "\n\nDetalle:\n" + detalleError);
@@ -1435,6 +1432,12 @@
                 });
 
                 return false;
+            });
+
+            // Guardar el valor original del botón para restaurarlo
+            $(document).ready(function() {
+                const submitBtn = $('#pedidoForm').find('input[type="submit"]');
+                submitBtn.attr('data-original-val', submitBtn.val());
             });
 
             function mostrarModalOpciones(npedido, clienteId) {
