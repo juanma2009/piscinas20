@@ -5,6 +5,35 @@
 <head>
     <meta charset="utf-8"/>
     <title th:text="${titulo}"></title>
+    <style>
+        .tipo-toggle {
+            display: flex;
+            background: #f1f3f5;
+            border-radius: 50px;
+            padding: 4px;
+            gap: 4px;
+            width: fit-content;
+            margin-bottom: 1.5rem;
+        }
+        .tipo-toggle label {
+            cursor: pointer;
+            padding: 8px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: .9rem;
+            transition: all .25s ease;
+            color: #666;
+            margin: 0;
+            user-select: none;
+        }
+        .tipo-toggle input[type=radio] { display:none; }
+        .tipo-toggle input[type=radio]:checked + label {
+            background: #fff;
+            color: #007bff;
+            box-shadow: 0 2px 8px rgba(0,0,0,.12);
+        }
+        #seccionEmpresa { display: none; }
+    </style>
 </head>
 <body>
 
@@ -27,26 +56,67 @@
                     <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-users mr-1"></i> Clientes
                     </a>
+                    <a th:href="@{/pedidos/form}" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus mr-1"></i> Nuevo Pedido
+                    </a>
                 </div>
 
                 <div class="card-body">
                     <form th:action="@{/form}" th:object="${cliente}" method="post" class="needs-validation" novalidate>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label font-weight-bold"><i class="fas fa-user mr-1"></i> Nombre</label>
-                                <input type="text" th:field="*{nombre}" class="form-control" placeholder="Ingrese nombre"
-                                       th:errorclass="is-invalid"/>
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
-                            </div>
 
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label font-weight-bold"><i class="fas fa-user mr-1"></i> Apellido</label>
-                                <input type="text" th:field="*{apellido}" class="form-control" placeholder="Ingrese apellido"
-                                       th:errorclass="is-invalid"/>
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('apellido')}" th:errors="*{apellido}"></div>
+                        <!-- Toggle Particular / Empresa -->
+                        <div class="tipo-toggle">
+                            <input type="radio" id="tipoParticular" name="tipoCliente" value="PARTICULAR" checked>
+                            <label for="tipoParticular"><i class="fas fa-user mr-1"></i> Particular</label>
+                            <input type="radio" id="tipoEmpresa" name="tipoCliente" value="EMPRESA">
+                            <label for="tipoEmpresa"><i class="fas fa-building mr-1"></i> Empresa</label>
+                        </div>
+                        <!-- Campo oculto que guarda el tipo -->
+                        <input type="hidden" name="Secret" id="hiddenTipoCliente" value="PARTICULAR">
+
+                        <!-- ====== SECCIÓN PARTICULAR ====== -->
+                        <div id="seccionParticular">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label font-weight-bold"><i class="fas fa-user mr-1"></i> Nombre</label>
+                                    <input type="text" th:field="*{nombre}" class="form-control" placeholder="Ingrese nombre"
+                                           th:errorclass="is-invalid"/>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label font-weight-bold"><i class="fas fa-user mr-1"></i> Apellido</label>
+                                    <input type="text" th:field="*{apellido}" class="form-control" placeholder="Ingrese apellido"
+                                           th:errorclass="is-invalid"/>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('apellido')}" th:errors="*{apellido}"></div>
+                                </div>
                             </div>
                         </div>
 
+                        <!-- ====== SECCIÓN EMPRESA ====== -->
+                        <div id="seccionEmpresa">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label font-weight-bold"><i class="fas fa-building mr-1"></i> Razón Social</label>
+                                    <input type="text" id="razonSocial" class="form-control" placeholder="Nombre de la empresa">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label font-weight-bold"><i class="fas fa-id-card mr-1"></i> CIF / NIF</label>
+                                    <input type="text" id="cifNif" class="form-control" placeholder="Ej: B12345678">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label font-weight-bold"><i class="fas fa-user-tie mr-1"></i> Persona de Contacto</label>
+                                    <input type="text" id="contactoNombre" class="form-control" placeholder="Nombre del contacto">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label font-weight-bold"><i class="fas fa-user-tie mr-1"></i> Apellido Contacto</label>
+                                    <input type="text" id="contactoApellido" class="form-control" placeholder="Apellido del contacto">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos comunes -->
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label font-weight-bold"><i class="fas fa-map-marker-alt mr-1"></i> Dirección</label>
@@ -54,7 +124,6 @@
                                        th:errorclass="is-invalid"/>
                                 <div class="invalid-feedback" th:if="${#fields.hasErrors('direccion')}" th:errors="*{direccion}"></div>
                             </div>
-
                             <div class="col-md-6 mb-3">
                                 <label class="form-label font-weight-bold"><i class="fas fa-phone mr-1"></i> Teléfono</label>
                                 <input type="text" th:field="*{telefono}" class="form-control" placeholder="Ej: +34 600 123 456"
@@ -62,7 +131,6 @@
                                 <div class="invalid-feedback" th:if="${#fields.hasErrors('telefono')}" th:errors="*{telefono}"></div>
                             </div>
                         </div>
-
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label class="form-label font-weight-bold"><i class="fas fa-envelope mr-1"></i> Email</label>
@@ -73,12 +141,11 @@
                         </div>
 
                         <hr class="my-4">
-
-                        <div class="d-flex justify-content-end mt-4" style="gap: .5rem;">
+                        <div class="d-flex justify-content-end mt-4" style="gap:.5rem;">
                             <button type="reset" class="btn btn-secondary">
                                 <i class="fas fa-undo mr-1"></i> Resetear
                             </button>
-                            <button type="submit" class="btn btn-success">
+                            <button type="submit" class="btn btn-success" id="btnGuardarCliente">
                                 <i class="fas fa-save mr-1"></i> Guardar Cliente
                             </button>
                         </div>
@@ -90,8 +157,59 @@
 </div>
 
 <div layout:fragment="script">
-    <!-- CKEditor u otros scripts específicos -->
-    <script src="https://cdn.ckeditor.com/ckeditor5/35.0.1/classic/ckeditor.js"></script>
+    <script>
+        (function() {
+            const radios       = document.querySelectorAll('input[name="tipoCliente"]');
+            const secPart      = document.getElementById('seccionParticular');
+            const secEmp       = document.getElementById('seccionEmpresa');
+            const hiddenTipo   = document.getElementById('hiddenTipoCliente');
+            // Campos Thymeleaf de nombre/apellido (binding real)
+            const inputNombre  = document.querySelector('input[name="nombre"]');
+            const inputApellido = document.querySelector('input[name="apellido"]');
+            // Campos empresa
+            const razonSocial     = document.getElementById('razonSocial');
+            const cifNif          = document.getElementById('cifNif');
+            const contactoNombre  = document.getElementById('contactoNombre');
+            const contactoApellido = document.getElementById('contactoApellido');
+
+            function applyMode(tipo) {
+                hiddenTipo.value = tipo;
+                if (tipo === 'EMPRESA') {
+                    secEmp.style.display  = 'block';
+                    secPart.style.display = 'none';
+                    // Los campos Thymeleaf reciben los datos de empresa al enviar
+                    document.getElementById('btnGuardarCliente').onclick = function(e) {
+                        e.preventDefault();
+                        inputNombre.value  = razonSocial.value.trim();
+                        inputApellido.value = 'CIF:' + cifNif.value.trim();
+                        // Guardamos contacto en dirección si no hay otro campo
+                        // (puedes adaptar a un campo dedicado)
+                        document.querySelector('form').submit();
+                    };
+                } else {
+                    secPart.style.display = 'block';
+                    secEmp.style.display  = 'none';
+                    document.getElementById('btnGuardarCliente').onclick = null;
+                }
+            }
+
+            radios.forEach(r => r.addEventListener('change', () => applyMode(r.value)));
+
+            // Detectar modo al cargar (si el cliente ya tiene 'EMPRESA' en Secret)
+            const tipoActual = /*[[${cliente.secret}]]*/ 'PARTICULAR';
+            if (tipoActual === 'EMPRESA') {
+                document.getElementById('tipoEmpresa').checked = true;
+                applyMode('EMPRESA');
+                // Pre-rellenar campos empresa desde los datos guardados
+                const nombreGuardado   = /*[[${cliente.nombre}]]*/ '';
+                const apellidoGuardado = /*[[${cliente.apellido}]]*/ '';
+                razonSocial.value = nombreGuardado;
+                cifNif.value = apellidoGuardado.replace('CIF:', '');
+            } else {
+                applyMode('PARTICULAR');
+            }
+        })();
+    </script>
 </div>
 
 </body>

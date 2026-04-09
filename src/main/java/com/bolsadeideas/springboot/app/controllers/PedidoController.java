@@ -250,6 +250,46 @@ public class PedidoController {
     }
 
 
+
+    /**
+     * Creación rápida de cliente desde el formulario de pedido (modal popout).
+     * Devuelve JSON con { id, nombre } para añadirlo al buscador en tiempo real.
+     */
+    @PostMapping("/api/cliente-rapido")
+    @ResponseBody
+    public ResponseEntity<?> crearClienteRapido(@RequestBody Map<String, String> datos) {
+        String nombre   = datos.getOrDefault("nombre", "").trim();
+        String apellido = datos.getOrDefault("apellido", "").trim();
+        String telefono = datos.getOrDefault("telefono", "").trim();
+        String email    = datos.getOrDefault("email", "").trim();
+
+        if (nombre.isEmpty() || apellido.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Nombre y apellido son obligatorios"));
+        }
+
+        Cliente cliente = new Cliente();
+        cliente.setNombre(nombre);
+        cliente.setApellido(apellido);
+        if (!telefono.isEmpty()) cliente.setTelefono(telefono);
+        if (!email.isEmpty())    cliente.setEmail(email);
+
+        String tipo = datos.getOrDefault("tipo", "PARTICULAR");
+        cliente.setSecret(tipo);
+
+        Cliente guardado = clienteService.save(cliente);
+        log.info("✅ Cliente rápido creado: {} (tipo={}, id={})", nombre, tipo, guardado.getId());
+
+        // Nombre para mostrar en el dropdown: Razón Social o Nombre + Apellido
+        String nombreMostrar = "EMPRESA".equals(tipo)
+                ? guardado.getNombre()
+                : guardado.getNombre() + " " + guardado.getApellido();
+
+        return ResponseEntity.ok(Map.of(
+                "id",     guardado.getId(),
+                "nombre", nombreMostrar
+        ));
+    }
+
     @GetMapping("/form")
     public String crear(Map<String, Object> model, RedirectAttributes flash) {
         log.info("Abriendo formulario de pedido nuevo (sin cliente pre-seleccionado)");
@@ -399,6 +439,7 @@ public class PedidoController {
             @RequestParam(name = "googleDriveFileIds", required = false) String[] googleDriveFileIds,
             @RequestParam(name = "googleDriveToken", required = false) String googleDriveToken,
             @RequestParam(name = "npedido", required = false) Long npedido,
+            @RequestParam(name = "clienteId", required = false) Long clienteId,
             Principal principal  // ← Usuario autenticado
     ) {
         try {
@@ -418,6 +459,15 @@ public class PedidoController {
                         "error", "Existen errores en el formulario",
                         "details", errores
                 ));
+            }
+
+            // Si el cliente viene por ID (formulario de nuevo pedido sin cliente pre-seleccionado)
+            if (clienteId != null && pedido.getCliente() == null) {
+                Cliente clienteSeleccionado = clienteService.findOne(clienteId);
+                if (clienteSeleccionado == null) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Cliente no encontrado con ID: " + clienteId));
+                }
+                pedido.setCliente(clienteSeleccionado);
             }
 
             // Parseo de parámetros (tu código existente)

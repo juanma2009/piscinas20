@@ -544,12 +544,15 @@
         
         <!-- ================= FAB MENU (Solo Móvil) ================= -->
         <div class="fab-wrapper d-block d-md-none">
+            <div class="fab-menu" id="fabMenu">
+
                 <div class="fab-item-container">
                     <span class="fab-label">Nuevo Pedido</span>
                     <a th:href="@{/pedidos/form}" class="fab-item bg-success text-white" title="Nuevo Pedido">
                         <i class="fas fa-edit"></i>
                     </a>
                 </div>
+
                 <div class="fab-item-container">
                     <span class="fab-label">Filtros</span>
                     <button type="button" class="fab-item bg-warning text-dark border-0" id="fabToggleBusqueda" title="Filtros">
@@ -577,7 +580,7 @@
                         <i class="fas fa-list"></i>
                     </a>
                 </div>
-                
+
             </div>
             <!-- Botón Principal -->
             <button class="fab-btn bg-primary text-white" id="fabMainBtn">
