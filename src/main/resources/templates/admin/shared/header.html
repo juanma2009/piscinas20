@@ -7,12 +7,30 @@
     <link rel="stylesheet" href="/style.css">
 </head>
 <style>
+/* Reset base */
 html, body {
-margin: 0;
-padding: 0;
-    mso-height-alt: max(10px);
-font-family: Arial, sans-serif;
-overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    overflow-x: hidden;
+}
+
+/* 📱 Ajustes de cabecera solo para móvil */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1rem !important; /* Letra más pequeña */
+        max-width: 170px;           /* Limitar ancho */
+        white-space: nowrap;        /* No saltar de línea */
+        overflow: hidden;           /* Ocultar lo que sobra */
+        text-overflow: ellipsis;    /* Poner tres puntos '...' si no cabe */
+        margin-right: 0.5rem !important;
+    }
+    
+    /* Juntar más los iconos de notificaciones y usuario */
+    .navbar-nav .nav-link {
+        padding-left: 0.4rem !important;
+        padding-right: 0.4rem !important;
+    }
 }
 </style>
 <body>
@@ -47,7 +65,8 @@ overflow-x: hidden;
             <li class="nav-item dropdown">
                 <a aria-expanded="false" class="nav-link" data-toggle="dropdown" href="#" role="button">
                     <i class="fas fa-user"></i>
-                    <span sec:authentication="name"></span> <!-- Nombre del Usuario -->
+                    <!-- Mostrar nombre solo en modo escritorio (tablets para arriba) -->
+                    <span class="d-none d-md-inline ml-1" sec:authentication="name"></span> 
                 </a>
                 <div class="dropdown-menu dropdown-menu-right">
                     <a class="dropdown-item" th:href="@{/profile}">

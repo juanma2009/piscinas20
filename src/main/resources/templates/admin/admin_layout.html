@@ -136,9 +136,112 @@
     // Carga normal
     $(function () {
         if (window.initAutoDataTables) window.initAutoDataTables(document);
+        initDynamicMobileFAB();
+        initAutoCollapseSidebar();
     });
-</script>
 
+    // ==========================================
+    // 🛠️ AUTO COLLAPSE SIDEBAR (Landscape/Tablets)
+    // ==========================================
+    function initAutoCollapseSidebar() {
+        function checkOrientation() {
+            // Si es landscape en móviles grandes o tablets (menor a 1024px)
+            if (window.innerWidth <= 1024 && window.innerWidth > window.innerHeight) {
+                $('body').addClass('sidebar-collapse').removeClass('sidebar-open');
+            }
+        }
+        
+        // Revisar al cargar y al rotar la pantalla
+        checkOrientation();
+        $(window).on('resize orientationchange', checkOrientation);
+    }
+
+    // ==========================================
+    // 🔘 GLOBAL DYNAMIC FAB GENERATOR PARA MÓVILES
+    // ==========================================
+    function initDynamicMobileFAB() {
+        const $toolbar = $('.toolbar');
+        if ($toolbar.length === 0) return;
+
+        // Limpiar FABs previos inyectados estáticamente para evitar duplicados
+        $('.fab-wrapper').remove();
+
+        // Ocultar el toolbar original en móviles
+        $toolbar.addClass('d-none d-md-flex');
+
+        // Construir la estructura principal del FAB
+        let fabHtml = `
+        <div class="fab-wrapper d-block d-md-none">
+            <div class="fab-menu" id="DynamicFabMenu">`;
+
+        // Procesar los botones del toolbar (invertidos para que el primero quede más abajo)
+        const $buttons = $toolbar.find('a, button').filter(function() {
+             return $(this).text().trim() !== ''; 
+        }).get().reverse();
+
+        $($buttons).each(function() {
+            const $el = $(this);
+            const iconHtml = $el.find('i').prop('outerHTML') || '<i class="fas fa-chevron-right"></i>';
+            const labelText = $el.text().trim();
+            
+            // Colores por defecto según clase
+            let btnClasses = "fab-item text-white border-0 ";
+            if ($el.hasClass("btn-outline-success") || $el.hasClass("btn-success") || labelText.includes('Nuevo')) btnClasses += "bg-success";
+            else if ($el.hasClass("btn-outline-info") || $el.hasClass("btn-info") || labelText.includes('Galería')) btnClasses += "bg-info";
+            else if ($el.hasClass("btn-outline-warning") || $el.hasClass("btn-warning") || labelText.includes('Filtros')) btnClasses += "bg-warning text-dark";
+            else if ($el.hasClass("btn-outline-danger") || $el.hasClass("btn-danger")) btnClasses += "bg-danger";
+            else btnClasses += "bg-primary";
+
+            if ($el.is('a')) {
+                const href = $el.attr('href');
+                let extraAttributes = '';
+                if($el.attr('data-toggle')) extraAttributes += `data-toggle="${$el.attr('data-toggle')}" `;
+                if($el.attr('data-target')) extraAttributes += `data-target="${$el.attr('data-target')}" `;
+
+                fabHtml += `
+                <div class="fab-item-container">
+                    <span class="fab-label">${labelText}</span>
+                    <a href="${href}" class="${btnClasses}" title="${labelText}" ${extraAttributes}>${iconHtml}</a>
+                </div>`;
+            } else {
+                const targetId = $el.attr('id') || ''; 
+                fabHtml += `
+                <div class="fab-item-container">
+                    <span class="fab-label">${labelText}</span>
+                    <button type="button" class="${btnClasses}" data-proxy-target="${targetId}" title="${labelText}">${iconHtml}</button>
+                </div>`;
+            }
+        });
+
+        fabHtml += `
+            </div>
+            <button type="button" class="fab-btn bg-primary text-white" id="DynamicFabMainBtn">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>`;
+
+        // Injectar al DOM
+        $('body').append(fabHtml);
+
+        // Lógica de apertura/cierre
+        $('#DynamicFabMainBtn').on('click', function(e) {
+            e.preventDefault();
+            $(this).toggleClass('active');
+            $('#DynamicFabMenu').toggleClass('show');
+        });
+
+        // Proxy de clicks en botones dinámicos (Ej. Filtros)
+        $('#DynamicFabMenu button[data-proxy-target]').on('click', function(e) {
+            e.preventDefault();
+            const targetId = $(this).attr('data-proxy-target');
+            if (targetId && $('#' + targetId).length) {
+                $('#' + targetId).click(); // Simula el click en el original
+            }
+            $('#DynamicFabMainBtn').click(); // Cierra el menú
+            document.activeElement.blur();
+        });
+    }
+</script>
 
 </body>
 </html>

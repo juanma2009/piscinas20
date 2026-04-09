@@ -39,7 +39,7 @@
                                 <th>Licencia</th>
                                 <th>Fecha Registro</th>
                                 <th>Estado</th>
-                                <th>Acciones</th>
+                                <th class="col-acciones-wide"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -54,15 +54,36 @@
                                     <span th:if="${empresa.activo}" class="badge badge-success">Activo</span>
                                     <span th:if="${!empresa.activo}" class="badge badge-danger">Inactivo / Suspendido</span>
                                 </td>
-                                <td>
-                                    <form th:action="@{/superadmin/empresas/toggle-status}" method="post" style="display:inline;">
-                                        <input type="hidden" name="id" th:value="${empresa.id}"/>
-                                        <button type="submit" 
-                                                th:class="${empresa.activo} ? 'btn btn-warning btn-sm' : 'btn btn-success btn-sm'"
-                                                th:text="${empresa.activo} ? 'Desactivar' : 'Activar'">
+                                <td class="col-acciones-wide">
+                                    <!-- Accesos rápidos -->
+                                    <a class="btn-quick-icon text-success" th:href="@{/superadmin/ingresos(empresaId=${empresa.id})}" title="Ver Ingresos">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </a>
+                                    <a class="btn-quick-icon text-info" href="#" title="Editar Empresa">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <!-- Más acciones -->
+                                    <div class="dropdown d-inline">
+                                        <button class="btn-action-trigger dropdown-toggle" type="button" data-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
                                         </button>
-                                    </form>
-                                    <a href="#" class="btn btn-info btn-sm">Ver Ingresos</a>
+                                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+                                            <form th:action="@{/superadmin/empresas/toggle-status}" method="post">
+                                                <input type="hidden" name="id" th:value="${empresa.id}"/>
+                                                <button type="submit" class="dropdown-item">
+                                                    <i th:class="${empresa.activo} ? 'fas fa-ban mr-2' : 'fas fa-check-circle mr-2'"></i>
+                                                    <span th:text="${empresa.activo} ? 'Desactivar Empresa' : 'Activar Empresa'"></span>
+                                                </button>
+                                            </form>
+                                            <a th:href="@{/superadmin/ingresos(empresaId=${empresa.id})}" class="dropdown-item">
+                                                <i class="fas fa-money-bill-wave mr-2"></i> Ver Ingresos
+                                            </a>
+                                            <div class="dropdown-divider"></div>
+                                            <a href="#" class="dropdown-item text-info">
+                                                <i class="fas fa-edit mr-2"></i> Editar Datos
+                                            </a>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>

@@ -121,7 +121,7 @@
                     <i class="fas fa-list mr-2"></i> Listado de Trabajos
                 </div>
 
-                <div class="toolbar">
+                <div class="toolbar d-none d-md-flex">
                     <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-images mr-1"></i> Galería
                     </a>
@@ -247,6 +247,45 @@
             </div>
         </section>
 
+        <!-- ================= FAB MENU (Solo Móvil) ================= -->
+        <div class="fab-wrapper d-block d-md-none">
+            <div class="fab-menu" id="fabMenu">
+                
+                <div class="fab-item-container">
+                    <span class="fab-label">Filtros</span>
+                    <button type="button" class="fab-item bg-warning text-dark border-0" id="fabToggleBusqueda" title="Filtros">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                </div>
+
+                <div class="fab-item-container">
+                    <span class="fab-label">Nuevo Cliente</span>
+                    <a th:href="@{/form}" class="fab-item bg-success text-white" title="Nuevo Cliente">
+                        <i class="fas fa-user-plus"></i>
+                    </a>
+                </div>
+
+                <div class="fab-item-container">
+                    <span class="fab-label">Clientes</span>
+                    <a th:href="@{/listar}" class="fab-item bg-info text-white" title="Clientes">
+                        <i class="fas fa-user"></i>
+                    </a>
+                </div>
+
+                <div class="fab-item-container">
+                    <span class="fab-label">Galería</span>
+                    <a th:href="@{/pedidos/listarFotosPedidos}" class="fab-item bg-primary text-white" title="Galería">
+                        <i class="fas fa-images"></i>
+                    </a>
+                </div>
+                
+            </div>
+            <!-- Botón Principal -->
+            <button class="fab-btn bg-primary text-white" id="fabMainBtn">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+        
     </div>
 </div>
 
@@ -369,41 +408,75 @@
                             const ref = row.ref || "sin ref";
                             const cliente = row.cliente || "";
                             const npedido = row.npedido || data;
-
                             const activo = row.activo;
                             const isActivo = (activo !== false && activo !== "false");
-
-                            const btnEditar = isActivo
-                                ? `<a href="/pedidos/formEditar/${npedido}" class="btn btn-warning btn-sm" title="Editar"><i class="fas fa-pencil-alt"></i></a>`
-                                : `<button class="btn btn-secondary btn-sm" disabled title="No se puede editar"><i class="fas fa-pencil-alt"></i></button>`;
-
-                            const btnEstado = isActivo
-                                ? `<a href="/pedidos/eliminar/${npedido}" class="btn btn-danger btn-sm" title="Dar de baja"
-              onclick="return confirm('¿Dar de baja?\\n\\nReferencia: ${ref}\\nCliente: ${cliente}\\nNúmero: ${npedido}\\n\\nReversible.')">
-              <i class="fas fa-ban"></i></a>`
-                                : `<a href="/pedidos/reactivar/${npedido}" class="btn btn-success btn-sm" title="Reactivar"
-              onclick="return confirm('¿Reactivar?\\n\\nReferencia: ${ref}\\nCliente: ${cliente}\\nNúmero: ${npedido}')">
-              <i class="fas fa-check-circle"></i></a>`;
-
-                            const btnCita = isActivo
-                                ? `<a href="/citas/form/pedido/${npedido}" class="btn btn-outline-info btn-sm" title="Programar Cita"><i class="far fa-calendar-plus"></i></a>`
-                                : "";
-
                             const isFacturado = row.facturado === true || row.facturado === "true";
-                            const btnFactura = (isActivo && !isFacturado)
-                                ? `<a href="/facturas/form/${npedido}" class="btn btn-outline-success btn-sm" title="Generar Factura"><i class="fas fa-file-invoice-dollar"></i></a>`
-                                : (isFacturado ? `<button class="btn btn-success btn-sm" title="Ya facturado" disabled><i class="fas fa-check-double"></i></button>` : "");
 
-                            return `
-          <div class="dt-actions" style="display:flex; gap:.35rem; flex-wrap:wrap; justify-content:center;">
-            <a href="/pedidos/ver/${npedido}" class="btn btn-info btn-sm" title="Ver"><i class="fas fa-eye"></i></a>
-            <a href="/workshop/checklist/${npedido}" class="btn btn-outline-dark btn-sm" title="Checklist Taller"><i class="fas fa-clipboard-list"></i></a>
-            ${btnEditar}
-            ${btnCita}
-            ${btnFactura}
-            ${btnEstado}
-          </div>
-        `;
+                            let menuHtml = `
+                                <div class="dropdown">
+                                    <!-- Accesos rápidos -->
+                                    <a class="btn btn-sm btn-link text-primary d-inline-block p-0 mr-1" href="/pedidos/ver/${npedido}" title="Ver">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                            `;
+
+                            if (isActivo) {
+                                menuHtml += `
+                                    <a class="btn btn-sm btn-link text-info d-inline-block p-0 mr-1" href="/pedidos/formEditar/${npedido}" title="Editar">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                `;
+                                if (!isFacturado) {
+                                    menuHtml += `
+                                        <a class="btn btn-sm btn-link text-success d-inline-block p-0 mr-1" href="/facturas/form/${npedido}" title="Generar Factura">
+                                            <i class="fas fa-file-invoice-dollar"></i>
+                                        </a>
+                                    `;
+                                }
+                            }
+
+                            menuHtml += `
+                                    <!-- Menú desplegable original -->
+                                    <button class="btn btn-sm btn-link text-dark dropdown-toggle p-0" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-right">
+                                        <a class="dropdown-item" href="/pedidos/ver/${npedido}"><i class="fas fa-eye mr-2 text-info"></i> Ver</a>
+                                        <a class="dropdown-item" href="/workshop/checklist/${npedido}"><i class="fas fa-clipboard-list mr-2 text-dark"></i> Checklist Taller</a>
+                            `;
+
+                            if (isActivo) {
+                                menuHtml += `
+                                    <a class="dropdown-item" href="/pedidos/formEditar/${npedido}"><i class="fas fa-pencil-alt mr-2 text-warning"></i> Editar</a>
+                                    <a class="dropdown-item" href="/citas/form/pedido/${npedido}"><i class="far fa-calendar-plus mr-2 text-info"></i> Programar Cita</a>
+                                `;
+                                
+                                if (!isFacturado) {
+                                    menuHtml += `<a class="dropdown-item" href="/facturas/form/${npedido}"><i class="fas fa-file-invoice-dollar mr-2 text-success"></i> Generar Factura</a>`;
+                                } else {
+                                    menuHtml += `<span class="dropdown-item disabled text-muted"><i class="fas fa-check-double mr-2"></i> Ya facturado</span>`;
+                                }
+
+                                menuHtml += `
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item text-danger" href="/pedidos/eliminar/${npedido}" 
+                                       onclick="return confirm('¿Dar de baja?\\n\\nReferencia: ${ref}\\nCliente: ${cliente}\\nNúmero: ${npedido}\\n\\nReversible.')">
+                                       <i class="fas fa-ban mr-2"></i> Dar de baja
+                                    </a>
+                                `;
+                            } else {
+                                menuHtml += `
+                                    <span class="dropdown-item disabled text-muted"><i class="fas fa-pencil-alt mr-2"></i> No se puede editar</span>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item text-success" href="/pedidos/reactivar/${npedido}"
+                                       onclick="return confirm('¿Reactivar?\\n\\nReferencia: ${ref}\\nCliente: ${cliente}\\nNúmero: ${npedido}')">
+                                       <i class="fas fa-check-circle mr-2"></i> Reactivar
+                                    </a>
+                                `;
+                            }
+
+                            menuHtml += `</div></div>`;
+                            return menuHtml;
                         }
                     }
                 ];
@@ -564,6 +637,28 @@
             $(function () {
                 ensureFiltersInitialState();
                 initPedidosDT();
+
+                // FAB (Floating Action Button) Logic
+                const fabMainBtn = document.getElementById('fabMainBtn');
+                const fabMenu = document.getElementById('fabMenu');
+                const fabToggleBusqueda = document.getElementById('fabToggleBusqueda');
+
+                if (fabMainBtn && fabMenu) {
+                    fabMainBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        fabMainBtn.classList.toggle('active');
+                        fabMenu.classList.toggle('show');
+                    });
+                }
+
+                if (fabToggleBusqueda) {
+                    fabToggleBusqueda.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        $('#toggleBusqueda').click();
+                        fabMainBtn.click();
+                        document.activeElement.blur();
+                    });
+                }
             });
 
         })();

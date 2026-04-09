@@ -107,8 +107,99 @@
 
 .table td,
 .table th {
-    padding: 10px;
+    padding: 8px 10px;
     border: 1px solid #dee2e6;
+    vertical-align: middle;
+}
+
+/* 🚀 FIX TOTAL DROPDIWNS EN TABLAS */
+/* Forzar visibilidad en todos los niveles posibles */
+.card, .card-body, .table-responsive, .dataTables_wrapper, .dataTables_scroll, .dataTables_scrollBody {
+    overflow: visible !important;
+}
+
+table.dataTable, .table {
+    border-collapse: collapse !important;
+}
+
+/* Columna de acciones mínima */
+.col-acciones {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    text-align: center;
+    padding: 0 !important;
+    overflow: visible !important;
+}
+
+/* Columna de acciones con iconos rápidos + ellipsis */
+.col-acciones-wide {
+    width: 100px !important;
+    min-width: 100px !important;
+    max-width: 100px !important;
+    text-align: center;
+    padding: 4px 6px !important;
+    overflow: visible !important;
+    white-space: nowrap;
+}
+
+/* Icono de acción rápida (ojo, editar) */
+.btn-quick-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.04);
+    border: none;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    text-decoration: none;
+    vertical-align: middle;
+}
+
+.btn-quick-icon:hover {
+    background: rgba(0,0,0,0.12);
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.table td.col-acciones {
+    position: relative;
+}
+
+/* Asegurar que el menú flote fuera del flujo */
+.dropdown-menu {
+    z-index: 9999 !important;
+    position: absolute !important;
+    margin: 0 !important;
+    transform: none !important;
+    top: 100% !important;
+    right: 0 !important;
+}
+
+.btn-link.dropdown-toggle::after {
+    display: none;
+}
+
+.btn-action-trigger {
+    background: transparent;
+    border: none;
+    padding: 8px;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.btn-action-trigger:hover {
+    background-color: rgba(0,0,0,0.05);
+    color: #007bff;
 }
 
 /* ---------- Modales ---------- */
@@ -153,4 +244,202 @@
     align-items: center;
     padding: .75rem 1rem 0 1rem;
     background-color: #fff;
+}
+
+/* =========================================================================
+   📱 RESPONSIVE GLOBAL RULES (Mobile, Tablet, Desktop)
+   ========================================================================= */
+
+/* --- 1. MÓVILES (Menos de 768px o <= 768px estándar) --- */
+@media (max-width: 768px) {
+    /* Ajustes generales de contenedor */
+    body, html {
+        overflow-x: hidden !important; /* Prevenir scroll horizontal accidental */
+        width: 100% !important;
+    }
+    
+    .container, .container-fluid {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    /* Toolbars y Botoneras fluidas */
+    .toolbar, .footer-buttons {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0.75rem !important;
+    }
+
+    .toolbar .btn, .footer-buttons .btn {
+        flex: 1 1 calc(50% - 0.5rem);
+        width: auto !important;
+        margin-bottom: 0;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0.45rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    /* Formularios */
+    .form-group label {
+        font-size: 0.85rem;
+    }
+
+    .form-control {
+        font-size: 16px !important; /* Evitar auto-zoom en inputs de iOS Safari */
+    }
+
+    /* Tarjetas */
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .card-header {
+        font-size: 0.95rem;
+        padding: 12px 10px !important;
+    }
+
+    /* Tablas: Forzar responsive nativo o scroll */
+    .table-responsive {
+        border: 0;
+        margin-bottom: 0;
+    }
+    .table td, .table th {
+        font-size: 0.85rem;
+        padding: 6px 8px;
+    }
+}
+
+/* --- 2. TABLETS (Entre 769px y 1024px) --- */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container, .container-fluid {
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+    }
+
+    .toolbar, .footer-buttons {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+    
+    /* Los botones mantiene un tamaño manejable pero no total */
+    .toolbar .btn {
+        flex: 0 1 auto;
+    }
+
+    .table td, .table th {
+        font-size: 0.9rem;
+    }
+}
+
+/* --- 3. DESKTOP (Más de 1024px) --- */
+@media (min-width: 1025px) {
+    .container-fluid {
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+    }
+
+    .toolbar {
+        justify-content: flex-start;
+        padding: .75rem 1.25rem 0 1.25rem;
+    }
+
+    /* Optimización hover/transiciones solo para desktop */
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .card:hover {
+        box-shadow: 0 4px 15px rgba(0,0,0,.1) !important;
+        transition: box-shadow 0.3s ease-in-out;
+    }
+}
+
+/* ===================================
+   🔘 SPEED DIAL / FAB (Global Móviles)
+   =================================== */
+.fab-wrapper {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    z-index: 1040;
+}
+.fab-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.fab-btn.active {
+    transform: rotate(45deg);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+.fab-menu {
+    position: absolute;
+    bottom: 70px;
+    right: 0px;
+    display: flex;
+    flex-direction: column-reverse; /* Se abren hacia arriba */
+    gap: 12px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px) scale(0.9);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+}
+.fab-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+.fab-item {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    text-decoration: none;
+}
+.fab-item:hover, .fab-item:active {
+    transform: scale(1.1);
+    text-decoration: none;
+    color: white;
+}
+
+/* Etiquetas del FAB Menu */
+.fab-item-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+}
+.fab-label {
+    background-color: white;
+    color: #333;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    white-space: nowrap;
 }

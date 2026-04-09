@@ -2,6 +2,7 @@ package com.bolsadeideas.springboot.app.models.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 import javax.persistence.*;
 import java.util.Date;
 
@@ -15,7 +16,7 @@ public class IncidenciaApp {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
 
@@ -24,6 +25,7 @@ public class IncidenciaApp {
     private String estado; // Pendiente, En Proceso, Cerrado
     private String prioridad; // Alta, Media, Baja
 
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Temporal(TemporalType.TIMESTAMP)
     private Date fecha;
 

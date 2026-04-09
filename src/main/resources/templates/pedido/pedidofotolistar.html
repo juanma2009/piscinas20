@@ -23,7 +23,6 @@
     .card{
         border-radius:10px;
         box-shadow:0 2px 6px rgba(0,0,0,.08);
-        overflow:hidden;
     }
 
     .card-header{
@@ -32,6 +31,8 @@
         font-weight:700;
         text-transform:uppercase;
         padding:15px;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
     }
 
     .card-header:hover {
@@ -45,7 +46,21 @@
         flex-wrap:wrap;
         gap:.5rem;
         align-items:center;
-        padding: .75rem 1rem 0 1rem;
+        padding: .75rem 1rem;
+        width: 100%;
+        background-color: #fff;
+    }
+
+    .toolbar .btn {
+        width: auto !important; /* Reset de flex/min-width para ser como el resto de la app */
+    }
+
+    @media (max-width: 1024px) {
+        .toolbar {
+            justify-content: flex-start;
+            padding: .75rem .5rem;
+            margin-left: 0 !important; /* Evita el margen que empuja a la derecha */
+        }
     }
 
     .container{
@@ -154,6 +169,13 @@
     max-height: 2000px; /* suficiente para todos los campos */
     }
 
+    /* Contenedor responsive para cuadrícula/tabla */
+    .table-responsive-custom {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
     /* cerrado */
     #formBusqueda.is-closed{
     max-height: 0;
@@ -171,30 +193,42 @@
     }
 
     /* ===================================
-    📱 MÓVIL (CRÍTICO)
+    📱 MÓVIL Y TABLET (CRÍTICO)
     =================================== */
-    @media (max-width: 768px){
+    @media (max-width: 1024px){
+        /* 🔑 Evitar desbordamiento horizontal */
+        html, body {
+            overflow-x: hidden !important;
+            width: 100% !important;
+            position: relative;
+        }
 
-    /* 🔑 deja crecer el formulario */
-    #formBusqueda{
-    overflow: visible !important;
-    max-height: none !important;
-    transition: none !important;
-    }
+        .container-fluid {
+            padding-left: 5px !important;
+            padding-right: 5px !important;
+        }
 
-    #formBusqueda.is-closed{
-    display:none;
-    }
+        /* 🔑 deja crecer el formulario */
+        #formBusqueda{
+            overflow: visible !important;
+            max-height: none !important;
+            transition: none !important;
+        }
 
-    #formBusqueda.is-open{
-    display:block;
-    }
+        #formBusqueda.is-closed{
+            display:none;
+        }
 
-    html, body{
-    height:auto;
-    min-height:100%;
-    overflow-y:auto;
-    }
+        #formBusqueda.is-open{
+            display:block;
+        }
+
+        .wrapper, .content-wrapper {
+            height:auto !important;
+            min-height:100% !important;
+            overflow-y:auto !important;
+            overflow-x: hidden !important;
+        }
     }
 
     /* ===== Layout horizontal del formulario (desktop) ===== */
@@ -212,7 +246,89 @@
         }
     }
 
-
+    /* ===================================
+       🔘 SPEED DIAL / FAB (Móviles)
+       =================================== */
+    .fab-wrapper {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        z-index: 1040;
+    }
+    .fab-btn {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .fab-btn.active {
+        transform: rotate(45deg);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    .fab-menu {
+        position: absolute;
+        bottom: 70px;
+        right: 0px;
+        display: flex;
+        flex-direction: column-reverse; /* Se abren hacia arriba */
+        gap: 12px;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(20px) scale(0.9);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        pointer-events: none;
+    }
+    .fab-menu.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+    }
+    .fab-item {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        text-decoration: none;
+    }
+    .fab-item:hover, .fab-item:active {
+        transform: scale(1.1);
+        text-decoration: none;
+        color: white;
+    }
+    
+    /* Etiquetas del FAB Menu */
+    .fab-item-container {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+    .fab-label {
+        background-color: white;
+        color: #333;
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        white-space: nowrap;
+    }
+    
     </style>
 </head>
 
@@ -227,22 +343,19 @@
                     <i class="fas fa-images mr-2"></i> Galería de Imágenes
                 </div>
 
-                <div class="row justify-content-between align-items-center">
-                    <div class="toolbar">
-                        <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-list"></i> Pedidos
-                        </a>
-                        <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-user"></i> Clientes
-                        </a>
-                        <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-user-plus"></i> Nuevo Cliente
-                        </a>
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="toggleBusqueda">
-                            Mostrar Filtros
-                        </button>
-                        <div></div>
-                    </div>
+                <div class="toolbar d-none d-md-flex">
+                    <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list"></i> Pedidos
+                    </a>
+                    <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user"></i> Clientes
+                    </a>
+                    <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user-plus"></i> Nuevo Cliente
+                    </a>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="toggleBusqueda">
+                        <i class="fas fa-filter mr-1"></i> Filtros
+                    </button>
                 </div>
 
                 <div class="card-body">
@@ -366,18 +479,20 @@
 
                         <!-- Si hay pedidos -->
                         <div class="grid-view" th:if="${pedido != null and !pedido.isEmpty()}">
-                            <div id="photo-container">
-                                <div class="pedido-card photo-item" th:each="p : ${pedido}">
-                                    <a th:href="@{'/pedidos/ver/' + ${p.npedido}}">
-                                        <img th:src="${imagenesPedidos != null and imagenesPedidos.containsKey(p.npedido) ? imagenesPedidos[p.npedido] : '/images/spring.png'}" alt="Imagen del Pedido">
-                                    </a>
-                                    <div class="pedido-info">
-                                        <div><b>Cliente:</b> [[${p.cliente.nombre}]] [[${p.cliente.apellido}]]</div>
-                                        <div><b>Cobrado:</b> [[${p.cobrado}]]</div>
-                                        <div><b>Pieza:</b> [[${p.pieza}]] - [[${p.tipo}]]</div>
-                                        <div class="badge-status"
-                                             th:classappend="${p.estado == 'Terminado' ? 'bg-success' : (p.estado == 'Pendiente' ? 'bg-danger' : 'bg-warning')}"
-                                             th:text="${p.estado}">
+                            <div class="table-responsive-custom">
+                                <div id="photo-container">
+                                    <div class="pedido-card photo-item" th:each="p : ${pedido}">
+                                        <a th:href="@{'/pedidos/ver/' + ${p.npedido}}">
+                                            <img th:src="${imagenesPedidos != null and imagenesPedidos.containsKey(p.npedido) ? imagenesPedidos[p.npedido] : '/images/spring.png'}" alt="Imagen del Pedido">
+                                        </a>
+                                        <div class="pedido-info">
+                                            <div><b>Cliente:</b> [[${p.cliente.nombre}]] [[${p.cliente.apellido}]]</div>
+                                            <div><b>Cobrado:</b> [[${p.cobrado}]]</div>
+                                            <div><b>Pieza:</b> [[${p.pieza}]] - [[${p.tipo}]]</div>
+                                            <div class="badge-status"
+                                                 th:classappend="${p.estado == 'Terminado' ? 'bg-success' : (p.estado == 'Pendiente' ? 'bg-danger' : 'bg-warning')}"
+                                                 th:text="${p.estado}">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -397,6 +512,46 @@
                 </div><!-- /card-body -->
             </div><!-- /card -->
         </section>
+        
+        <!-- ================= FAB MENU (Solo Móvil) ================= -->
+        <div class="fab-wrapper d-block d-md-none">
+            <div class="fab-menu" id="fabMenu">
+                
+                <div class="fab-item-container">
+                    <span class="fab-label">Filtros</span>
+                    <button type="button" class="fab-item bg-warning text-dark border-0" id="fabToggleBusqueda" title="Filtros">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                </div>
+
+                <div class="fab-item-container">
+                    <span class="fab-label">Nuevo Cliente</span>
+                    <a th:href="@{/form}" class="fab-item bg-success text-white" title="Nuevo Cliente">
+                        <i class="fas fa-user-plus"></i>
+                    </a>
+                </div>
+
+                <div class="fab-item-container">
+                    <span class="fab-label">Clientes</span>
+                    <a th:href="@{/listar}" class="fab-item bg-info text-white" title="Clientes">
+                        <i class="fas fa-user"></i>
+                    </a>
+                </div>
+
+                <div class="fab-item-container">
+                    <span class="fab-label">Pedidos</span>
+                    <a th:href="@{/pedidos/listarPedidos}" class="fab-item bg-primary text-white" title="Pedidos">
+                        <i class="fas fa-list"></i>
+                    </a>
+                </div>
+                
+            </div>
+            <!-- Botón Principal -->
+            <button class="fab-btn bg-primary text-white" id="fabMainBtn">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+        
     </div>
 </div>
 
@@ -539,6 +694,32 @@
                     formBusqueda.reset();
                     $(formBusqueda).find('select').val('').trigger('change');
                     tipoSel.empty().append('<option value="" disabled selected>Seleccione una pieza primero</option>');
+                });
+            }
+
+            // 5. FAB (Floating Action Button) Logic
+            const fabMainBtn = document.getElementById('fabMainBtn');
+            const fabMenu = document.getElementById('fabMenu');
+            const fabToggleBusqueda = document.getElementById('fabToggleBusqueda');
+
+            if (fabMainBtn && fabMenu) {
+                fabMainBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    fabMainBtn.classList.toggle('active');
+                    fabMenu.classList.toggle('show');
+                });
+            }
+
+            if (fabToggleBusqueda) {
+                fabToggleBusqueda.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // Ejecuta el botón original de filtros oculto
+                    document.getElementById('toggleBusqueda').click();
+                    // Cierra el menú FAB interactuando como si clickara de nuevo
+                    fabMainBtn.click();
+                    
+                    // Asegurarnos de cerrar el teclado en móviles
+                    document.activeElement.blur();
                 });
             }
         });

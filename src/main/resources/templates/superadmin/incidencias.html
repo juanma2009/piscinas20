@@ -32,7 +32,7 @@
                                 <th>Asunto</th>
                                 <th>Prioridad</th>
                                 <th>Estado</th>
-                                <th>Acciones</th>
+                                <th class="col-acciones"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -50,16 +50,25 @@
                                           th:text="${inc.estado}">
                                     </span>
                                 </td>
-                                <td>
-                                    <form th:action="@{/superadmin/incidencias/cambiar-estado}" method="post" style="display:inline;">
-                                        <input type="hidden" name="id" th:value="${inc.id}"/>
-                                        <select name="estado" class="form-control-sm" onchange="this.form.submit()">
-                                            <option th:selected="${inc.estado == 'PENDIENTE'}" value="PENDIENTE">PENDIENTE</option>
-                                            <option th:selected="${inc.estado == 'PROCESO'}" value="PROCESO">EN PROCESO</option>
-                                            <option th:selected="${inc.estado == 'CERRADO'}" value="CERRADO">CERRADO</option>
-                                        </select>
-                                    </form>
-                                    <button class="btn btn-info btn-sm ml-2" th:title="${inc.descripcion}" onclick="alert(this.title)">Ver Detalle</button>
+                                <td class="col-acciones">
+                                    <div class="dropdown">
+                                        <button class="btn-action-trigger dropdown-toggle" type="button" data-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+                                            <a class="dropdown-item" href="#" th:title="${inc.descripcion}" onclick="alert(this.title)">
+                                                <i class="fas fa-info-circle mr-2"></i> Ver Detalle
+                                            </a>
+                                            <div class="dropdown-divider"></div>
+                                            <form th:action="@{/superadmin/incidencias/cambiar-estado}" method="post" id="formCambiarEstado">
+                                                <input type="hidden" name="id" th:value="${inc.id}"/>
+                                                <h6 class="dropdown-header">Cambiar Estado</h6>
+                                                <button type="submit" name="estado" value="PENDIENTE" class="dropdown-item" th:classappend="${inc.estado == 'PENDIENTE'} ? 'active' : ''">PENDIENTE</button>
+                                                <button type="submit" name="estado" value="PROCESO" class="dropdown-item" th:classappend="${inc.estado == 'PROCESO'} ? 'active' : ''">EN PROCESO</button>
+                                                <button type="submit" name="estado" value="CERRADO" class="dropdown-item" th:classappend="${inc.estado == 'CERRADO'} ? 'active' : ''">CERRADO</button>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
