@@ -269,9 +269,29 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="empleado">Empleado</label>
-                                        <select name="empleado" class="form-control" th:field="*{empleado}">
-                                            <option th:each="empleado : ${empleado}" th:value="${empleado}" th:text="${empleado}"></option>
-                                        </select>
+
+                                        <!-- Nuevo pedido: muestra el usuario logueado (solo lectura) -->
+                                        <div th:if="${pedido.npedido == null}">
+                                            <input type="text"
+                                                   id="empleado"
+                                                   name="empleado"
+                                                   class="form-control"
+                                                   th:value="${empleadoLogueado}"
+                                                   readonly
+                                                   style="background-color:#e9ecef; cursor:not-allowed;"
+                                                   title="Empleado detectado automáticamente del usuario en sesión" />
+                                            <small class="form-text text-muted">
+                                                <i class="fas fa-lock mr-1"></i>Se asigna automáticamente al usuario en sesión
+                                            </small>
+                                        </div>
+
+                                        <!-- Pedido existente: campo editable con valor guardado -->
+                                        <input th:if="${pedido.npedido != null}"
+                                               type="text"
+                                               id="empleado"
+                                               name="empleado"
+                                               class="form-control"
+                                               th:value="${pedido.empleado}" />
                                     </div>
                                 </div>
 
@@ -565,6 +585,237 @@
                 </div>
             </div>
         </div>
+
+        <!-- =====================================================
+             Modal: Crear Nuevo Cliente (rápido desde pedido)
+             ===================================================== -->
+        <div class="modal fade" id="modalNuevoCliente" tabindex="-1" role="dialog"
+             aria-labelledby="modalNuevoClienteLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                <div class="modal-content">
+
+                    <!-- Cabecera -->
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="modalNuevoClienteLabel">
+                            <i class="fas fa-user-plus mr-2"></i>Nuevo Cliente
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <!-- Cuerpo -->
+                    <div class="modal-body">
+
+                        <!-- Alerta de errores -->
+                        <div id="modalClienteError" class="alert alert-danger" style="display:none;"></div>
+
+                        <!-- Toggle Particular / Empresa -->
+                        <div class="tipo-toggle" id="modalTipoToggle">
+                            <input type="radio" id="modalTipoParticular" name="modalTipoCliente" value="PARTICULAR" checked>
+                            <label for="modalTipoParticular"><i class="fas fa-user mr-1"></i> Particular</label>
+                            <input type="radio" id="modalTipoEmpresa" name="modalTipoCliente" value="EMPRESA">
+                            <label for="modalTipoEmpresa"><i class="fas fa-building mr-1"></i> Empresa</label>
+                        </div>
+
+                        <!-- ====== SECCIÓN PARTICULAR ====== -->
+                        <div id="modalSeccionParticular">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="font-weight-bold"><i class="fas fa-user mr-1"></i> Nombre</label>
+                                    <input type="text" id="modalNombre" class="form-control" placeholder="Ingrese nombre">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="font-weight-bold"><i class="fas fa-user mr-1"></i> Apellido</label>
+                                    <input type="text" id="modalApellido" class="form-control" placeholder="Ingrese apellido">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ====== SECCIÓN EMPRESA ====== -->
+                        <div id="modalSeccionEmpresa" style="display:none;">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="font-weight-bold"><i class="fas fa-building mr-1"></i> Razón Social</label>
+                                    <input type="text" id="modalRazonSocial" class="form-control" placeholder="Nombre de la empresa">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="font-weight-bold"><i class="fas fa-id-card mr-1"></i> CIF / NIF</label>
+                                    <input type="text" id="modalCifNif" class="form-control" placeholder="Ej: B12345678">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="font-weight-bold"><i class="fas fa-user-tie mr-1"></i> Persona de Contacto</label>
+                                    <input type="text" id="modalContactoNombre" class="form-control" placeholder="Nombre del contacto">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="font-weight-bold"><i class="fas fa-user-tie mr-1"></i> Apellido Contacto</label>
+                                    <input type="text" id="modalContactoApellido" class="form-control" placeholder="Apellido del contacto">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos comunes -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="font-weight-bold"><i class="fas fa-map-marker-alt mr-1"></i> Dirección</label>
+                                <input type="text" id="modalDireccion" class="form-control" placeholder="Calle, número, ciudad">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="font-weight-bold"><i class="fas fa-phone mr-1"></i> Teléfono</label>
+                                <input type="text" id="modalTelefono" class="form-control" placeholder="Ej: +34 600 123 456">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="font-weight-bold"><i class="fas fa-envelope mr-1"></i> Email</label>
+                                <input type="email" id="modalEmail" class="form-control" placeholder="ejemplo@correo.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pie -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fas fa-times mr-1"></i> Cancelar
+                        </button>
+                        <button type="button" class="btn btn-success" id="btnGuardarNuevoCliente">
+                            <i class="fas fa-save mr-1"></i> Guardar Cliente
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!-- FIN Modal Nuevo Cliente -->
+
+        <script>
+        (function() {
+            // ── Toggle Particular / Empresa dentro del modal ──────────────────
+            const modalRadios  = document.querySelectorAll('input[name="modalTipoCliente"]');
+            const secPart      = document.getElementById('modalSeccionParticular');
+            const secEmp       = document.getElementById('modalSeccionEmpresa');
+
+            function applyModalMode(tipo) {
+                if (tipo === 'EMPRESA') {
+                    secEmp.style.display  = 'block';
+                    secPart.style.display = 'none';
+                } else {
+                    secPart.style.display = 'block';
+                    secEmp.style.display  = 'none';
+                }
+            }
+
+            modalRadios.forEach(r => r.addEventListener('change', () => applyModalMode(r.value)));
+
+            // Limpiar el modal al abrirlo
+            document.getElementById('modalNuevoCliente').addEventListener('show.bs.modal', limpiarModalCliente);
+            // Bootstrap 4 usa jQuery eventos
+            $('#modalNuevoCliente').on('show.bs.modal', limpiarModalCliente);
+
+            function limpiarModalCliente() {
+                document.getElementById('modalClienteError').style.display = 'none';
+                ['modalNombre','modalApellido','modalRazonSocial','modalCifNif',
+                 'modalContactoNombre','modalContactoApellido',
+                 'modalDireccion','modalTelefono','modalEmail'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = '';
+                });
+                document.getElementById('modalTipoParticular').checked = true;
+                applyModalMode('PARTICULAR');
+            }
+
+            // ── Guardar cliente via AJAX ──────────────────────────────────────
+            document.getElementById('btnGuardarNuevoCliente').addEventListener('click', async function() {
+                const errorDiv = document.getElementById('modalClienteError');
+                errorDiv.style.display = 'none';
+
+                const tipo = document.querySelector('input[name="modalTipoCliente"]:checked').value;
+
+                let nombre, apellido;
+
+                if (tipo === 'EMPRESA') {
+                    const razonSocial = (document.getElementById('modalRazonSocial').value || '').trim();
+                    const cifNif      = (document.getElementById('modalCifNif').value || '').trim();
+                    if (!razonSocial) {
+                        errorDiv.textContent = 'La Razón Social es obligatoria.';
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+                    nombre   = razonSocial;
+                    apellido = cifNif ? 'CIF:' + cifNif : 'EMPRESA';
+                } else {
+                    nombre   = (document.getElementById('modalNombre').value || '').trim();
+                    apellido = (document.getElementById('modalApellido').value || '').trim();
+                    if (!nombre || !apellido) {
+                        errorDiv.textContent = 'Nombre y apellido son obligatorios.';
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+                }
+
+                const telefono  = (document.getElementById('modalTelefono').value || '').trim();
+                const email     = (document.getElementById('modalEmail').value || '').trim();
+                const direccion = (document.getElementById('modalDireccion').value || '').trim();
+
+                const csrfToken  = document.querySelector("meta[name='_csrf']")?.content;
+                const csrfHeader = document.querySelector("meta[name='_csrf_header']")?.content;
+                const headers    = { 'Content-Type': 'application/json' };
+                if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+
+                const btnGuardar = this;
+                btnGuardar.disabled = true;
+                btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+
+                try {
+                    const resp = await fetch('/pedidos/api/cliente-rapido', {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({ nombre, apellido, telefono, email, direccion, tipo })
+                    });
+
+                    const data = await resp.json();
+
+                    if (!resp.ok || data.error) {
+                        errorDiv.textContent = data.error || 'Error al guardar el cliente.';
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+
+                    // ── Añadir al dropdown y seleccionarlo automáticamente ────
+                    const clienteNombre = data.nombre;
+                    const clienteIdNuevo = data.id;
+
+                    // Añadir opción al dropdown existente
+                    const dropdown = document.getElementById('clienteDropdown');
+                    const noResults = document.getElementById('clienteNoResults');
+
+                    const nuevaOpcion = document.createElement('div');
+                    nuevaOpcion.className = 'cliente-option';
+                    nuevaOpcion.setAttribute('data-id', clienteIdNuevo);
+                    nuevaOpcion.setAttribute('data-nombre', clienteNombre);
+                    nuevaOpcion.innerHTML = '<i class="fas fa-user mr-1 text-success"></i><span>' + clienteNombre + '</span>';
+                    dropdown.appendChild(nuevaOpcion);
+
+                    // Seleccionar el cliente recién creado en el buscador
+                    document.getElementById('clienteSearchInput').value = clienteNombre;
+                    document.getElementById('clienteId').value = clienteIdNuevo;
+                    document.getElementById('clienteDropdown').classList.remove('open');
+
+                    // Cerrar modal
+                    $('#modalNuevoCliente').modal('hide');
+
+                } catch (e) {
+                    errorDiv.textContent = 'Error de conexión: ' + e.message;
+                    errorDiv.style.display = 'block';
+                } finally {
+                    btnGuardar.disabled = false;
+                    btnGuardar.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar Cliente';
+                }
+            });
+        })();
+        </script>
 
         <script src="https://cdn.ckeditor.com/ckeditor5/35.0.1/classic/ckeditor.js"></script>
         <script src="https://accounts.google.com/gsi/client" async defer></script>

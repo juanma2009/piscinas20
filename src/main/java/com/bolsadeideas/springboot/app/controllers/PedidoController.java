@@ -9,6 +9,7 @@ import com.bolsadeideas.springboot.app.util.paginator.PageRender;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.core.context.SecurityContextHolder;
 import net.sf.jasperreports.engine.*;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -258,10 +259,11 @@ public class PedidoController {
     @PostMapping("/api/cliente-rapido")
     @ResponseBody
     public ResponseEntity<?> crearClienteRapido(@RequestBody Map<String, String> datos) {
-        String nombre   = datos.getOrDefault("nombre", "").trim();
-        String apellido = datos.getOrDefault("apellido", "").trim();
-        String telefono = datos.getOrDefault("telefono", "").trim();
-        String email    = datos.getOrDefault("email", "").trim();
+        String nombre    = datos.getOrDefault("nombre", "").trim();
+        String apellido  = datos.getOrDefault("apellido", "").trim();
+        String telefono  = datos.getOrDefault("telefono", "").trim();
+        String email     = datos.getOrDefault("email", "").trim();
+        String direccion = datos.getOrDefault("direccion", "").trim();
 
         if (nombre.isEmpty() || apellido.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Nombre y apellido son obligatorios"));
@@ -270,8 +272,9 @@ public class PedidoController {
         Cliente cliente = new Cliente();
         cliente.setNombre(nombre);
         cliente.setApellido(apellido);
-        if (!telefono.isEmpty()) cliente.setTelefono(telefono);
-        if (!email.isEmpty())    cliente.setEmail(email);
+        if (!telefono.isEmpty())  cliente.setTelefono(telefono);
+        if (!email.isEmpty())     cliente.setEmail(email);
+        if (!direccion.isEmpty()) cliente.setDireccion(direccion);
 
         String tipo = datos.getOrDefault("tipo", "PARTICULAR");
         cliente.setSecret(tipo);
@@ -293,19 +296,22 @@ public class PedidoController {
     @GetMapping("/form")
     public String crear(Map<String, Object> model, RedirectAttributes flash) {
         log.info("Abriendo formulario de pedido nuevo (sin cliente pre-seleccionado)");
-        
+
         Pedido numeroPedido = pedidoService.obtenerUltimoNumeroPedido();
         Pedido pedido = new Pedido();
-        
+
+        String nombreEmpleado = obtenerNombreEmpleadoLogueado();
+        pedido.setEmpleado(nombreEmpleado);
+
         model.put("numeroPedido", numeroPedido.getNpedido() + 1);
         model.put("pedido", pedido);
-        model.put("clientes", clienteService.findAll()); // Lista de clientes para el select
+        model.put("clientes", clienteService.findAll());
         model.put("proveedores", proveedorService.findAll());
-        model.put("empleado", List.of("Anselmo"));
+        model.put("empleadoLogueado", nombreEmpleado);
         model.put(TITULO, "Crear Pedido");
-        
+
         agregarDatosOpcionesAModelo(model);
-        
+
         return "pedido/pedidoform";
     }
 
@@ -330,11 +336,14 @@ public class PedidoController {
         Pedido pedido = new Pedido();
         pedido.setCliente(cliente);
 
+        String nombreEmpleado = obtenerNombreEmpleadoLogueado();
+        pedido.setEmpleado(nombreEmpleado);
+
         model.put("numeroPedido", numeroPedido.getNpedido() + 1);
         model.put("pedido", pedido);
-        model.put("clientes", clienteService.findAll()); // También pasamos todos por si quiere cambiarlo
+        model.put("clientes", clienteService.findAll());
         model.put("proveedores", proveedorService.findAll());
-        model.put("empleado", List.of("Anselmo"));
+        model.put("empleadoLogueado", nombreEmpleado);
         model.put(TITULO, CREARPEDIDO);
 
         agregarDatosOpcionesAModelo(model);
@@ -586,7 +595,23 @@ public class PedidoController {
     }
 
 // -------------------------------------------------------------------------
-// 4. Métodos auxiliares para sanitización de datos
+// 4. Métodos auxiliares
+// -------------------------------------------------------------------------
+
+    /**
+     * Obtiene el nombre completo del usuario actualmente autenticado.
+     * Si tiene nombre/apellido registrado en la BD, los usa; si no, usa el username.
+     */
+    private String obtenerNombreEmpleadoLogueado() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails) {
+            return ((CustomUserDetails) auth.getPrincipal()).getNombreCompleto();
+        }
+        return auth != null ? auth.getName() : "Desconocido";
+    }
+
+// -------------------------------------------------------------------------
+// 5. Métodos auxiliares para sanitización de datos
 // -------------------------------------------------------------------------
 
     private Double parsePeso(String peso) {

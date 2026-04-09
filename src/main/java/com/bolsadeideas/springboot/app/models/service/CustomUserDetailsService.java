@@ -6,14 +6,11 @@ import com.bolsadeideas.springboot.app.models.entity.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Collection;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
@@ -51,12 +48,14 @@ public class CustomUserDetailsService implements UserDetailsService {
         Long empresaId = (user.getEmpresa() != null) ? user.getEmpresa().getId() : null;
         
         return new CustomUserDetails(
-                user.getUsername(), 
-                user.getPassword(), 
-                user.isActive(), 
-                true, true, true, 
+                user.getUsername(),
+                user.getPassword(),
+                user.isActive(),
+                true, true, true,
                 user.getGrantedAuthorities(),
-                empresaId);
+                empresaId,
+                user.getNombre(),
+                user.getApellido());
     }
 
 }

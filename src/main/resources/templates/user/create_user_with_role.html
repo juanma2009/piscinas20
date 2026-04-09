@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"
       xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="admin/admin_layout">
 
@@ -28,19 +29,32 @@
                     <a th:href="@{/users}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-user-shield mr-1"></i> Usuarios
                     </a>
+                    <a th:href="@{/pedidos/form}" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus mr-1"></i> Nuevo Pedido
+                    </a>
+                    <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user-plus mr-1"></i> Crear Cliente
+                    </a>
                 </div>
 
                 <div class="card-body">
-                    <form method="post" th:action="@{/register}" th:object="${user}" class="needs-validation" novalidate>
+                    <form method="post" th:action="@{/register}" th:object="${user}"
+                          class="needs-validation" novalidate autocomplete="off">
                         <div class="form-row">
                             <div class="form-group col-md-6 mb-3">
                                 <label class="font-weight-bold"><i class="fas fa-user mr-1 text-primary"></i> Username</label>
-                                <input class="form-control" required th:field="*{username}" type="text" placeholder="Nombre de usuario"/>
+                                <input class="form-control" required th:field="*{username}" type="text"
+                                       placeholder="Nombre de usuario"
+                                       autocomplete="off"
+                                       th:value=""/>
                                 <div class="invalid-feedback">El nombre de usuario es obligatorio.</div>
                             </div>
                             <div class="form-group col-md-6 mb-3">
                                 <label class="font-weight-bold"><i class="fas fa-lock mr-1 text-primary"></i> Password</label>
-                                <input class="form-control" required th:field="*{password}" type="password" placeholder="Contraseña"/>
+                                <input class="form-control" required th:field="*{password}" type="password"
+                                       placeholder="Contraseña"
+                                       autocomplete="new-password"
+                                       th:value=""/>
                                 <div class="invalid-feedback">La contraseña es obligatoria.</div>
                             </div>
                         </div>
@@ -65,7 +79,20 @@
                             <div class="form-group col-md-6 mb-3">
                                 <label class="font-weight-bold"><i class="fas fa-user-shield mr-1 text-primary"></i> Asigna role(s)</label>
                                 <select multiple="true" th:field="*{roles}" class="form-control">
-                                    <option th:each="role : ${rolesList}" th:text="${role.nombre}" th:value="${role.id}"></option>
+                                    <!-- SUPER_ADMIN solo visible para SUPER_ADMIN -->
+                                    <th:block th:each="role : ${rolesList}">
+                                        <option
+                                            th:if="${role.nombre != 'ROLE_SUPER_ADMIN'}"
+                                            th:text="${role.nombre}"
+                                            th:value="${role.id}">
+                                        </option>
+                                        <option
+                                            th:if="${role.nombre == 'ROLE_SUPER_ADMIN'}"
+                                            sec:authorize="hasRole('SUPER_ADMIN')"
+                                            th:text="${role.nombre}"
+                                            th:value="${role.id}">
+                                        </option>
+                                    </th:block>
                                 </select>
                             </div>
                         </div>
