@@ -508,10 +508,26 @@
                                 </div>
                             </div>
                         </div>
-                            <nav aria-label="Page navigation">
-                                <ul class="pagination justify-content-center mt-2" id="photo-pagination"></ul>
-                            </nav>
                         </div>
+
+                        <!-- 🔄 INDICADOR DE CARGA -->
+                        <div id="loading-spinner" class="text-center my-4" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Cargando...</span>
+                            </div>
+                            <p class="text-muted mt-2">Cargando más fotos...</p>
+                        </div>
+
+                        <!-- 🏁 FIN DE RESULTADOS -->
+                        <div id="end-of-results" class="text-center my-4" style="display: none;">
+                            <hr class="w-25 mx-auto">
+                            <p class="text-muted small">No hay más fotos para mostrar</p>
+                        </div>
+
+                        <!-- Elemento Centinela para el Scroll Infinito -->
+                        <div id="infinite-scroll-sentinel" style="height: 20px;"></div>
+
+                    </div> <!-- ✅ Fin del bloque th:if="${busquedaRealizada == true}" -->
 
                         <!-- Si no hay pedidos -->
                         <div th:if="${pedido == null or pedido.isEmpty()}"
@@ -589,6 +605,8 @@
                 });
             });
 
+            let isToggling = false;
+
             // 2. Filter Toggle (Responsive)
             const formBusqueda = document.getElementById("formBusqueda");
             const btnToggle = document.getElementById("toggleBusqueda");
@@ -602,6 +620,7 @@
                 }
 
                 function abrirFiltros() {
+                    isToggling = true;
                     if (esMovil()) {
                         formBusqueda.style.display = "flex";
                         formBusqueda.style.maxHeight = "none";
@@ -612,9 +631,13 @@
                     formBusqueda.classList.remove("is-closed");
                     formBusqueda.classList.add("is-open");
                     btnToggle.textContent = "Ocultar Filtros";
+                    
+                    // Desbloqueamos después de la animación (0.4s en el CSS)
+                    setTimeout(() => { isToggling = false; }, 450);
                 }
 
                 function cerrarFiltros() {
+                    isToggling = true;
                     if (esMovil()) {
                         formBusqueda.style.display = "none";
                     } else {
@@ -623,6 +646,8 @@
                     formBusqueda.classList.remove("is-open");
                     formBusqueda.classList.add("is-closed");
                     btnToggle.textContent = "Mostrar Filtros";
+
+                    setTimeout(() => { isToggling = false; }, 450);
                 }
 
                 btnToggle.addEventListener("click", function () {
@@ -652,50 +677,91 @@
                 });
             }
 
-            // 3. Pagination for the grid
-            const itemsPerPage = 9;
-            const photos = document.querySelectorAll(".photo-item");
-            const pagination = document.getElementById("photo-pagination");
-            let currentPage = 1;
+            // 3. INFINITE SCROLL LOGIC
+            let currentPage = 0; // La página 0 ya viene cargada por Thymeleaf si es Búsqueda inicial
+            let isLoading = false;
+            let isLastPage = false;
+            
+            // Si acabas de hacer una búsqueda (POST), la página 0 ya está en el DOM.
+            // Pero como la búsqueda de fotos suele ser por AJAX para el scroll, 
+            // inicializamos el estado con los datos de los filtros actuales.
+            
+            const sentinel = document.getElementById('infinite-scroll-sentinel');
+            const photoContainer = document.getElementById('photo-container');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const endOfResults = document.getElementById('end-of-results');
 
-            function showPage(page) {
-                const start = (page - 1) * itemsPerPage;
-                const end = start + itemsPerPage;
-                photos.forEach((photo, index) => {
-                    photo.style.display = (index >= start && index < end) ? "block" : "none";
+            const observer = new IntersectionObserver((entries) => {
+                // Solo cargamos si no estamos animando la interfaz (abrir/cerrar filtros)
+                if (entries[0].isIntersecting && !isLoading && !isLastPage && !isToggling) {
+                    loadMorePhotos();
+                }
+            }, { threshold: 0.1 });
+
+            if (sentinel) observer.observe(sentinel);
+
+            function loadMorePhotos() {
+                if (isLoading || isLastPage) return;
+                
+                isLoading = true;
+                loadingSpinner.style.display = 'block';
+                currentPage++;
+
+                // Obtener filtros actuales del formulario
+                const formData = new FormData(formBusqueda);
+                const params = new URLSearchParams();
+                params.append('page', currentPage);
+                params.append('size', 12);
+                
+                for (let [key, value] of formData.entries()) {
+                    if (value) params.append(key, value);
+                }
+
+                $.ajax({
+                    url: '/pedidos/buscarFoto/json?' + params.toString(),
+                    method: 'GET',
+                    dataType: 'json'
+                }).done(data => {
+                    if (data.content && data.content.length > 0) {
+                        data.content.forEach(p => {
+                            const cardHtml = createPhotoCard(p);
+                            photoContainer.insertAdjacentHTML('beforeend', cardHtml);
+                        });
+                    }
+                    
+                    isLastPage = data.last;
+                    if (isLastPage) {
+                        endOfResults.style.display = 'block';
+                        observer.unobserve(sentinel);
+                    }
+                }).fail((xhr, s, e) => {
+                    console.error('Error cargando más fotos:', e);
+                }).always(() => {
+                    isLoading = false;
+                    loadingSpinner.style.display = 'none';
                 });
             }
 
-            function buildPagination() {
-                if (!pagination) return;
-                const totalPages = Math.ceil(photos.length / itemsPerPage);
-                pagination.innerHTML = "";
-                if (totalPages <= 1) return;
-
-                for (let i = 1; i <= totalPages; i++) {
-                    let li = document.createElement("li");
-                    li.className = "page-item" + (i === currentPage ? " active" : "");
-                    let a = document.createElement("a");
-                    a.className = "page-link";
-                    a.href = "javascript:void(0)";
-                    a.textContent = i;
-                    a.addEventListener("click", function(e) {
-                        e.preventDefault();
-                        currentPage = i;
-                        showPage(currentPage);
-                        buildPagination();
-                        const grid = document.querySelector(".grid-view");
-                        if (grid) grid.scrollIntoView({ behavior: 'smooth' });
-                    });
-                    li.appendChild(a);
-                    pagination.appendChild(li);
-                }
+            function createPhotoCard(p) {
+                const statusClass = (p.estado === 'Terminado' || p.estado === 'Finalizado') ? 'bg-success' : (p.estado === 'Pendiente' ? 'bg-danger' : 'bg-warning');
+                return `
+                    <div class="pedido-card photo-item">
+                        <img src="${p.imageUrl || '/images/spring.png'}" alt="Imagen del Pedido">
+                        <div class="pedido-card-content">
+                            <div class="pedido-info">
+                                <div><b>Cliente:</b> ${p.clienteNombre} ${p.clienteApellido}</div>
+                                <div><b>Cobrado:</b> ${p.cobrado} €</div>
+                                <div><b>Pieza:</b> ${p.pieza} - ${p.tipo}</div>
+                                <div class="badge-status ${statusClass}">${p.estado}</div>
+                            </div>
+                            <a href="/pedidos/ver/${p.npedido}" class="stretched-link" title="Ver Detalles"></a>
+                        </div>
+                    </div>`;
             }
 
-            if (photos.length > 0) {
-                showPage(1);
-                buildPagination();
-            }
+            // Al enviar el formulario, el navegador hace un envío normal (POST).
+            // Queremos que la primera página (0) se cargue normalmente y el resto por JS.
+            // El estado de currentPage se reinicia a 0 en cada recarga de página.
 
             // 4. Reset Button
             const btnReset = document.getElementById("btnReset");

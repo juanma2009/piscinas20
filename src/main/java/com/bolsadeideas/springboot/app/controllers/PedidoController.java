@@ -767,37 +767,14 @@ public class PedidoController {
         Date fechaDesdeDate = (fechaDesde != null) ? Date.from(fechaDesde.atStartOfDay(ZoneId.systemDefault()).toInstant()) : null;
         Date fechaHastaDate = (fechaHasta != null) ? Date.from(fechaHasta.atStartOfDay(ZoneId.systemDefault()).toInstant()) : null;
 
-        // Búsqueda paginada
-        Pageable pageRequest = PageRequest.of(page, Integer.MAX_VALUE);
+        // Búsqueda paginada real (ahora con 12 por página en lugar de MAX_VALUE)
+        int size = 12;
+        Pageable pageRequest = PageRequest.of(page, size);
         Page<Pedido> pedido = pedidoService.buscarPedidos(id, servicios, estado, grupo, pieza, tipo, ref, fechaDesdeDate, fechaHastaDate, Boolean.valueOf(activoStr), pageRequest);
         PageRender<Pedido> pageRender = new PageRender<>("listarPedidos", pedido);
 
-        // Mapear imágenes de pedidos
-        Map<Long, String> imagenesPedidos = new HashMap<>();
-        for (Pedido p : pedido.getContent()) {
-            // Obtener los archivos adjuntos del pedido
-            List<ArchivoAdjunto> archivos = archivoAdjuntoService.findArchivosAdjuntosByPedidoId(p.getNpedido());
-
-            if (!archivos.isEmpty()) {
-                try {
-                    // Usar el publicId almacenado en el archivo adjunto (por ejemplo, archivos.get(0).getPublicId())
-                    String publicId = archivos.get(0).getUrlCloudinary();  // Asumiendo que el publicId está almacenado en el objeto `ArchivoAdjunto`
-
-                    // Intentar obtener la URL de la imagen desde Redis
-                    String imageUrl = cloudinaryService.obtenerImagen(publicId);  // Recupera la URL de Cloudinary o Redis
-
-                    // Guardar la URL en el mapa para el pedido
-                    imagenesPedidos.put(p.getNpedido(), imageUrl);
-
-                } catch (Exception e) {
-                    // Si ocurre un error, asignar la imagen por defecto
-                    imagenesPedidos.put(p.getNpedido(), "/img/default.jpg");
-                }
-            } else {
-                // Si no hay archivos adjuntos, asignar la imagen por defecto
-                imagenesPedidos.put(p.getNpedido(), "/img/default.jpg");
-            }
-        }
+        // Mapear imágenes de pedidos usando el nuevo helper
+        Map<Long, String> imagenesPedidos = getImagenesPedidos(pedido.getContent());
 
         // Añadir resultados y filtros al modelo
         model.addAttribute("busquedaRealizada", true);
@@ -1141,5 +1118,69 @@ public class PedidoController {
             case 404 -> throw new RuntimeException("GDRIVE_404_NOT_FOUND");
             default -> throw new RuntimeException("GDRIVE_HTTP_ERROR_" + responseCode);
         }
+    }
+    @GetMapping("/buscarFoto/json")
+    @ResponseBody
+    public ResponseEntity<?> buscarFotoJson(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "12") int size,
+            @RequestParam(required = false) Integer id,
+            @RequestParam(required = false) String servicios,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String grupo,
+            @RequestParam(required = false) String pieza,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) String ref,
+            @RequestParam(name = "activo", defaultValue = "true") String activoStr,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta) {
+
+        Date fechaDesdeDate = (fechaDesde != null) ? Date.from(fechaDesde.atStartOfDay(ZoneId.systemDefault()).toInstant()) : null;
+        Date fechaHastaDate = (fechaHasta != null) ? Date.from(fechaHasta.atStartOfDay(ZoneId.systemDefault()).toInstant()) : null;
+
+        Pageable pageRequest = PageRequest.of(page, size);
+        Page<Pedido> pedidos = pedidoService.buscarPedidos(id, servicios, estado, grupo, pieza, tipo, ref, fechaDesdeDate, fechaHastaDate, Boolean.valueOf(activoStr), pageRequest);
+
+        Map<Long, String> imagenes = getImagenesPedidos(pedidos.getContent());
+
+        List<Map<String, Object>> content = pedidos.getContent().stream().map(p -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("npedido", p.getNpedido());
+            map.put("clienteNombre", p.getCliente().getNombre());
+            map.put("clienteApellido", p.getCliente().getApellido());
+            map.put("cobrado", p.getCobrado());
+            map.put("pieza", p.getPieza());
+            map.put("tipo", p.getTipo());
+            map.put("estado", p.getEstado());
+            map.put("imageUrl", imagenes.get(p.getNpedido()));
+            return map;
+        }).collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", content);
+        response.put("last", pedidos.isLast());
+        response.put("totalPages", pedidos.getTotalPages());
+        response.put("pageNumber", pedidos.getNumber());
+
+        return ResponseEntity.ok(response);
+    }
+
+    private Map<Long, String> getImagenesPedidos(List<Pedido> pedidos) {
+        Map<Long, String> imagenesPedidos = new HashMap<>();
+        for (Pedido p : pedidos) {
+            List<ArchivoAdjunto> archivos = archivoAdjuntoService.findArchivosAdjuntosByPedidoId(p.getNpedido());
+            if (!archivos.isEmpty()) {
+                try {
+                    String publicId = archivos.get(0).getUrlCloudinary();
+                    String imageUrl = cloudinaryService.obtenerImagen(publicId);
+                    imagenesPedidos.put(p.getNpedido(), imageUrl != null ? imageUrl : "/images/spring.png");
+                } catch (Exception e) {
+                    imagenesPedidos.put(p.getNpedido(), "/images/spring.png");
+                }
+            } else {
+                imagenesPedidos.put(p.getNpedido(), "/images/spring.png");
+            }
+        }
+        return imagenesPedidos;
     }
 }
