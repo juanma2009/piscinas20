@@ -358,6 +358,9 @@
                     <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-user"></i> Clientes
                     </a>
+                    <a th:href="@{/pedidos/form}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-plus mr-1"></i> Nuevo Pedido
+                    </a>
                     <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-user-plus"></i> Nuevo Cliente
                     </a>
@@ -541,8 +544,12 @@
         
         <!-- ================= FAB MENU (Solo Móvil) ================= -->
         <div class="fab-wrapper d-block d-md-none">
-            <div class="fab-menu" id="fabMenu">
-                
+                <div class="fab-item-container">
+                    <span class="fab-label">Nuevo Pedido</span>
+                    <a th:href="@{/pedidos/form}" class="fab-item bg-success text-white" title="Nuevo Pedido">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                </div>
                 <div class="fab-item-container">
                     <span class="fab-label">Filtros</span>
                     <button type="button" class="fab-item bg-warning text-dark border-0" id="fabToggleBusqueda" title="Filtros">

@@ -173,9 +173,21 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="cliente">Cliente</label>
-                                        <input name="cliente"
+                                        <!-- Si es un pedido nuevo (npedido es null), permitimos elegir cliente -->
+                                        <select th:if="${pedido.npedido == null}" id="cliente" name="cliente" class="form-control select2" th:field="*{cliente}">
+                                            <option value="">Seleccione un cliente</option>
+                                            <option th:each="c : ${clientes}"
+                                                    th:value="${c.id}"
+                                                    th:text="${c.nombre} + ' ' + ${c.apellido}"
+                                                    th:selected="${pedido.cliente != null and c.id == pedido.cliente.id}">
+                                            </option>
+                                        </select>
+                                        <!-- Si ya existe, lo mostramos como texto (deshabilitado) -->
+                                        <input th:if="${pedido.npedido != null}" 
                                                th:value="${pedido.cliente.nombre} + ' ' + ${pedido.cliente.apellido}"
                                                class="form-control" disabled/>
+                                        <!-- Campo oculto para mantener el ID si está deshabilitado -->
+                                        <input type="hidden" th:if="${pedido.npedido != null}" th:field="*{cliente}" />
                                     </div>
                                 </div>
                                 <!-- Nº Pedido esta oculto pero sigueenviado el numero al servicio-->
@@ -1448,7 +1460,7 @@
                 });
                 
                 $('#btnNuevoPedido').off('click').on('click', function() {
-                    window.location.href = '/pedidos/form/' + clienteId;
+                    window.location.href = '/pedidos/form';
                 });
                 
                 $('#btnVolverLista').off('click').on('click', function() {
@@ -1467,6 +1479,18 @@
                     window.location.href = '/citas/form/pedido/' + npedido;
                 });
             }
+
+            // Inicializar Select2 para el buscador de clientes si existe la librería
+            $(document).ready(function() {
+                if ($.fn.select2) {
+                    $('#cliente').select2({
+                        placeholder: 'Buscar un cliente...',
+                        allowClear: true,
+                        width: '100%',
+                        theme: 'bootstrap4'
+                    });
+                }
+            });
         </script>
 
     </section>

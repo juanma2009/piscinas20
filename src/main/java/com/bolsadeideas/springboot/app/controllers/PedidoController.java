@@ -250,8 +250,27 @@ public class PedidoController {
     }
 
 
+    @GetMapping("/form")
+    public String crear(Map<String, Object> model, RedirectAttributes flash) {
+        log.info("Abriendo formulario de pedido nuevo (sin cliente pre-seleccionado)");
+        
+        Pedido numeroPedido = pedidoService.obtenerUltimoNumeroPedido();
+        Pedido pedido = new Pedido();
+        
+        model.put("numeroPedido", numeroPedido.getNpedido() + 1);
+        model.put("pedido", pedido);
+        model.put("clientes", clienteService.findAll()); // Lista de clientes para el select
+        model.put("proveedores", proveedorService.findAll());
+        model.put("empleado", List.of("Anselmo"));
+        model.put(TITULO, "Crear Pedido");
+        
+        agregarDatosOpcionesAModelo(model);
+        
+        return "pedido/pedidoform";
+    }
+
     /**
-     * Crear los Pedidos para los clientes
+     * Crear los Pedidos para los clientes (con clienteId pre-seleccionado)
      *
      * @param clienteId
      * @param model
@@ -273,6 +292,7 @@ public class PedidoController {
 
         model.put("numeroPedido", numeroPedido.getNpedido() + 1);
         model.put("pedido", pedido);
+        model.put("clientes", clienteService.findAll()); // También pasamos todos por si quiere cambiarlo
         model.put("proveedores", proveedorService.findAll());
         model.put("empleado", List.of("Anselmo"));
         model.put(TITULO, CREARPEDIDO);
