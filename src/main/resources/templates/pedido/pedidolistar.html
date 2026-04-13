@@ -71,43 +71,38 @@
             padding:8px;
         }
 
-        /* ✅ En móvil: evita botones gigantes si en el layout hay reglas globales */
+        /* ✅ En móvil: botones más grandes para mejor usabilidad */
         @media (max-width: 768px) {
-            .toolbar .btn { width:auto !important; }
-        }
+            .toolbar .btn { 
+                width:auto !important; 
+                padding: 8px 16px !important;
+                font-size: 15px !important;
+            }
 
-        .dataTables_wrapper .dataTables_length {
-            margin: 0 !important;
-            padding: 0 !important;
-        }
+            /* Iconos de acción en la tabla: más área táctil */
+            .table .btn-link {
+                padding: 10px 8px !important;
+                font-size: 1.2rem !important;
+                margin-right: 5px !important;
+                min-width: 38px;
+                min-height: 38px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
 
-        .dataTables_wrapper .dataTables_length label {
-            margin: 0 !important;
-            display: inline-flex !important;
-            align-items: center;
-            gap: .25rem;
-            font-size: .9rem;
-        }
+            /* Botones de búsqueda */
+            #formBusqueda .btn {
+                padding: 10px 20px !important;
+                font-size: 16px !important;
+            }
 
-        .dataTables_wrapper .dataTables_length select {
-            margin: 0 !important;
-            padding: 0 .35rem !important;
-            height: 28px !important;
-            line-height: 28px !important;
-            width: auto !important;
+            /* Dropdown menu items */
+            .dropdown-menu .dropdown-item {
+                padding: 12px 20px !important;
+                font-size: 16px !important;
+            }
         }
-
-        .dataTables_wrapper .row {
-            margin-top: .25rem !important;
-            margin-bottom: .25rem !important;
-        }
-        .dt-actions{
-            display: inline-flex;
-            gap: .35rem;
-            flex-wrap: wrap;
-        }
-
-
     </style>
 </head>
 
@@ -409,7 +404,7 @@
                     { data: "metal",   title: "Metal" },
                     { data: "pieza",   title: "Pieza" },
                     { data: "tipo",    title: "Tipo" },
-                    { data: "cobrado", title: "Cobrado" },
+
 
                     {
                         data: "npedido", title: "Acciones",

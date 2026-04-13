@@ -64,6 +64,14 @@
                 margin-left: 0 !important;
                 /* Evita el margen que empuja a la derecha */
             }
+            .toolbar .btn {
+                padding: 10px 18px !important;
+                font-size: 16px !important;
+            }
+            .form-actions .btn {
+                padding: 10px 20px !important;
+                font-size: 16px !important;
+            }
         }
 
         .container {
@@ -505,7 +513,7 @@
                                                 <div class="pedido-info">
                                                     <div><b>Cliente:</b> [[${p.cliente.nombre}]]
                                                         [[${p.cliente.apellido}]]</div>
-                                                    <div><b>Cobrado:</b> [[${p.cobrado}]] €</div>
+
                                                     <div><b>Pieza:</b> [[${p.pieza}]] - [[${p.tipo}]]</div>
                                                     <div class="badge-status"
                                                         th:classappend="${p.estado == 'Terminado' or p.estado == 'Finalizado' ? 'bg-success' : (p.estado == 'Pendiente' ? 'bg-danger' : 'bg-warning')}"
@@ -769,7 +777,7 @@
                         <div class="pedido-card-content">
                             <div class="pedido-info">
                                 <div><b>Cliente:</b> ${p.clienteNombre} ${p.clienteApellido}</div>
-                                <div><b>Cobrado:</b> ${p.cobrado} €</div>
+
                                 <div><b>Pieza:</b> ${p.pieza} - ${p.tipo}</div>
                                 <div class="badge-status ${statusClass}">${p.estado}</div>
                             </div>

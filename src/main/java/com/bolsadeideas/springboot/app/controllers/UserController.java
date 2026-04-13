@@ -101,20 +101,42 @@ public class UserController {
 
     @GetMapping("/users")
     public String listUsers(@RequestParam(name = "page", defaultValue = "0") int page, Principal principal, Model model) {
-        Pageable pageRequest = PageRequest.of(page, 6); // Cambia 4 por el tamaño de página deseado
-        Page<User> users = userRepository.findActiveUsers(pageRequest); // Página de usuarios
-        PageRender<User> pageRender = new PageRender<>("/users", users); // Usamos el paginador PageRender
+        Pageable pageRequest = PageRequest.of(page, 6);
 
         String currentUsername = principal.getName();
         User currentUser = userRepository.findByUsername(currentUsername);
-        boolean isAdmin = currentUser != null && currentUser.getRoles().stream().anyMatch(role -> "ADMIN".equals(role.getNombre()) || "ROLE_ADMIN".equals(role.getNombre()));
 
-        model.addAttribute("users", users.getContent()); // Lista de usuarios
-        model.addAttribute("page", pageRender); // Paginación
-        model.addAttribute("titulo", "Lista de Usuarios"); // Título de la vista
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        boolean isSuperAdmin = currentUser.getRoles().stream()
+                .anyMatch(role -> "ROLE_SUPER_ADMIN".equals(role.getNombre()));
+
+        Page<User> users;
+        if (isSuperAdmin) {
+            // Super Admin ve a todos los usuarios activos de todas las empresas
+            users = userRepository.findActiveUsers(pageRequest);
+        } else if (currentUser.getEmpresa() != null) {
+            // Usuarios normales (Admins) solo ven usuarios de su propia empresa
+            users = userRepository.findActiveUsersByEmpresa(currentUser.getEmpresa().getId(), pageRequest);
+        } else {
+            // Si por alguna razón no tiene empresa y no es superadmin, no ve a nadie (o solo a sí mismo)
+            users = Page.empty(pageRequest);
+        }
+
+        PageRender<User> pageRender = new PageRender<>("/users", users);
+
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(role -> "ADMIN".equals(role.getNombre()) || "ROLE_ADMIN".equals(role.getNombre()));
+
+        model.addAttribute("users", users.getContent());
+        model.addAttribute("page", pageRender);
+        model.addAttribute("titulo", "Lista de Usuarios");
         model.addAttribute("isAdmin", isAdmin);
+        model.addAttribute("isSuperAdmin", isSuperAdmin);
 
-        return "user/list_users"; // Retornamos la vista
+        return "user/list_users";
     }
 
     @PostMapping("/users/deactivate/{id}")
