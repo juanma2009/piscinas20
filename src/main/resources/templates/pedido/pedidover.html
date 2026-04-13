@@ -40,6 +40,18 @@
             padding: 0.75rem 1rem 0 1rem;
         }
 
+        /* ✅ En móvil y tablets: toolbar más cómoda */
+        @media (max-width: 1024px) {
+            .toolbar {
+                padding: 1rem .5rem !important;
+                gap: .75rem !important;
+            }
+            .toolbar .btn {
+                padding: 10px 18px !important;
+                font-size: 16px !important;
+            }
+        }
+
 
         /* ✅ Filtros: toggle con altura real */
         #formBusqueda{

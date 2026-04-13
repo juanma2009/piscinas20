@@ -71,36 +71,38 @@
             padding:8px;
         }
 
-        /* ✅ En móvil: botones más grandes para mejor usabilidad */
-        @media (max-width: 768px) {
+        /* ✅ En móvil y tablets: botones e iconos mucho más grandes para mejor usabilidad */
+        @media (max-width: 1024px) {
             .toolbar .btn { 
                 width:auto !important; 
-                padding: 8px 16px !important;
-                font-size: 15px !important;
+                padding: 10px 18px !important;
+                font-size: 16px !important;
             }
 
-            /* Iconos de acción en la tabla: más área táctil */
-            .table .btn-link {
-                padding: 10px 8px !important;
-                font-size: 1.2rem !important;
-                margin-right: 5px !important;
-                min-width: 38px;
-                min-height: 38px;
+            /* Iconos de acción en la tabla: ¡Súper área táctil! */
+            .table .btn-link, 
+            .table .dropdown-toggle {
+                padding: 8px !important;
+                font-size: 1.5rem !important; /* Iconos grandes y claros */
+                margin-right: 12px !important; /* Más separación entre ellos */
+                min-width: 45px; /* Estándar óptimo para dedos */
+                min-height: 45px;
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
+                text-decoration: none !important;
             }
 
             /* Botones de búsqueda */
             #formBusqueda .btn {
-                padding: 10px 20px !important;
-                font-size: 16px !important;
+                padding: 12px 24px !important;
+                font-size: 17px !important;
             }
 
             /* Dropdown menu items */
             .dropdown-menu .dropdown-item {
-                padding: 12px 20px !important;
-                font-size: 16px !important;
+                padding: 15px 25px !important;
+                font-size: 17px !important;
             }
         }
     </style>
