@@ -46,6 +46,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
         
         Long empresaId = (user.getEmpresa() != null) ? user.getEmpresa().getId() : null;
+        String empresaNombre = (user.getEmpresa() != null) ? user.getEmpresa().getNombre() : "Sin Empresa";
         
         return new CustomUserDetails(
                 user.getUsername(),
@@ -54,6 +55,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 true, true, true,
                 user.getGrantedAuthorities(),
                 empresaId,
+                empresaNombre,
                 user.getNombre(),
                 user.getApellido());
     }

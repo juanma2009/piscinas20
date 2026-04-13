@@ -420,7 +420,7 @@
                             const isFacturado = row.facturado === true || row.facturado === "true";
 
                             let menuHtml = `
-                                <div class="dropdown">
+                                <div class="dropdown dropup">
                                     <!-- Accesos rápidos -->
                                     <a class="btn btn-sm btn-link text-primary d-inline-block p-0 mr-1" href="/pedidos/ver/${npedido}" title="Ver">
                                         <i class="fas fa-eye"></i>
@@ -449,6 +449,7 @@
                                     </button>
                                     <div class="dropdown-menu dropdown-menu-right">
                                         <a class="dropdown-item" href="/pedidos/ver/${npedido}"><i class="fas fa-eye mr-2 text-info"></i> Ver</a>
+                                        <a class="dropdown-item" href="/pedidos/copiar/${npedido}"><i class="fas fa-copy mr-2 text-primary"></i> Copiar</a>
                                         <a class="dropdown-item" href="/workshop/checklist/${npedido}"><i class="fas fa-clipboard-list mr-2 text-dark"></i> Checklist Taller</a>
                             `;
 

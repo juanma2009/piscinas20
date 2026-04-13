@@ -162,6 +162,24 @@
 
     <div id="messege"></div>
 
+    <!-- Banner de copia -->
+    <div th:if="${esCopia}" class="alert alert-info alert-dismissible fade show mx-3 mt-2" role="alert" style="border-left: 5px solid #17a2b8;">
+        <i class="fas fa-copy mr-2"></i>
+        <strong>Copia de pedido:</strong> Los datos han sido pre-rellenados del pedido original. Puedes modificar cualquier campo antes de guardar como nuevo pedido.
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+
+    <!-- Variables JS para copia con cliente pre-seleccionado -->
+    <script th:if="${esCopia}" th:inline="javascript">
+        /*<![CDATA[*/
+        var copiaClienteId = /*[[${clientePreseleccionado?.id}]]*/ null;
+        var copiaClienteNombre = /*[[${clientePreseleccionado?.nombre + ' ' + clientePreseleccionado?.apellido}]]*/ '';
+        /*]]>*/
+    </script>
+
+
     <section class="content-header">
         <div class="card">
             <div class="card-header">
@@ -1843,6 +1861,19 @@
                         dropdown.classList.remove('open');
                     }
                 });
+
+                // ✅ Auto-seleccionar cliente si es una copia de pedido
+                if (typeof copiaClienteId !== 'undefined' && copiaClienteId) {
+                    hiddenId.value = copiaClienteId;
+                    searchInput.value = copiaClienteNombre || '';
+                    // Marcar la opción correspondiente como activa
+                    options.forEach(opt => {
+                        if (opt.dataset.id == copiaClienteId) {
+                            opt.classList.add('active');
+                        }
+                    });
+                    console.log('📋 Cliente pre-seleccionado de copia:', copiaClienteNombre, '(ID:', copiaClienteId, ')');
+                }
             })();
 
             // ===== MODAL: CREAR CLIENTE RÁPIDO =====

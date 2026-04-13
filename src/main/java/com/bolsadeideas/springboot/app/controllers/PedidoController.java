@@ -352,6 +352,54 @@ public class PedidoController {
     }
 
 
+    /**
+     * Copiar un pedido existente: abre el formulario de creación pre-rellenado
+     * con los datos del pedido original para poder modificarlos antes de guardar.
+     */
+    @GetMapping("/copiar/{id}")
+    public String copiarPedido(@PathVariable(value = "id") Long id, Map<String, Object> model, RedirectAttributes flash) {
+        Pedido original = pedidoService.findPedidoById(id);
+        if (original == null) {
+            flash.addFlashAttribute(ERROR, "El pedido a copiar no existe en la base de datos");
+            return "redirect:/pedidos/listarPedidos";
+        }
+
+        log.info("📋 Copiando pedido {} para crear uno nuevo", id);
+
+        // Crear nuevo pedido con datos copiados (sin ID → será nuevo)
+        Pedido copia = new Pedido();
+        copia.setCliente(original.getCliente());
+        copia.setObservacion(original.getObservacion());
+        copia.setEstado("Pendiente"); // Siempre empieza como Pendiente
+        copia.setTipoPedido(original.getTipoPedido());
+        copia.setGrupo(original.getGrupo());
+        copia.setSubgrupo(original.getSubgrupo());
+        copia.setPieza(original.getPieza());
+        copia.setTipo(original.getTipo());
+        copia.setPeso(original.getPeso());
+        copia.setRef(original.getRef());
+        copia.setHoras(original.getHoras());
+        copia.setCobrado(original.getCobrado());
+
+        String nombreEmpleado = obtenerNombreEmpleadoLogueado();
+        copia.setEmpleado(nombreEmpleado);
+
+        Pedido numeroPedido = pedidoService.obtenerUltimoNumeroPedido();
+
+        model.put("numeroPedido", numeroPedido.getNpedido() + 1);
+        model.put("pedido", copia);
+        model.put("clientes", clienteService.findAll());
+        model.put("proveedores", proveedorService.findAll());
+        model.put("empleadoLogueado", nombreEmpleado);
+        model.put(TITULO, "Copiar Pedido");
+        model.put("esCopia", true);
+        model.put("clientePreseleccionado", original.getCliente());
+
+        agregarDatosOpcionesAModelo(model);
+
+        return "pedido/pedidoform";
+    }
+
     private void actualizarPedidoExistente(Pedido pedidoExistente, String observacion, String estado, String tipoPedido, String grupo, String pieza,String tipo, Double peso, String horas, Double cobrado, Date fechaEntrega, Date fechaFinalizado, String empleado, String ref, RedirectAttributes flash) {
         log.info("📝 Iniciando actualización de pedido: {}", pedidoExistente.getNpedido());
         

@@ -18,18 +18,24 @@ html, body {
 /* 📱 Ajustes de cabecera solo para móvil */
 @media (max-width: 768px) {
     .navbar-brand {
-        font-size: 1rem !important; /* Letra más pequeña */
-        max-width: 170px;           /* Limitar ancho */
-        white-space: nowrap;        /* No saltar de línea */
-        overflow: hidden;           /* Ocultar lo que sobra */
-        text-overflow: ellipsis;    /* Poner tres puntos '...' si no cabe */
-        margin-right: 0.5rem !important;
+        max-width: 280px;           /* Permitir más espacio para ver la empresa */
+        margin-right: 0.25rem !important;
+        padding-left: 0.5rem !important;
+    }
+    
+    .company-tag {
+        padding: 2px 10px !important;
+        font-size: 0.75rem !important;
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     /* Juntar más los iconos de notificaciones y usuario */
     .navbar-nav .nav-link {
-        padding-left: 0.4rem !important;
-        padding-right: 0.4rem !important;
+        padding-left: 0.3rem !important;
+        padding-right: 0.3rem !important;
     }
 }
 </style>
@@ -38,7 +44,16 @@ html, body {
 <nav class="main-header navbar navbar-expand navbar-white navbar-light">
 
         <!-- Logo o Nombre del Sitio -->
-        <a class="navbar-brand" href="/" th:href="@{/}">Taller Artesanal Joyería</a>
+        <a class="navbar-brand d-flex align-items-center" href="/" th:href="@{/}" style="gap: 0.75rem;">
+            <span class="d-none d-sm-inline font-weight-bold" style="color: #004085; letter-spacing: -0.5px;">Taller Artesanal <span style="color: #0062cc;">Joyería</span></span>
+            <span class="d-inline d-sm-none font-weight-bold" style="color: #004085;">TAJ</span>
+            <div class="company-tag d-flex align-items-center" 
+                 sec:authorize="isAuthenticated()"
+                 style="background: #f0f7ff; color: #0062cc; padding: 4px 12px; border-radius: 50px; border: 1px solid #cce5ff; font-size: 0.85rem; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                <i class="fas fa-building mr-2" style="font-size: 0.75rem; opacity: 0.8;"></i>
+                <span sec:authentication="principal.empresaNombre">Empresa</span>
+            </div>
+        </a>
 
         <!-- Right navbar links -->
         <ul class="navbar-nav ml-auto">

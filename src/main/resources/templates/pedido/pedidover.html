@@ -605,6 +605,9 @@
                 <a th:href="@{'/pedidos/formEditar/' + ${pedido.npedido}}" class="btn btn-outline-primary btn-sm">
                     <i class="fas fa-edit"></i> Editar
                 </a>
+                <a th:href="@{'/pedidos/copiar/' + ${pedido.npedido}}" class="btn btn-outline-info btn-sm">
+                    <i class="fas fa-copy"></i> Copiar
+                </a>
                 <a th:href="@{'/workshop/checklist/' + ${pedido.npedido}}" class="btn btn-outline-dark btn-sm">
                     <i class="fas fa-clipboard-list"></i> Checklist
                 </a>
