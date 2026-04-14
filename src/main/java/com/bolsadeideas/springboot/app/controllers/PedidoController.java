@@ -324,6 +324,7 @@ public class PedidoController {
         model.put(TITULO, "Crear Pedido");
 
         agregarDatosOpcionesAModelo(model);
+        model.put("existingPhotos", new ArrayList<>());
 
         return "pedido/pedidoform";
     }
@@ -360,6 +361,7 @@ public class PedidoController {
         model.put(TITULO, CREARPEDIDO);
 
         agregarDatosOpcionesAModelo(model);
+        model.put("existingPhotos", new ArrayList<>());
 
         return "pedido/pedidoform";
     }

@@ -1673,9 +1673,14 @@
                     const noPhotosMsg = $('#sinFotosMensaje');
                     const tableModal = $('#fileListTable');
 
-                    const initialCount = (initialPhotos && Array.isArray(initialPhotos)) ? initialPhotos.length : 0;
-                    const pendientesCount = (archivosPendientes && Array.isArray(archivosPendientes)) ? archivosPendientes.length : 0;
-                    const driveCount = (googleDriveFiles && Array.isArray(googleDriveFiles)) ? googleDriveFiles.length : 0;
+                    // Garantizar que las variables sean arreglos para evitar errores de .forEach()
+                    if (!initialPhotos) initialPhotos = [];
+                    if (!archivosPendientes) archivosPendientes = [];
+                    if (!googleDriveFiles) googleDriveFiles = [];
+
+                    const initialCount = initialPhotos.length;
+                    const pendientesCount = archivosPendientes.length;
+                    const driveCount = googleDriveFiles.length;
 
                     const totalCount = initialCount + pendientesCount + driveCount;
                     console.log("📊 Conteo de fotos - Iniciales:", initialCount, "Pendientes:", pendientesCount, "Drive:", driveCount);
