@@ -34,6 +34,8 @@ public class ArchivoAdjunto implements Serializable {
 
     private String setUrlDrive;  // Si decides usar Google Drive, puedes almacenar aquí la URL
 
+    private Long tamano;  // Tamaño del archivo en bytes
+
     public void setUrlDrive(String urlDrive) {
         this.setUrlDrive = urlDrive;  // Asigna la URL de Google Drive al campo
     }
@@ -47,5 +49,14 @@ public class ArchivoAdjunto implements Serializable {
         this.nombre = nombre;
         this.urlCloudinary = urlCloudinary;
         this.fecha = new Date();  // Fecha actual
+    }
+
+    // Constructor completo (nuevo)
+    public ArchivoAdjunto(Long pedidoAdjunto, String nombre, String urlCloudinary, Long tamano) {
+        this.pedidoAdjunto = pedidoAdjunto;
+        this.nombre = nombre;
+        this.urlCloudinary = urlCloudinary;
+        this.tamano = tamano;
+        this.fecha = new Date();
     }
 }

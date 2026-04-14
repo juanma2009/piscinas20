@@ -359,9 +359,14 @@ public class PedidoServiceImpl implements PedidoService {
 	@Transactional
 	public Pedido findPedidoById(Long id) {
 		Pedido pedido = pedidoDao.findByIdWithCliente(id);
-		if (pedido != null && pedido.getCliente() != null) {
-			pedido.getCliente().getId(); // fuerza la carga dentro de la sesión activa
-			return pedido;
+		if (pedido != null) {
+			if (pedido.getCliente() != null) {
+				pedido.getCliente().getId(); // fuerza la carga dentro de la sesión activa
+			}
+			// Forzamos la inicialización de la colección de archivos adjuntos para evitar LazyInitializationException en la vista
+			if (pedido.getArchivosAdjuntos() != null) {
+				pedido.getArchivosAdjuntos().size();
+			}
 		}
 		return pedido;
 	}

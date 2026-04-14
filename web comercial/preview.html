@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRM para Taller Artesanal de Joyería</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .crm-dark { background: #0f172a; }
+    .crm-blue { background: linear-gradient(135deg, #0b5fc1 0%, #0a3f8f 100%); }
+    .crm-accent { color: #0b5fc1; }
+    .crm-gold { color: #d4af37; }
+    .btn-primary { background: linear-gradient(135deg, #0b5fc1 0%, #0a3f8f 100%); color: white; }
+    .btn-secondary { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white; }
+    .shot-card img { width: 100%; display: block; }
+    .shadow-soft { box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12); }
+    html { scroll-behavior: smooth; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-11 h-11 rounded-2xl crm-blue text-white flex items-center justify-center shadow-lg font-extrabold text-lg">💎</div>
+        <div class="min-w-0">
+          <div class="font-extrabold text-lg sm:text-xl truncate">CRM Taller Artesanal Joyería</div>
+          <div class="text-sm text-slate-500 truncate">Gestión comercial, operativa y visual del taller en una sola plataforma</div>
+        </div>
+      </div>
+      <div class="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-700">
+        <a href="#modulos" class="hover:text-blue-700">Módulos</a>
+        <a href="#capturas" class="hover:text-blue-700">Capturas</a>
+        <a href="#video" class="hover:text-blue-700">Vídeo</a>
+        <a href="#demo" class="hover:text-blue-700">Demo</a>
+        <a href="#contacto" class="hover:text-blue-700">Contacto</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="#contacto" class="hidden sm:inline-flex px-4 py-2 rounded-xl border border-slate-300 font-semibold hover:bg-slate-50">Solicitar demo</a>
+        <a href="#demo" class="inline-flex px-5 py-2.5 rounded-xl btn-primary font-semibold shadow-lg">Abrir demo</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="crm-dark text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 text-sm font-semibold mb-6">
+          <i class="fa-solid fa-chart-line crm-gold"></i>
+          CRM especializado para joyerías y talleres artesanales
+        </span>
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
+          Controla clientes, pedidos, producción, citas, compras y facturación desde un único panel.
+        </h1>
+        <p class="text-lg sm:text-xl text-slate-300 leading-relaxed max-w-2xl mb-8">
+          Esta solución CRM está pensada para talleres de joyería que necesitan ordenar su operación diaria, dar seguimiento real a cada pedido, centralizar la información del cliente y visualizar el estado del negocio con datos claros.
+        </p>
+        <div class="flex flex-wrap gap-4 mb-10">
+          <a href="#demo" class="px-6 py-3 rounded-2xl btn-primary font-bold shadow-xl">Abrir demo</a>
+          <a href="#capturas" class="px-6 py-3 rounded-2xl border border-white/20 bg-white/5 font-bold">Ver pantallas del CRM</a>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+          <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+            <div class="text-2xl font-extrabold">360º</div>
+            <div class="text-slate-300 mt-1">Visión completa del cliente y del pedido</div>
+          </div>
+          <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+            <div class="text-2xl font-extrabold">Visual</div>
+            <div class="text-slate-300 mt-1">Galería de piezas, filtros y archivos adjuntos</div>
+          </div>
+          <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+            <div class="text-2xl font-extrabold">Operativo</div>
+            <div class="text-slate-300 mt-1">Desde la captación hasta la entrega y facturación</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="bg-white rounded-[28px] p-3 shadow-2xl">
+          <img src="analisdel_cliente.PNG" alt="Vista general del CRM de joyería" class="w-full rounded-[22px] border border-slate-200">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="modulos" class="py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mx-auto text-center mb-14">
+        <span class="inline-block text-sm font-bold uppercase tracking-wider text-blue-700 mb-3">Módulos del CRM</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold mb-4">Un CRM pensado para la operativa real del taller</h2>
+        <p class="text-slate-600 text-lg">Cada apartado responde a una necesidad concreta del negocio: captar clientes, gestionar pedidos, controlar producción, organizar citas, registrar compras y seguir la rentabilidad.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div class="bg-white rounded-3xl p-7 shadow-soft border border-slate-200">
+          <div class="w-14 h-14 rounded-2xl crm-blue text-white flex items-center justify-center text-xl mb-5"><i class="fa-solid fa-users"></i></div>
+          <h3 class="text-xl font-bold mb-3">Clientes y fichas completas</h3>
+          <p class="text-slate-600 leading-relaxed">Registra clientes particulares y empresas, centraliza datos de contacto, histórico, pedidos, citas y facturas, y consulta la ficha del cliente sin salir del flujo comercial.</p>
+        </div>
+        <div class="bg-white rounded-3xl p-7 shadow-soft border border-slate-200">
+          <div class="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl mb-5"><i class="fa-solid fa-box-open"></i></div>
+          <h3 class="text-xl font-bold mb-3">Pedidos y seguimiento</h3>
+          <p class="text-slate-600 leading-relaxed">Crea pedidos, asigna empleado, controla fechas de entrega y finalización, consulta referencias y accede a checklist, observaciones, detalles técnicos y archivos adjuntos.</p>
+        </div>
+        <div class="bg-white rounded-3xl p-7 shadow-soft border border-slate-200">
+          <div class="w-14 h-14 rounded-2xl bg-cyan-600 text-white flex items-center justify-center text-xl mb-5"><i class="fa-solid fa-list-check"></i></div>
+          <h3 class="text-xl font-bold mb-3">Checklist de taller</h3>
+          <p class="text-slate-600 leading-relaxed">Organiza el trabajo por fases: recepción, tallas y medidas, metales del cliente, piedras, diseño, producción, control de calidad y entrega.</p>
+        </div>
+        <div class="bg-white rounded-3xl p-7 shadow-soft border border-slate-200">
+          <div class="w-14 h-14 rounded-2xl bg-violet-600 text-white flex items-center justify-center text-xl mb-5"><i class="fa-solid fa-camera"></i></div>
+          <h3 class="text-xl font-bold mb-3">Galería visual de piezas</h3>
+          <p class="text-slate-600 leading-relaxed">Filtra imágenes por cliente, tipo de pedido, metal, referencia y estado para encontrar rápidamente trabajos activos o finalizados con soporte visual.</p>
+        </div>
+        <div class="bg-white rounded-3xl p-7 shadow-soft border border-slate-200">
+          <div class="w-14 h-14 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-xl mb-5"><i class="fa-solid fa-calendar-days"></i></div>
+          <h3 class="text-xl font-bold mb-3">Citas y agenda</h3>
+          <p class="text-slate-600 leading-relaxed">Programa citas de taller, organiza visitas comerciales y vincula reuniones a pedidos o clientes para no perder contexto en la atención.</p>
+        </div>
+        <div class="bg-white rounded-3xl p-7 shadow-soft border border-slate-200">
+          <div class="w-14 h-14 rounded-2xl bg-rose-600 text-white flex items-center justify-center text-xl mb-5"><i class="fa-solid fa-chart-pie"></i></div>
+          <h3 class="text-xl font-bold mb-3">Balances y facturación</h3>
+          <p class="text-slate-600 leading-relaxed">Consulta pedidos por año, facturación anual, análisis financiero del cliente y balance de pagos y beneficios para una gestión más rentable.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="capturas" class="py-20 bg-slate-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl mx-auto text-center mb-14">
+        <span class="inline-block text-sm font-bold uppercase tracking-wider text-blue-700 mb-3">Capturas reales</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold mb-4">Todas las áreas clave del CRM, en tamaño grande</h2>
+        <p class="text-slate-600 text-lg">Aquí se muestra el sistema tal como se utiliza en la práctica, con pantallas enfocadas en relación con clientes, pedidos, producción, imágenes, compras, administración y usuarios.</p>
+      </div>
+
+      <div class="grid gap-10">
+        <article class="bg-white rounded-[28px] p-6 lg:p-8 shadow-soft border border-slate-200 shot-card">
+          <div class="mb-5">
+            <h3 class="text-2xl font-extrabold mb-2">Panel de análisis del cliente</h3>
+            <p class="text-slate-600 text-lg">El CRM permite ver de forma inmediata los pedidos por año y la facturación anual del cliente. Esto ayuda a medir recurrencia, valor comercial y evolución económica de cada cuenta.</p>
+          </div>
+          <img src="analisdel_cliente.PNG" alt="Análisis financiero del cliente en el CRM" class="rounded-2xl border border-slate-200">
+        </article>
+
+        <article class="bg-white rounded-[28px] p-6 lg:p-8 shadow-soft border border-slate-200 shot-card">
+          <div class="mb-5">
+            <h3 class="text-2xl font-extrabold mb-2">Detalle del pedido con visión 360</h3>
+            <p class="text-slate-600 text-lg">Cada pedido reúne cliente, referencia, fechas, empleado responsable, estado, horas y acceso directo a editar, copiar, checklist, galería y archivos. Es el centro operativo del trabajo diario.</p>
+          </div>
+          <img src="detalles_pedido.PNG" alt="Detalle del pedido en el CRM" class="rounded-2xl border border-slate-200">
+        </article>
+
+        <article class="bg-white rounded-[28px] p-6 lg:p-8 shadow-soft border border-slate-200 shot-card">
+          <div class="mb-5">
+            <h3 class="text-2xl font-extrabold mb-2">Checklist de producción por fases</h3>
+            <p class="text-slate-600 text-lg">El CRM estructura el avance del taller por etapas para que cada pedido tenga control documental y operativo desde la recepción hasta la entrega final.</p>
+          </div>
+          <img src="checklistpedido.PNG" alt="Checklist del pedido" class="rounded-2xl border border-slate-200">
+        </article>
+
+        <div class="grid xl:grid-cols-2 gap-10">
+          <article class="bg-white rounded-[28px] p-6 shadow-soft border border-slate-200 shot-card">
+            <div class="mb-5">
+              <h3 class="text-2xl font-extrabold mb-2">Creación de pedidos</h3>
+              <p class="text-slate-600 text-lg">Alta rápida de nuevos trabajos con cliente, empleado, servicio, estado y fechas clave para iniciar el proceso comercial y productivo con orden.</p>
+            </div>
+            <img src="crear pedido.PNG" alt="Formulario de creación de pedido" class="rounded-2xl border border-slate-200">
+          </article>
+
+          <article class="bg-white rounded-[28px] p-6 shadow-soft border border-slate-200 shot-card">
+            <div class="mb-5">
+              <h3 class="text-2xl font-extrabold mb-2">Menú de acciones operativas</h3>
+              <p class="text-slate-600 text-lg">Desde el listado se puede ver, copiar, abrir checklist, editar, programar cita, generar factura o dar de baja un pedido según el flujo del negocio.</p>
+            </div>
+            <img src="acciones_listado de pedidos.PNG" alt="Acciones disponibles en pedidos" class="rounded-2xl border border-slate-200">
+          </article>
+        </div>
+
+        <div class="grid xl:grid-cols-2 gap-10">
+          <article class="bg-white rounded-[28px] p-6 shadow-soft border border-slate-200 shot-card">
+            <div class="mb-5">
+              <h3 class="text-2xl font-extrabold mb-2">Ficha detallada del cliente</h3>
+              <p class="text-slate-600 text-lg">La ficha del cliente concentra nombre, dirección, teléfono, email, fecha de alta y acceso a pedidos, citas, facturas y análisis financiero.</p>
+            </div>
+            <img src="detalles_cliente.PNG" alt="Detalle del cliente" class="rounded-2xl border border-slate-200">
+          </article>
+
+          <article class="bg-white rounded-[28px] p-6 shadow-soft border border-slate-200 shot-card">
+            <div class="mb-5">
+              <h3 class="text-2xl font-extrabold mb-2">Alta de clientes particulares y empresas</h3>
+              <p class="text-slate-600 text-lg">El CRM contempla distintos tipos de clientes para adaptarse a ventas directas y cuentas corporativas, manteniendo estructuras diferenciadas de información.</p>
+            </div>
+            <div class="grid gap-6">
+              <img src="crearclienteaprticular.PNG" alt="Crear cliente particular" class="rounded-2xl border border-slate-200">
+              <img src="crearclienteempresa.PNG" alt="Crear cliente empresa" class="rounded-2xl border border-slate-200">
+            </div>
+          </article>
+        </div>
+
+        <article class="bg-white rounded-[28px] p-6 lg:p-8 shadow-soft border border-slate-200 shot-card">
+          <div class="mb-5">
+            <h3 class="text-2xl font-extrabold mb-2">Galería de imágenes con filtros avanzados</h3>
+            <p class="text-slate-600 text-lg">Una parte diferencial del CRM es su gestión visual: localiza rápidamente piezas y trabajos por cliente, tipo, metal, estado, referencia o rango de fechas.</p>
+          </div>
+          <div class="grid gap-6">
+            <img src="filtroyfotosgaleria.PNG" alt="Galería con resultados" class="rounded-2xl border border-slate-200">
+            <img src="galeriafiltro.PNG" alt="Filtros de galería" class="rounded-2xl border border-slate-200">
+          </div>
+        </article>
+
+        <div class="grid xl:grid-cols-2 gap-10">
+          <article class="bg-white rounded-[28px] p-6 shadow-soft border border-slate-200 shot-card">
+            <div class="mb-5">
+              <h3 class="text-2xl font-extrabold mb-2">Citas vinculadas al proceso comercial</h3>
+              <p class="text-slate-600 text-lg">La agenda de citas ayuda a ordenar reuniones, entregas, visitas de seguimiento y atención al cliente dentro del propio CRM.</p>
+            </div>
+            <img src="citas.PNG" alt="Listado de citas" class="rounded-2xl border border-slate-200">
+          </article>
+
+          <article class="bg-white rounded-[28px] p-6 shadow-soft border border-slate-200 shot-card">
+            <div class="mb-5">
+              <h3 class="text-2xl font-extrabold mb-2">Balance de pagos y beneficios</h3>
+              <p class="text-slate-600 text-lg">Módulo preparado para consolidar la lectura financiera del negocio y complementar la parte comercial con información de rentabilidad.</p>
+            </div>
+            <img src="balancepagobeneficios.PNG" alt="Balance pagos y beneficios" class="rounded-2xl border border-slate-200">
+          </article>
+        </div>
+
+        <div class="grid xl:grid-cols-2 gap-10">
+          <article class="bg-white rounded-[28px] p-6 shadow-soft border border-slate-200 shot-card">
+            <div class="mb-5">
+              <h3 class="text-2xl font-extrabold mb-2">Compras, materiales y proveedores</h3>
+              <p class="text-slate-600 text-lg">El CRM también soporta la parte de abastecimiento con formularios para materiales y proveedores, lo que mejora trazabilidad y control de stock.</p>
+            </div>
+            <div class="grid gap-6">
+              <img src="compramaterial.PNG" alt="Formulario de material" class="rounded-2xl border border-slate-200">
+              <img src="crearproveddor.PNG" alt="Formulario de proveedor" class="rounded-2xl border border-slate-200">
+            </div>
+          </article>
+
+          <article class="bg-white rounded-[28px] p-6 shadow-soft border border-slate-200 shot-card">
+            <div class="mb-5">
+              <h3 class="text-2xl font-extrabold mb-2">Roles, usuarios y administración</h3>
+              <p class="text-slate-600 text-lg">La plataforma incorpora administración interna para definir roles, dar de alta usuarios y controlar permisos según la función de cada miembro del equipo.</p>
+            </div>
+            <div class="grid gap-6">
+              <img src="crearroles.PNG" alt="Gestión de roles" class="rounded-2xl border border-slate-200">
+              <img src="crearusaurio.PNG" alt="Crear usuarios" class="rounded-2xl border border-slate-200">
+              <img src="crearusuario.PNG" alt="Crear usuario con roles" class="rounded-2xl border border-slate-200">
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="video" class="py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-10 items-center">
+        <div>
+          <span class="inline-block text-sm font-bold uppercase tracking-wider text-blue-700 mb-3">Vídeo demo</span>
+          <h2 class="text-3xl sm:text-4xl font-extrabold mb-5">Explica el CRM con una demo guiada del flujo comercial y operativo</h2>
+          <p class="text-slate-600 text-lg leading-relaxed mb-6">Aquí puedes insertar un vídeo de presentación donde se vea el recorrido real: alta del cliente, creación del pedido, checklist del taller, seguimiento por estados, galería visual, cita comercial y generación de factura.</p>
+          <ul class="space-y-3 text-slate-700 text-lg">
+            <li><i class="fa-solid fa-check crm-accent mr-2"></i>Captación y alta de clientes</li>
+            <li><i class="fa-solid fa-check crm-accent mr-2"></i>Seguimiento integral del pedido</li>
+            <li><i class="fa-solid fa-check crm-accent mr-2"></i>Control interno del taller</li>
+            <li><i class="fa-solid fa-check crm-accent mr-2"></i>Indicadores de actividad y facturación</li>
+          </ul>
+        </div>
+        <div class="bg-slate-950 rounded-[28px] p-4 shadow-2xl">
+          <div class="aspect-video rounded-[22px] border border-white/10 bg-gradient-to-br from-slate-900 to-slate-800 flex flex-col items-center justify-center text-white text-center p-8">
+            <i class="fa-solid fa-circle-play text-6xl mb-5 text-blue-400"></i>
+            <div class="text-2xl font-bold mb-2">Espacio para vídeo demo del CRM</div>
+            <div class="text-slate-300 max-w-lg">Sustituye este bloque por un vídeo embebido de YouTube, Vimeo o una grabación propia del sistema en funcionamiento.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo" class="py-20 bg-slate-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="bg-white rounded-[32px] border border-slate-200 shadow-soft overflow-hidden">
+        <div class="crm-blue text-white p-8 lg:p-10">
+          <div class="max-w-3xl">
+            <span class="inline-block text-sm font-bold uppercase tracking-wider text-blue-100 mb-3">Demo comercial</span>
+            <h2 class="text-3xl sm:text-4xl font-extrabold mb-4">Abre una demo del CRM con usuario de ejemplo</h2>
+            <p class="text-blue-100 text-lg">Puedes presentar el sistema con acceso guiado. El botón puede enlazar a la demo real, a un subdominio o a una instalación de pruebas del CRM.</p>
+          </div>
+        </div>
+        <div class="p-8 lg:p-10 grid lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <h3 class="text-2xl font-bold mb-4">Acceso de muestra</h3>
+            <div class="space-y-4 text-lg">
+              <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4"><strong>Usuario:</strong> demo@tallerjoyeria.com</div>
+              <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4"><strong>Contraseña:</strong> Demo1234*</div>
+              <div class="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-amber-800 text-base">Sustituye estos datos por las credenciales reales o elimina este bloque si la demo se abrirá sin login visible.</div>
+            </div>
+            <div class="mt-6 flex flex-wrap gap-4">
+              <a href="#" onclick="alert('Conecta este botón con la URL real de tu demo o login.'); return false;" class="px-6 py-3 rounded-2xl btn-primary font-bold shadow-lg">Abrir demo</a>
+              <a href="#contacto" class="px-6 py-3 rounded-2xl btn-secondary font-bold shadow-lg">Solicitar una demo guiada</a>
+            </div>
+          </div>
+          <div class="bg-slate-50 rounded-[28px] border border-slate-200 p-5">
+            <img src="detalles_pedido.PNG" alt="Vista previa de demo del CRM" class="w-full rounded-[22px] border border-slate-200">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contacto" class="py-20">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <span class="inline-block text-sm font-bold uppercase tracking-wider text-blue-700 mb-3">Contacto comercial</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold mb-4">Solicita una demostración del CRM</h2>
+        <p class="text-slate-600 text-lg">Ideal para talleres artesanales, joyerías con producción propia, negocios con encargos personalizados y equipos que necesitan más control comercial y operativo.</p>
+      </div>
+      <div class="bg-white rounded-[32px] p-8 lg:p-10 border border-slate-200 shadow-soft">
+        <form class="grid md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-bold mb-2">Nombre</label>
+            <input type="text" placeholder="Tu nombre" class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-bold mb-2">Empresa</label>
+            <input type="text" placeholder="Nombre de tu taller o joyería" class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-bold mb-2">Email</label>
+            <input type="email" placeholder="correo@empresa.com" class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-bold mb-2">Teléfono</label>
+            <input type="text" placeholder="Tu teléfono" class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-bold mb-2">Mensaje</label>
+            <textarea rows="5" placeholder="Cuéntanos qué necesitas controlar en tu negocio: pedidos, clientes, producción, citas, facturación, galería de piezas..." class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+          </div>
+          <div class="md:col-span-2 flex flex-wrap gap-4 items-center justify-between">
+            <p class="text-sm text-slate-500">Puedes conectar este formulario con tu email, CRM de ventas o WhatsApp comercial.</p>
+            <button type="button" onclick="alert('Conecta este formulario con tu backend o servicio de email.');" class="px-6 py-3 rounded-2xl btn-primary font-bold shadow-lg">Solicitar demo</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer class="crm-dark text-slate-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col lg:flex-row gap-6 lg:items-center lg:justify-between">
+      <div>
+        <div class="font-extrabold text-white text-lg">CRM Taller Artesanal Joyería</div>
+        <div class="text-slate-400 mt-1">Web comercial orientada a mostrar el valor real del software con capturas del sistema.</div>
+      </div>
+      <div class="flex flex-wrap gap-4 text-sm font-semibold">
+        <a href="#modulos" class="hover:text-white">Módulos</a>
+        <a href="#capturas" class="hover:text-white">Capturas</a>
+        <a href="#video" class="hover:text-white">Vídeo</a>
+        <a href="#demo" class="hover:text-white">Demo</a>
+        <a href="#contacto" class="hover:text-white">Contacto</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

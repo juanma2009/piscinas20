@@ -136,7 +136,7 @@ public class ArchivoSubidaService {
 
                 // Cache y guardado en BD (común)
                 String cacheKey = "local_" + npedido + "_" + fileNameParaCloudinary.replaceAll("[^a-zA-Z0-9_-]", "_");
-                cachearYGuardarAdjunto(npedido, nombreOriginal, cloudinaryUrl, cacheKey);
+                cachearYGuardarAdjunto(npedido, nombreOriginal, cloudinaryUrl, cacheKey, foto.getSize(), null);
 
                 procesados++;
                 log.info("✅ Archivo local → Cloudinary OK: {} → {}", nombreOriginal, cloudinaryUrl);
@@ -150,7 +150,7 @@ public class ArchivoSubidaService {
         return procesados;
     }
 
-    // ==================== GOOGLE DRIVE (casi sin cambios) ====================
+    // ==================== GOOGLE DRIVE ====================
     private int procesarArchivosGoogleDrive(Long npedido, String[] googleDriveFileIds,
                                             String googleDriveToken, String userId, StringBuilder errores) {
         int procesados = 0;
@@ -166,31 +166,40 @@ public class ArchivoSubidaService {
         for (String fileId : googleDriveFileIds) {
             if (fileId == null || fileId.trim().isEmpty()) continue;
 
-            String nombreDisplay = "Google Drive - " + fileId;
-
-            // [SENIOR OPTIMIZATION] Comprobar si ya existe antes de descargar de Drive
-            if (archivoAdjuntoService.findArchivosAdjuntosByPedidoIdOne(nombreDisplay, npedido).isPresent()) {
-                log.info("⏩ Archivo de Drive ya existe en BD para este pedido: {}. Saltando descarga.", fileId);
-                procesados++;
-                continue;
-            }
-
             try {
+                // 1. Obtener Metadatos (Nombre y Tamaño) antes de subir
+                Map<String, Object> metadata = hasFrontToken 
+                    ? fetchDriveMetadataWithToken(fileId, googleDriveToken)
+                    : googleDriveApiService.getFileMetadata(userId, fileId);
+                
+                String nombreOriginal = (String) metadata.getOrDefault("name", "Archivo de Drive");
+                Object sizeObj = metadata.get("size");
+                Long tamano = sizeObj != null ? Long.parseLong(sizeObj.toString()) : 0L;
+
+                log.info("📄 Metadata Drive: {} ({} bytes)", nombreOriginal, tamano);
+
+                // [SENIOR OPTIMIZATION] Comprobar si ya existe por FileId en setUrlDrive
+                // Si preferimos nombreOriginal, cambiar aquí. Pero fileId es más único.
+                if (archivoAdjuntoService.findArchivosAdjuntosByPedidoIdOne(nombreOriginal, npedido).isPresent()) {
+                    log.info("⏩ Archivo de Drive ya existe en BD: {}. Saltando.", nombreOriginal);
+                    procesados++;
+                    continue;
+                }
+
                 String cloudinaryUrl = hasFrontToken
                         ? downloadAndUploadToCloudinaryFromDrive(fileId, googleDriveToken, npedido)
                         : googleDriveApiService.downloadAndUploadToCloudinary(userId, fileId, npedido);
 
                 if (cloudinaryUrl == null || cloudinaryUrl.isEmpty()) {
-                    errores.append("• Archivo vacío desde Drive: ").append(fileId).append("\n");
+                    errores.append("• URL vacía desde Drive para: ").append(nombreOriginal).append("\n");
                     continue;
                 }
 
                 String cacheKey = "gdrive_" + npedido + "_" + fileId;
-
-                cachearYGuardarAdjunto(npedido, nombreDisplay, cloudinaryUrl, cacheKey);
+                cachearYGuardarAdjunto(npedido, nombreOriginal, cloudinaryUrl, cacheKey, tamano, fileId);
 
                 procesados++;
-                log.info("✅ Drive → Cloudinary OK: {} → {}", fileId, cloudinaryUrl);
+                log.info("✅ Drive → Cloudinary OK: {} → {}", nombreOriginal, cloudinaryUrl);
 
             } catch (Exception e) {
                 log.error("❌ Error procesando Drive fileId={}", fileId, e);
@@ -201,20 +210,38 @@ public class ArchivoSubidaService {
         return procesados;
     }
 
+    private Map<String, Object> fetchDriveMetadataWithToken(String fileId, String token) {
+        try {
+            String url = "https://www.googleapis.com/drive/v3/files/" + fileId + "?fields=id,name,size,mimeType";
+            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setRequestProperty("Authorization", "Bearer " + token);
+            conn.setRequestMethod("GET");
+
+            if (conn.getResponseCode() == 200) {
+                return new com.fasterxml.jackson.databind.ObjectMapper().readValue(conn.getInputStream(), Map.class);
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo obtener metadata de Drive para {}: {}", fileId, e.getMessage());
+        }
+        return Map.of("name", "Google Drive - " + fileId);
+    }
+
     // ==================== COMÚN: CACHE + BD ====================
-    private void cachearYGuardarAdjunto(Long npedido, String nombreDisplay, String cloudinaryUrl, String cacheKey) {
+    private void cachearYGuardarAdjunto(Long npedido, String nombreDisplay, String cloudinaryUrl, String cacheKey, Long tamano, String driveFileId) {
         log.info("🔍 Comprobando si el archivo ya existe: {} para pedido {}", nombreDisplay, npedido);
         
-        // Verificamos si ya existe el adjunto en la BD para evitar duplicados
         if (archivoAdjuntoService.findArchivosAdjuntosByPedidoIdOne(nombreDisplay, npedido).isPresent()) {
-            log.info("⏩ El archivo ya existe en la BD. Saltando guardado redundante.");
+            log.info("⏩ El archivo ya existe en la BD. Saltando.");
             return;
         }
 
         redisTemplate.opsForValue().set(cacheKey, cloudinaryUrl, Duration.ofDays(30));
-        log.info("📦 URL cacheada en Redis (30 días) con clave: {}", cacheKey);
+        log.info("📦 URL cacheada en Redis: {}", cacheKey);
 
-        ArchivoAdjunto adjunto = new ArchivoAdjunto(npedido, nombreDisplay, cloudinaryUrl);
+        ArchivoAdjunto adjunto = new ArchivoAdjunto(npedido, nombreDisplay, cloudinaryUrl, tamano);
+        if (driveFileId != null) {
+            adjunto.setUrlDrive(driveFileId);
+        }
         archivoAdjuntoService.guardar(adjunto);
     }
 

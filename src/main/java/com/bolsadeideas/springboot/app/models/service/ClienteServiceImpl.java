@@ -149,8 +149,14 @@ public class ClienteServiceImpl implements IClienteService {
     @Override
     public Pedido findPedidoById(Long id) {
         Pedido pedido = pedidoDao.findById(id).orElse(null);
-        if (pedido != null && pedido.getCliente() != null) {
-            pedido.getCliente().getNombre(); // fuerza la carga dentro de la sesión activa
+        if (pedido != null) {
+            if (pedido.getCliente() != null) {
+                pedido.getCliente().getNombre(); // fuerza la carga dentro de la sesión activa
+            }
+            // Inicializar la colección para evitar LazyInitializationException en la vista
+            if (pedido.getArchivosAdjuntos() != null) {
+                pedido.getArchivosAdjuntos().size();
+            }
         }
         return pedido;
     }

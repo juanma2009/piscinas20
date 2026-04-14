@@ -233,21 +233,34 @@ public class PedidoController {
     @ResponseBody
     public List<String> cargarImagenes(@PathVariable(value = "id") Long id) throws Exception {
         List<String> urls = new ArrayList<>();
-
-        // Obtener los archivos adjuntos asociados al pedido
         List<ArchivoAdjunto> archivosAdjuntos = archivoAdjuntoService.findArchivosAdjuntosByPedidoId(id);
 
         for (ArchivoAdjunto archivo : archivosAdjuntos) {
-            if (archivo.getUrlCloudinary() != null) {  // Cambia esto a la propiedad de Cloudinary
-                // Construir la URL pública para cada archivo desde Cloudinary
-                String url = cloudinaryService.getImageUrl(archivo.getUrlCloudinary());
-                urls.add(url);
-            } else {
-                log.warn("El archivo con nombre " + archivo.getNombre() + " no tiene un Cloudinary Public ID asociado.");
+            if (archivo.getUrlCloudinary() != null && !archivo.getUrlCloudinary().isEmpty()) {
+                urls.add(archivo.getUrlCloudinary());
+            } else if (archivo.getSetUrlDrive() != null && !archivo.getSetUrlDrive().isEmpty()) {
+                urls.add("/api/google/drive/preview/" + archivo.getSetUrlDrive());
             }
         }
-
         return urls;
+    }
+
+    @GetMapping("/api/archivos/{id}")
+    @ResponseBody
+    public ResponseEntity<?> getArchivosAdjuntos(@PathVariable Long id) {
+        try {
+            List<ArchivoAdjunto> archivos = archivoAdjuntoService.findArchivosAdjuntosByPedidoId(id);
+            List<Map<String, Object>> response = archivos.stream().map(a -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", a.getId());
+                map.put("nombre", a.getNombre());
+                map.put("url", a.getUrlCloudinary() != null ? a.getUrlCloudinary() : "/api/google/drive/preview/" + a.getSetUrlDrive());
+                return map;
+            }).collect(Collectors.toList());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
     }
 
 
@@ -395,9 +408,62 @@ public class PedidoController {
         model.put("esCopia", true);
         model.put("clientePreseleccionado", original.getCliente());
 
+        // Copiar las fotos adjuntas en la copia temporal (mismas URLs, nuevos registros)
+        List<ArchivoAdjunto> fotosOriginales = archivoAdjuntoService.findArchivosAdjuntosByPedidoId(id);
+        List<ArchivoAdjunto> fotosCopiadas = new ArrayList<>();
+        for (ArchivoAdjunto originalAdjunto : fotosOriginales) {
+            ArchivoAdjunto copiaAdjunto = new ArchivoAdjunto();
+            copiaAdjunto.setNombre(originalAdjunto.getNombre());
+            copiaAdjunto.setFecha(new Date());
+            copiaAdjunto.setUrlCloudinary(originalAdjunto.getUrlCloudinary());
+            copiaAdjunto.setUrlDrive(originalAdjunto.getSetUrlDrive());
+            copiaAdjunto.setPedido(copia);
+            fotosCopiadas.add(copiaAdjunto);
+        }
+        copia.setArchivosAdjuntos(fotosCopiadas);
+
         agregarDatosOpcionesAModelo(model);
 
+        // Pasar fotos originales como JSON para el frontend (porque la copia aún no se ha guardado y no tiene IDs)
+        List<Map<String, Object>> existingPhotos = fotosOriginales.stream().map(a -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", a.getId());
+            map.put("nombre", a.getNombre());
+            map.put("tamano", a.getTamano());
+            if (a.getSetUrlDrive() != null && !a.getSetUrlDrive().isEmpty()) {
+                map.put("url", "/api/google/drive/preview/" + a.getSetUrlDrive());
+                map.put("origen", "DRIVE");
+            } else {
+                map.put("url", a.getUrlCloudinary());
+                map.put("origen", "LOCAL");
+            }
+            return map;
+        }).collect(Collectors.toList());
+
+        model.put("existingPhotos", existingPhotos);
+
         return "pedido/pedidoform";
+    }
+
+    /**
+     * Eliminar una foto de un pedido de forma asíncrona (AJAX)
+     */
+    @DeleteMapping("/eliminarFoto/{id}")
+    @ResponseBody
+    public ResponseEntity<?> eliminarFoto(@PathVariable Long id) {
+        try {
+            Optional<ArchivoAdjunto> adjunto = archivoAdjuntoService.findOne(id);
+            if (adjunto.isPresent()) {
+                archivoAdjuntoService.eliminarById(id);
+                log.info("📸 Foto eliminada correctamente: {}", id);
+                return ResponseEntity.ok(Map.of("success", true, "message", "Foto eliminada con éxito"));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("success", false, "message", "Foto no encontrada"));
+            }
+        } catch (Exception e) {
+            log.error("❌ Error al eliminar foto {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("success", false, "message", e.getMessage()));
+        }
     }
 
     private void actualizarPedidoExistente(Pedido pedidoExistente, String observacion, String estado, String tipoPedido, String grupo, String pieza,String tipo, Double peso, String horas, Double cobrado, Date fechaEntrega, Date fechaFinalizado, String empleado, String ref, RedirectAttributes flash) {
@@ -698,7 +764,7 @@ public class PedidoController {
 
     // Método para concatenar el nombre y apellido del cliente
     private void sanitizeClienteNombre(Pedido pedido) {
-        if (pedido.getCliente().getNombre() != null && pedido.getCliente().getApellido() != null) {
+        if (pedido.getCliente() != null && pedido.getCliente().getNombre() != null && pedido.getCliente().getApellido() != null) {
             String nombreCompleto = pedido.getCliente().getNombre() + " " + pedido.getCliente().getApellido();
             pedido.getCliente().setNombre(nombreCompleto);
         }
@@ -1056,6 +1122,28 @@ public class PedidoController {
 
         model.put("pedido", pedido);
         model.put("titulo", "Editar Pedido");
+
+        // Obtener fotos existentes usando el servicio (más robusto que la relación Hibernate)
+        List<ArchivoAdjunto> fotosExistentes = archivoAdjuntoService.findArchivosAdjuntosByPedidoId(id);
+
+        // Pasar fotos existentes como JSON para el frontend
+        List<Map<String, Object>> existingPhotos = fotosExistentes.stream().map(a -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", a.getId());
+            map.put("nombre", a.getNombre());
+            map.put("tamano", a.getTamano()); 
+            if (a.getSetUrlDrive() != null && !a.getSetUrlDrive().isEmpty()) {
+                map.put("url", "/api/google/drive/preview/" + a.getSetUrlDrive());
+                map.put("origen", "DRIVE");
+            } else {
+                map.put("url", a.getUrlCloudinary());
+                map.put("origen", "LOCAL");
+            }
+            return map;
+        }).collect(Collectors.toList());
+
+        model.put("existingPhotos", existingPhotos);
+
         return "pedido/pedidoform";
     }
 
@@ -1100,7 +1188,7 @@ public class PedidoController {
             return "redirect:/listar"; // o página de error
         }
 
-        return "redirect:/pedidos/formEditar/{}" + pedidoId;
+        return "redirect:/pedidos/formEditar/" + pedidoId;
     }
 
     @GetMapping("/cloudinary-signature/{npedido}")

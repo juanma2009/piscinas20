@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Taller Artesanal Joyería - CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .gold-accent { color: #d4af37; }
+        .bg-dark-jewelry { background-color: #1a1c20; }
+        .btn-gold { background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%); color: white; }
+    </style>
+</head>
+<body class="bg-slate-50 text-gray-900">
+
+    <nav class="bg-white border-b sticky top-0 z-50 px-6 py-3 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-cyan-500 rounded flex items-center justify-center text-white font-bold text-xl">A</div>
+            <span class="font-bold text-lg hidden md:block">Gestión Taller Artesanal Joyería</span>
+        </div>
+        <div class="space-x-4">
+            <a href="#demo" class="btn-gold px-5 py-2 rounded-md font-semibold text-sm">SOLICITAR DEMO</a>
+        </div>
+    </nav>
+
+    <section class="py-20 bg-dark-jewelry text-white text-center">
+        <div class="container mx-auto px-4">
+            <h1 class="text-4xl md:text-6xl font-serif mb-6">Software de Gestión para el Maestro Joyero</h1>
+            <p class="text-xl text-gray-400 max-w-2xl mx-auto mb-10">Control total de pedidos, balances y trazabilidad de piezas desde el boceto hasta la factura final.</p>
+            <img src="image_6f4195.png" alt="Dashboard Principal" class="rounded-lg shadow-2xl border-4 border-gray-700 mx-auto max-w-4xl w-full">
+        </div>
+    </section>
+
+    <section class="py-20 container mx-auto px-4" id="modulos">
+        <h2 class="text-3xl font-bold text-center mb-16 underline decoration-yellow-500">Módulos Especializados</h2>
+
+        <div class="flex flex-wrap items-center mb-24">
+            <div class="w-full lg:w-3/5 shadow-2xl rounded-lg overflow-hidden border">
+                <img src="image_6f41d5.png" alt="Listado de Clientes">
+            </div>
+            <div class="w-full lg:w-2/5 lg:pl-12 mt-8 lg:mt-0">
+                <h3 class="text-2xl font-bold mb-4"><i class="fas fa-users gold-accent mr-2"></i>Gestión de Clientes</h3>
+                <p class="text-gray-600 leading-relaxed">Base de datos centralizada con historial completo de compras, datos de contacto y pedidos vinculados. Todo a un click de distancia.</p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center flex-row-reverse mb-24">
+            <div class="w-full lg:w-3/5 shadow-2xl rounded-lg overflow-hidden border">
+                <img src="image_6f4234.jpg" alt="Galería y Filtros">
+            </div>
+            <div class="w-full lg:w-2/5 lg:pr-12 mt-8 lg:mt-0">
+                <h3 class="text-2xl font-bold mb-4"><i class="fas fa-gem gold-accent mr-2"></i>Control de Trabajos y Galería</h3>
+                <p class="text-gray-600 leading-relaxed">Visualiza el avance de tus piezas. Incluye filtros avanzados por metal, tipo de pieza y estado (Activos/Finalizados).</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-slate-200 py-20">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold">Procesos del Sistema</h2>
+                <p class="text-gray-600 mt-2">Mira cómo automatizamos la creación de pedidos y facturas.</p>
+            </div>
+            <div class="max-w-4xl mx-auto aspect-video bg-gray-800 rounded-xl flex items-center justify-center text-white border-8 border-white shadow-xl">
+                <p class="italic text-lg">Aquí aparecerá el video de demostración de los procesos de la aplicación</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo" class="py-20">
+        <div class="container mx-auto px-4 max-w-5xl">
+            <div class="bg-white rounded-3xl shadow-inner border p-8 md:p-12">
+                <div id="formSection">
+                    <h2 class="text-3xl font-bold text-center mb-4">Solicita tu acceso a la Demo</h2>
+                    <p class="text-center text-gray-500 mb-10">Completa tus datos para desbloquear el panel interactivo.</p>
+                    <form onsubmit="unlockDemo(event)" class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                        <input type="text" placeholder="Tu Nombre" class="p-3 border rounded-lg focus:ring-2 ring-yellow-500 outline-none" required>
+                        <input type="email" placeholder="Correo de la Empresa" class="p-3 border rounded-lg focus:ring-2 ring-yellow-500 outline-none" required>
+                        <button class="md:col-span-2 btn-gold py-4 rounded-lg font-bold shadow-lg">OBTENER ACCESO AHORA</button>
+                    </form>
+                </div>
+
+                <div id="demoPage" class="hidden">
+                    <div class="bg-gray-800 text-white p-4 rounded-t-lg flex justify-between">
+                        <span class="font-bold font-mono">MODO_DEMOSTRACIÓN: ACTIVO</span>
+                        <span class="text-xs text-yellow-400">Límite: 1 registro por módulo</span>
+                    </div>
+                    <div class="flex h-[500px] border shadow-2xl">
+                        <div class="w-1/4 bg-slate-800 p-4 text-gray-300 text-sm hidden md:block">
+                            <div class="mb-6 font-bold text-white flex items-center gap-2">
+                                <i class="fas fa-diamond"></i> Taller de Joyería
+                            </div>
+                            <ul class="space-y-4">
+                                <li class="text-white"><i class="fas fa-balance-scale mr-2"></i> Balances</li>
+                                <li><i class="fas fa-users mr-2"></i> Clientes</li>
+                                <li class="text-yellow-500"><i class="fas fa-briefcase mr-2"></i> Trabajos</li>
+                                <li><i class="fas fa-shopping-cart mr-2"></i> Compras</li>
+                            </ul>
+                        </div>
+                        <div class="w-full md:w-3/4 bg-white p-6 overflow-y-auto">
+                            <h4 class="text-xl font-bold mb-6 border-b pb-2">Simulador de Gestión</h4>
+                            
+                            <div class="grid gap-6">
+                                <div class="bg-gray-50 p-4 rounded border">
+                                    <h5 class="font-bold text-sm mb-3">PASO 1: REGISTRAR CLIENTE</h5>
+                                    <div class="flex gap-2">
+                                        <input id="input-cli" type="text" placeholder="Ej: Joyería Abolengo" class="border p-2 flex-grow text-sm">
+                                        <button onclick="simular('cli')" class="bg-blue-600 text-white px-4 py-2 rounded text-xs">Guardar</button>
+                                    </div>
+                                    <div id="log-cli" class="mt-2 text-xs font-mono text-blue-700"></div>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded border">
+                                    <h5 class="font-bold text-sm mb-3">PASO 2: CREAR PEDIDO</h5>
+                                    <div class="flex gap-2">
+                                        <input id="input-ped" type="text" placeholder="Ej: Anillo Oro 18k" class="border p-2 flex-grow text-sm">
+                                        <button onclick="simular('ped')" class="bg-green-600 text-white px-4 py-2 rounded text-xs">Crear</button>
+                                    </div>
+                                    <div id="log-ped" class="mt-2 text-xs font-mono text-green-700"></div>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded border">
+                                    <h5 class="font-bold text-sm mb-3">PASO 3: GENERAR FACTURA</h5>
+                                    <div class="flex gap-2">
+                                        <input id="input-fac" type="number" placeholder="Monto total" class="border p-2 flex-grow text-sm">
+                                        <button onclick="simular('fac')" class="bg-indigo-600 text-white px-4 py-2 rounded text-xs">Facturar</button>
+                                    </div>
+                                    <div id="log-fac" class="mt-2 text-xs font-mono text-indigo-700"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function unlockDemo(e) {
+            e.preventDefault();
+            document.getElementById('formSection').classList.add('hidden');
+            document.getElementById('demoPage').classList.remove('hidden');
+            window.location.hash = '#demo';
+        }
+
+        const limits = { cli: false, ped: false, fac: false };
+
+        function simular(tipo) {
+            if(limits[tipo]) {
+                alert("Solo puedes crear un registro en la versión de prueba.");
+                return;
+            }
+            const val = document.getElementById(`input-${tipo}`).value;
+            if(!val) return alert("Ingresa un dato válido");
+
+            document.getElementById(`log-${tipo}`).innerText = `✓ REGISTRO EXITOSO: ${val}`;
+            limits[tipo] = true;
+        }
+    </script>
+</body>
+</html>

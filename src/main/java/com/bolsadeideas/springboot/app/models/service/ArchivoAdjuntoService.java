@@ -23,9 +23,17 @@ public class ArchivoAdjuntoService {
         archivoAdjuntoRepository.delete(archivoAdjunto);
     }
 
+    public void eliminarById(Long id) {
+        archivoAdjuntoRepository.deleteById(id);
+    }
+
     //metodo guarda
     public void guardar(ArchivoAdjunto archivoAdjunto) {
         archivoAdjuntoRepository.save(archivoAdjunto);
+    }
+
+    public Optional<ArchivoAdjunto> findOne(Long id) {
+        return archivoAdjuntoRepository.findById(id);
     }
 
     public List<ArchivoAdjunto> findArchivosAdjuntosByPedidoId(Long pedidoId) {
