@@ -339,7 +339,7 @@
                                                 class="form-control" disabled />
                                             <!-- Campo oculto para mantener el ID si está deshabilitado -->
                                             <input type="hidden" th:if="${pedido.npedido != null}"
-                                                th:field="*{cliente}" />
+                                                th:field="*{cliente}" id="clienteId" />
                                         </div>
                                     </div>
                                     <!-- Nº Pedido esta oculto pero sigueenviado el numero al servicio-->
@@ -582,7 +582,7 @@
                         <div class="modal-body">
                             <form id="uploadForm" enctype="multipart/form-data">
                                 <input type="hidden" name="npedido" id="npedidoModal" th:value="${pedido.npedido}" />
-                                <input type="hidden" name="clienteId" id="clienteId"
+                                <input type="hidden" name="clienteId" id="clienteIdModal"
                                     th:value="${pedido.cliente != null ? pedido.cliente.id : ''}" />
 
                                 <!-- Tab Navigation -->
@@ -621,8 +621,6 @@
                                             <small class="form-text text-muted mt-2">Puedes seleccionar múltiples
                                                 archivos</small>
                                         </div>
-
-                                        <table id="fileListTable" class="table table-bordered table-sm"></table>
                                     </div>
 
                                     <!-- Google Drive Tab -->
@@ -644,24 +642,6 @@
                                             </button>
 
                                             <div id="driveAuthStatus" class="mt-2"></div>
-                                        </div>
-
-                                        <hr>
-
-
-                                        <h6>Fotos seleccionadas:</h6>
-                                        <table id="googleDriveFilesTable" class="table table-bordered table-sm">
-                                            <thead class="bg-light">
-                                                <tr>
-                                                    <th>Vista previa</th>
-                                                    <th>Nombre</th>
-                                                    <th>Tamaño</th>
-                                                    <th>Acción</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody></tbody>
-                                        </table>
-                                        <div id="noFilesMessage" class="alert alert-info">No hay archivos seleccionados
                                         </div>
                                     </div>
                                 </div>
@@ -995,6 +975,56 @@
                 var archivosPendientes = [];
                 var googleDriveFiles = [];
 
+                // ===== FUNCIÓN GENÉRICA PARA MOSTRAR MENSAJES EN MODAL =====
+                function mostrarMensaje(titulo, cuerpo, tipo) {
+                    tipo = tipo || 'info';
+                    var iconos = {
+                        success: '<i class="fas fa-check-circle fa-4x text-success"></i>',
+                        danger:  '<i class="fas fa-exclamation-circle fa-4x text-danger"></i>',
+                        warning: '<i class="fas fa-exclamation-triangle fa-4x text-warning"></i>',
+                        info:    '<i class="fas fa-info-circle fa-4x text-info"></i>'
+                    };
+                    var claseHeader = {
+                        success: 'bg-success text-white',
+                        danger:  'bg-danger text-white',
+                        warning: 'bg-warning text-dark',
+                        info:    'bg-info text-white'
+                    };
+                    var claseBtn = {
+                        success: 'btn-success',
+                        danger:  'btn-danger',
+                        warning: 'btn-warning',
+                        info:    'btn-info'
+                    };
+                    $('#modalMensajeTitulo').text(titulo);
+                    $('#modalMensajeCuerpo').html(cuerpo);
+                    $('#modalMensajeIcono').html(iconos[tipo] || iconos.info);
+                    $('#modalMensajeHeader').attr('class', 'modal-header ' + (claseHeader[tipo] || claseHeader.info));
+                    $('#modalMensajeBtnCerrar').attr('class', 'btn btn-lg px-4 ' + (claseBtn[tipo] || claseBtn.info));
+                    $('#modalMensajeGenerico').modal('show');
+                }
+
+                // ===== FUNCIÓN GENÉRICA PARA CONFIRMACIÓN EN MODAL =====
+                function mostrarConfirmacion(titulo, cuerpo) {
+                    return new Promise(function(resolve) {
+                        $('#modalConfirmTitulo').text(titulo);
+                        $('#modalConfirmCuerpo').html(cuerpo);
+                        $('#modalConfirmBtnSi').off('click').on('click', function() {
+                            $('#modalConfirmacion').modal('hide');
+                            resolve(true);
+                        });
+                        $('#modalConfirmBtnNo').off('click').on('click', function() {
+                            $('#modalConfirmacion').modal('hide');
+                            resolve(false);
+                        });
+                        $('#modalConfirmacion').off('hidden.bs.modal.confirm').on('hidden.bs.modal.confirm', function() {
+                            resolve(false);
+                        });
+                        $('#modalConfirmacion').modal('show');
+                    });
+                }
+
+
                 // Google API Configuration
                 const GOOGLE_CLIENT_ID = '828501898797-66mt3fps426me6smm5u2macr0ca5d721.apps.googleusercontent.com';
                 const GOOGLE_PROJECT_ID = '828501898797';  // Project ID para Picker
@@ -1022,7 +1052,11 @@
                 }
 
                 async function disconnectGoogle() {
-                    if (!confirm("¿Deseas desvincular la cuenta actual de Google Drive para usar otra?")) return;
+                    var confirmado = await mostrarConfirmacion(
+                        '⚠️ Desvincular Cuenta',
+                        '¿Deseas desvincular la cuenta actual de Google Drive para usar otra?'
+                    );
+                    if (!confirmado) return;
 
                     const csrfToken = document.querySelector("meta[name='_csrf']")?.content;
                     const csrfHeader = document.querySelector("meta[name='_csrf_header']")?.content;
@@ -1034,7 +1068,7 @@
                         if (r.ok) {
                             googleDriveToken = null;
                             updateAuthStatus(false);
-                            alert("Cuenta desvinculada. Ahora puedes elegir archivos con otra cuenta.");
+                            mostrarMensaje('✅ Cuenta Desvinculada', 'Ahora puedes elegir archivos con otra cuenta de Google.', 'success');
                         }
                     } catch (e) {
                         console.error("Error al desvincular:", e);
@@ -1502,67 +1536,9 @@
                 }
 
                 function actualizarTablaGoogleDrive() {
-
-                    console.log("🔵 actualizarTablaGoogleDrive() llamado");
-
-                    var table = $('#googleDriveFilesTable tbody');
-                    var tableForm = $('#googleDriveFilesTableForm tbody');
-                    var noFilesMsg = $('#noFilesMessage');
-                    var containerForm = $('#nuevasFotosDriveContainer');
-
-                    table.empty();
-                    tableForm.empty();
-
-                    if (googleDriveFiles.length > 0) {
-                        console.log("✅ Mostrando", googleDriveFiles.length, "archivo(s)");
-                        noFilesMsg.hide();
-                        containerForm.show();
-                        $("#filesCount").text(archivosPendientes.length + googleDriveFiles.length);
-
-                        googleDriveFiles.forEach(function (file, idx) {
-                            const mime = (file.mimeType || '').toLowerCase();
-                            const isImage = mime.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file.name || '');
-                            const previewSrc = '/api/google/drive/preview/' + encodeURIComponent(file.id);
-
-                            const buildRow = () => $('<tr>').append(
-                                $('<td>').append(
-                                    isImage
-                                        ? $('<img>')
-                                            .attr('src', previewSrc)
-                                            .attr('alt', file.name || 'preview')
-                                            .css({
-                                                'max-width': '50px',
-                                                'max-height': '50px',
-                                                'border-radius': '4px',
-                                                'border': '1px solid #ccc',
-                                                'object-fit': 'cover'
-                                            })
-                                            .on('error', function () { $(this).replaceWith($('<span>').text('🖼️')); })
-                                        : $('<span>').text('—')
-                                ),
-                                $('<td>').addClass('file-name-cell').attr('title', file.name).text(file.name),
-                                $('<td>').text(((file.size || 0) / 1024 / 1024).toFixed(2) + ' MB'),
-                                $('<td>').append(
-                                    $('<button>')
-                                        .attr('type', 'button')
-                                        .text('Eliminar')
-                                        .addClass('btn btn-danger btn-sm')
-                                        .on('click', function (e) {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            eliminarArchivoDrive(file.id);
-                                        })
-                                )
-                            );
-
-                            table.append(buildRow());
-                            tableForm.append(buildRow());
-                        });
-                    } else {
-                        noFilesMsg.show();
-                        containerForm.hide();
-                        $("#filesCount").text(archivosPendientes.length);
-                    }
+                    // Ya no es necesaria pues usamos actualizarGaleria()
+                    console.log("🔵 actualizarTablaGoogleDrive() - Deprecated");
+                    actualizarGaleria();
                 }
 
 
@@ -1577,61 +1553,11 @@
 
                 // ✅ Función para actualizar la tabla del modal
                 function actualizarTabla() {
-                    const tableModal = $('#fileListTable');
-                    const tableForm = $('#fileListTableForm');
-                    const containerForm = $('#nuevasFotosLocalesContainer');
-
-                    tableModal.empty();
-                    tableForm.empty();
-
-                    if (archivosPendientes.length === 0) {
-                        const emptyRow = $('<tr>').append($('<td colspan="4" class="text-center text-muted">').text('No se han seleccionado archivos.'));
-                        tableModal.append(emptyRow.clone());
-                        tableForm.append(emptyRow);
-                        containerForm.hide();
-                        $("#filesCount").text(googleDriveFiles.length);
-                        return;
-                    }
-
-                    containerForm.show();
-                    $("#filesCount").text(archivosPendientes.length + googleDriveFiles.length);
-
-                    // THEAD for Form Table (Modal already has it if static, but here we rebuild or it's dynamic)
-                    const theadForm = $('<thead>').append(
-                        $('<tr>').append($('<th>').text('Archivo'), $('<th>').text('Tamaño'), $('<th>').text('Vista previa'), $('<th>').text('Acciones'))
-                    );
-                    tableForm.append(theadForm);
-
-                    const tbodyModal = $('<tbody>');
-                    const tbodyForm = $('<tbody>');
-
-                    archivosPendientes.forEach((file, i) => {
-                        const fileURL = file._blobUrl || URL.createObjectURL(file);
-                        const fileSize = (file.size / 1024 / 1024).toFixed(2) + ' MB';
-
-                        const buildRow = () => $('<tr>').append(
-                            $('<td>').addClass('file-name-cell').text(file.name),
-                            $('<td>').text(fileSize),
-                            $('<td>').append($('<img>').attr('src', fileURL).css({ 'max-width': '50px', 'max-height': '50px', 'object-fit': 'cover', 'border-radius': '4px' })),
-                            $('<td>').append(
-                                $('<button>').text('Eliminar').addClass('btn btn-danger btn-sm')
-                                    .on('click', (e) => {
-                                        e.preventDefault();
-                                        archivosPendientes.splice(i, 1);
-                                        actualizarTabla();
-                                    })
-                            )
-                        );
-
-                        tbodyModal.append(buildRow());
-                        tbodyForm.append(buildRow());
-                    });
-
-                    tableModal.append($('<thead>').append($('<tr>').append($('<th>').text('Archivo'), $('<th>').text('Tamaño'), $('<th>').text('Vista previa'), $('<th>').text('Acciones')))).append(tbodyModal);
-                    tableForm.append(tbodyForm);
+                    console.log("📸 actualizarTabla() - Deprecated, usando actualizarGaleria()");
+                    actualizarGaleria();
                 }
 
-                function eliminarFotoExistente(id) {
+                async function eliminarFotoExistente(id) {
                     // Si el ID es nulo (por ejemplo, en una COPIA que aún no se ha guardado), 
                     // simplemente eliminamos de la lista local y refrescamos.
                     if (!id) {
@@ -1641,7 +1567,11 @@
                         return;
                     }
 
-                    if (!confirm('¿Estás seguro de que deseas eliminar esta foto permanentemente?')) return;
+                    var confirmado = await mostrarConfirmacion(
+                        '🗑️ Eliminar Foto',
+                        '¿Estás seguro de que deseas eliminar esta foto permanentemente?'
+                    );
+                    if (!confirmado) return;
 
                     console.log("🗑️ Solicitando eliminación al servidor para foto ID:", id);
                     const csrfToken = $("meta[name='_csrf']").attr("content");
@@ -1661,7 +1591,7 @@
                         },
                         error: function (err) {
                             console.error("❌ Error al eliminar foto:", err);
-                            alert('Error al eliminar la foto.');
+                            mostrarMensaje('❌ Error', 'No se pudo eliminar la foto. Inténtalo de nuevo.', 'danger');
                         }
                     });
                 }
@@ -1671,7 +1601,6 @@
                     const tbody = $('#cuerpoTablaGaleria');
                     const container = $('#galeriaFotosContainer');
                     const noPhotosMsg = $('#sinFotosMensaje');
-                    const tableModal = $('#fileListTable');
 
                     // Garantizar que las variables sean arreglos para evitar errores de .forEach()
                     if (!initialPhotos) initialPhotos = [];
@@ -1686,7 +1615,6 @@
                     console.log("📊 Conteo de fotos - Iniciales:", initialCount, "Pendientes:", pendientesCount, "Drive:", driveCount);
 
                     tbody.empty();
-                    if (tableModal.length) tableModal.empty();
 
                     if (totalCount === 0) {
                         container.hide();
@@ -1715,12 +1643,6 @@
                             actualizarGaleria();
                         });
                         tbody.append(row);
-
-                        // Actualizar modal si existe
-                        if (tableModal.length) {
-                            const modalRow = row.clone(true);
-                            tableModal.append(modalRow);
-                        }
                     });
 
                     // 3. Renderizar nuevas fotos de DRIVE
@@ -1780,8 +1702,12 @@
                     const submitBtn = $(this).find('input[type="submit"]');
 
                     // 🔴 VALIDACIÓN DE CLIENTE ANTES DE ENVIAR
-                    const currentClienteId = $('#clienteId').val();
-                    if (!currentClienteId || currentClienteId === "" || currentClienteId === "0") {
+                    // Buscamos el ID del cliente. En creación es #clienteId, en edición el th:field genera #cliente
+                    const currentClienteId = $('#clienteId').val() || $('#cliente').val();
+                    console.log("🔍 Validando cliente antes de guardar. ID encontrado:", currentClienteId);
+
+                    if (!currentClienteId || currentClienteId === "" || currentClienteId === "0" || currentClienteId === "null") {
+                        console.warn("⚠️ Intento de guardar sin cliente. Mostrando modal de advertencia.");
                         $('#modalClienteRequerido').modal('show');
                         return;
                     }
@@ -2019,6 +1945,7 @@
                     // ✅ CARGAR GALERÍA DE FOTOS AL INICIAR (Para edición y copia)
                     cargarFotosExistentes();
                 });
+
 
                 function mostrarModalOpciones(npedido, clienteId) {
                     $('#opcionesDespuesGuardarModal').modal('show');
@@ -2329,8 +2256,53 @@
                 </div>
             </div>
 
-        </section>
+    <!-- ===== MODAL GENÉRICO DE MENSAJES ===== -->
+    <div class="modal fade" id="modalMensajeGenerico" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg" id="modalMensajeContent">
+                <div class="modal-header" id="modalMensajeHeader">
+                    <h5 class="modal-title" id="modalMensajeTitulo"></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-3" id="modalMensajeIcono"></div>
+                    <p class="lead mb-0" id="modalMensajeCuerpo"></p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-lg px-4" id="modalMensajeBtnCerrar" data-dismiss="modal">Aceptar</button>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- ===== MODAL DE CONFIRMACIÓN ===== -->
+    <div class="modal fade" id="modalConfirmacion" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg border-warning">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="modalConfirmTitulo"></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-question-circle fa-4x text-warning"></i>
+                    </div>
+                    <p class="lead mb-0" id="modalConfirmCuerpo"></p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary btn-lg px-4" id="modalConfirmBtnNo">Cancelar</button>
+                    <button type="button" class="btn btn-danger btn-lg px-4" id="modalConfirmBtnSi">
+                        <i class="fas fa-check mr-1"></i>Sí, continuar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Cliente Requerido -->
     <div class="modal fade" id="modalClienteRequerido" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -2355,6 +2327,8 @@
             </div>
         </div>
     </div>
+</section>
+</div>
 </body>
 
 </html>

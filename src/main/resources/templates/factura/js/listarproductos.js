@@ -44,9 +44,10 @@ window.onload = function() {
 					// Marcar que los productos han sido cargados
 					productosCargados = true;
 				},
-				error: function () {
-					alert("Error al cargar los productos.");
-				}
+					error: function () {
+						var errHtml = '<tr><td colspan="5" class="text-center text-danger py-3"><i class="fas fa-exclamation-circle mr-2"></i>Error al cargar los productos. Recarga la p&aacute;gina.</td></tr>';
+						$("#productosBody").html(errHtml);
+					}
 			});
 		}
 	}
