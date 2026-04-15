@@ -86,6 +86,11 @@ public class UserService {
         return userRepository.findByUsername(username) != null;
     }
 
+    // Retiramos la validación de negocio global, la manejaremos en el controller si hace falta
+    // public boolean existsByEmail(String email) {
+    //    return userRepository.existsByEmail(email);
+    // }
+
 
     public void deleteUserById(Long id) {
         if (userRepository.existsById(id)) {
@@ -127,8 +132,8 @@ public class UserService {
         return userRepository.findByUsername(username);
     }
 
-    public void save(User user) {
-        userRepository.save(user);
+    public User save(User user) {
+        return userRepository.save(user);
     }}
 
 
