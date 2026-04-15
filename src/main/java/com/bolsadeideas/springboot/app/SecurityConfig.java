@@ -25,7 +25,7 @@ public class SecurityConfig {
                 .and()
                 .authorizeRequests()
                 .antMatchers("/css/**", "/js/**", "/images/**", "/admin/**", "/style.css", "/sw.js", "/favicon.ico").permitAll()
-                .antMatchers("/login", "/logout", "/signup").permitAll()
+                .antMatchers("/login", "/logout", "/signup", "/activar-cuenta**").permitAll()
                 .antMatchers("/workshop/**").permitAll()
                 .antMatchers("/pedidos/**").permitAll()
                 .antMatchers("/api/**").permitAll() // Permitir acceso temporal a la API

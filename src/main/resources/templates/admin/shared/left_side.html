@@ -91,16 +91,23 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" th:href="@{'/configuracion'}">
-                                Configuración de Fomularios <span class="badge badge-secondary"></span>
+                                <i class="fas fa-list-ul nav-icon"></i> Personalizar Opciones
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" th:href="@{/admin/roles}">
-                                <i class="bi bi-shield-lock"></i> Crear Roles
+                                <i class="fas fa-user-tag nav-icon"></i> Crear Roles
                             </a>
                         </li>
-
                     </ul>
+                </li>
+                <!-- Mi Perfil (Accesible para todos) -->
+                <li class="nav-item">
+                    <hr class="border-secondary mx-3 my-2" />
+                    <a class="nav-link" th:href="@{/user/profile}">
+                        <i class="nav-icon fas fa-user-circle"></i>
+                        Mi Perfil
+                    </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link special-link">

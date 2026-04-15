@@ -154,7 +154,8 @@ public class UserController {
         }
 
         User userToEdit;
-        boolean isAdmin = currentUser.getRoles().stream().anyMatch(role -> "ADMIN".equals(role.getNombre()) || "ROLE_ADMIN".equals(role.getNombre()));
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(role -> role.getNombre().toUpperCase().contains("ADMIN"));
 
         if (userId != null) {
             userToEdit = userRepository.findById(userId).orElse(null);

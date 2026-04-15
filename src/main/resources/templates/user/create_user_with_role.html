@@ -75,6 +75,13 @@
                                 <input class="form-control" th:field="*{apellido}" type="text" placeholder="Apellidos"/>
                             </div>
                             <div class="form-group col-md-6 mb-3">
+                                <label class="font-weight-bold"><i class="fas fa-briefcase mr-1 text-primary"></i> Puesto</label>
+                                <input class="form-control" th:field="*{puesto}" type="text" placeholder="Ej: Vendedor, Taller..."/>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-12 mb-3">
                                 <label class="font-weight-bold"><i class="fas fa-user-shield mr-1 text-primary"></i> Asigna role(s)</label>
                                 <select multiple="true" th:field="*{roles}" class="form-control">
                                     <!-- SUPER_ADMIN solo visible para SUPER_ADMIN -->
@@ -126,16 +133,59 @@
         (function() {
             'use strict';
             window.addEventListener('load', function() {
-                var forms = document.getElementsByClassName('needs-validation');
-                Array.prototype.filter.call(forms, function(form) {
-                    form.addEventListener('submit', function(event) {
-                        if (form.checkValidity() === false) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }
+                var form = document.querySelector('.needs-validation');
+                var pwdInput = document.getElementById('password'); 
+
+                if(pwdInput) {
+                    pwdInput.removeAttribute('required');
+                    pwdInput.value = ""; 
+                    pwdInput.closest('.form-group').style.display = 'none';
+                }
+
+                form.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    
+                    if (form.checkValidity() === false) {
+                        event.stopPropagation();
                         form.classList.add('was-validated');
-                    }, false);
-                });
+                        return;
+                    }
+
+                    var formData = new FormData(form);
+                    var data = Object.fromEntries(formData.entries());
+                    data.roles = formData.getAll('roles'); 
+                    data.twoFactorEnabled = formData.get('twoFactorEnabled') === 'on';
+
+                    try {
+                        var csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+                        var csrfToken = document.querySelector('meta[name="_csrf"]');
+
+                        var headers = { 'Content-Type': 'application/json' };
+                        if(csrfHeader && csrfToken) {
+                            headers[csrfHeader.content] = csrfToken.content;
+                        }
+
+                        var response = await fetch('/api/users/crear-pendiente', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify(data)
+                        });
+
+                        if (response.ok) {
+                            mostrarMensaje('Usuario Creado', 'Usuario guardado en estado PENDIENTE. Se ha enviado un correo electrónico con el enlace de activación.', 'success');
+                            form.reset();
+                            form.classList.remove('was-validated');
+                            if(pwdInput) {
+                                pwdInput.value = "";
+                            }
+                        } else {
+                            var err = await response.json();
+                            mostrarMensaje('Error', err.message || 'Ocurrió un error al crear.', 'danger');
+                        }
+                    } catch (error) {
+                         mostrarMensaje('Error', 'Fallo de conexión.', 'danger');
+                    }
+                }, false);
             }, false);
         })();
     </script>

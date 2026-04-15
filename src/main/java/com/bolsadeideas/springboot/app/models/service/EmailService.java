@@ -12,7 +12,7 @@ import javax.mail.internet.MimeMessage;
 import java.time.format.DateTimeFormatter;
 
 @Service
-public class EmailService {
+public class EmailService { // Force recompile
 
     @Autowired
     private JavaMailSender mailSender;
@@ -98,5 +98,34 @@ public class EmailService {
                 "</div>" +
                 "</body>" +
                 "</html>";
+    }
+
+    public void enviarEmailActivacion(String emailDestino, String nombre, String plainToken) {
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(emailDestino);
+            helper.setSubject("Activación de tu cuenta en el CRM");
+
+            // URL absoluta asumiendo despliegue local o dominio desde un property si estuviera disponible. 
+            // Para asegurar funcionamiento, usamos hardcode localhost en desarrollo, se puede externalizar
+            String appUrl = "http://localhost:8080"; 
+            String link = appUrl + "/activar-cuenta?token=" + plainToken;
+
+            String htmlBody = "<h3>Hola " + nombre + "</h3>" +
+                    "<p>Te informamos que se ha creado un perfil interactivo para ti en nuestro sistema CRM corporativo.</p>" +
+                    "<p>Por motivos de seguridad, para poder establecer tu contraseña personal y habilitar el acceso a la plataforma, debes hacer clic en el siguiente enlace:</p>" +
+                    "<br>" +
+                    "<a href='" + link + "' style='background-color:#28a745;color:white;padding:12px 20px;text-decoration:none;border-radius:5px;'>Establecer Contraseña y Activar Cuenta</a>" +
+                    "<br><br>" +
+                    "<p><small>Este enlace es de uso único (Security One-Time) y caducará permanentemente en <strong>24 horas</strong>. Si superas este límite, deberás solicitar a recursos humanos o al administrador que te generen un nuevo enlace de acceso.</small></p>";
+
+            helper.setText(htmlBody, true);
+            mailSender.send(msg);
+        } catch (MessagingException e) {
+            System.err.println("Error enviando email de activación: " + e.getMessage());
+        }
     }
 }

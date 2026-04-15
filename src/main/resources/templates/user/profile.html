@@ -79,7 +79,14 @@
                                     </div>
                                 </div>
 
-                                <div class="form-row" th:if="${isAdmin}">
+                                <div class="form-row">
+                                    <div class="form-group col-md-12">
+                                        <label class="font-weight-bold"><i class="fas fa-briefcase mr-1 text-primary"></i> Puesto</label>
+                                        <input class="form-control" th:field="*{puesto}" type="text" placeholder="Ej: Vendedor, Taller..."/>
+                                    </div>
+                                </div>
+
+                                <div class="form-row" sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')">
                                     <div class="form-group col-md-6">
                                         <label class="font-weight-bold"><i class="fas fa-user-shield mr-1 text-primary"></i> Roles</label>
                                         <select multiple="true" th:field="*{roles}" class="form-control">
@@ -244,7 +251,7 @@
                 if (isCurrentOk && newValid && confirmValid) {
                     const formData = $(this).serialize();
                     $.ajax({
-                        url: $(this).attr('action'),
+                        url: /*[[@{/user/changePasswordAjax}]]*/ '/user/changePasswordAjax',
                         type: 'POST',
                         data: formData,
                         success: function (response) {

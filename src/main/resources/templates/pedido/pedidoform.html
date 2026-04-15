@@ -975,54 +975,6 @@
                 var archivosPendientes = [];
                 var googleDriveFiles = [];
 
-                // ===== FUNCIÓN GENÉRICA PARA MOSTRAR MENSAJES EN MODAL =====
-                function mostrarMensaje(titulo, cuerpo, tipo) {
-                    tipo = tipo || 'info';
-                    var iconos = {
-                        success: '<i class="fas fa-check-circle fa-4x text-success"></i>',
-                        danger:  '<i class="fas fa-exclamation-circle fa-4x text-danger"></i>',
-                        warning: '<i class="fas fa-exclamation-triangle fa-4x text-warning"></i>',
-                        info:    '<i class="fas fa-info-circle fa-4x text-info"></i>'
-                    };
-                    var claseHeader = {
-                        success: 'bg-success text-white',
-                        danger:  'bg-danger text-white',
-                        warning: 'bg-warning text-dark',
-                        info:    'bg-info text-white'
-                    };
-                    var claseBtn = {
-                        success: 'btn-success',
-                        danger:  'btn-danger',
-                        warning: 'btn-warning',
-                        info:    'btn-info'
-                    };
-                    $('#modalMensajeTitulo').text(titulo);
-                    $('#modalMensajeCuerpo').html(cuerpo);
-                    $('#modalMensajeIcono').html(iconos[tipo] || iconos.info);
-                    $('#modalMensajeHeader').attr('class', 'modal-header ' + (claseHeader[tipo] || claseHeader.info));
-                    $('#modalMensajeBtnCerrar').attr('class', 'btn btn-lg px-4 ' + (claseBtn[tipo] || claseBtn.info));
-                    $('#modalMensajeGenerico').modal('show');
-                }
-
-                // ===== FUNCIÓN GENÉRICA PARA CONFIRMACIÓN EN MODAL =====
-                function mostrarConfirmacion(titulo, cuerpo) {
-                    return new Promise(function(resolve) {
-                        $('#modalConfirmTitulo').text(titulo);
-                        $('#modalConfirmCuerpo').html(cuerpo);
-                        $('#modalConfirmBtnSi').off('click').on('click', function() {
-                            $('#modalConfirmacion').modal('hide');
-                            resolve(true);
-                        });
-                        $('#modalConfirmBtnNo').off('click').on('click', function() {
-                            $('#modalConfirmacion').modal('hide');
-                            resolve(false);
-                        });
-                        $('#modalConfirmacion').off('hidden.bs.modal.confirm').on('hidden.bs.modal.confirm', function() {
-                            resolve(false);
-                        });
-                        $('#modalConfirmacion').modal('show');
-                    });
-                }
 
 
                 // Google API Configuration
@@ -2256,52 +2208,6 @@
                 </div>
             </div>
 
-    <!-- ===== MODAL GENÉRICO DE MENSAJES ===== -->
-    <div class="modal fade" id="modalMensajeGenerico" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content shadow-lg" id="modalMensajeContent">
-                <div class="modal-header" id="modalMensajeHeader">
-                    <h5 class="modal-title" id="modalMensajeTitulo"></h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body text-center py-4">
-                    <div class="mb-3" id="modalMensajeIcono"></div>
-                    <p class="lead mb-0" id="modalMensajeCuerpo"></p>
-                </div>
-                <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-lg px-4" id="modalMensajeBtnCerrar" data-dismiss="modal">Aceptar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== MODAL DE CONFIRMACIÓN ===== -->
-    <div class="modal fade" id="modalConfirmacion" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content shadow-lg border-warning">
-                <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title" id="modalConfirmTitulo"></h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body text-center py-4">
-                    <div class="mb-3">
-                        <i class="fas fa-question-circle fa-4x text-warning"></i>
-                    </div>
-                    <p class="lead mb-0" id="modalConfirmCuerpo"></p>
-                </div>
-                <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-secondary btn-lg px-4" id="modalConfirmBtnNo">Cancelar</button>
-                    <button type="button" class="btn btn-danger btn-lg px-4" id="modalConfirmBtnSi">
-                        <i class="fas fa-check mr-1"></i>Sí, continuar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Modal Cliente Requerido -->
     <div class="modal fade" id="modalClienteRequerido" tabindex="-1" role="dialog" aria-hidden="true">

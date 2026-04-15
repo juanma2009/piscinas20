@@ -84,11 +84,11 @@ html, body {
                     <span class="d-none d-md-inline ml-1" sec:authentication="name"></span> 
                 </a>
                 <div class="dropdown-menu dropdown-menu-right">
-                    <a class="dropdown-item" th:href="@{/profile}">
+                    <a class="dropdown-item" th:href="@{/user/profile}">
                         <i class="fas fa-user-circle mr-2"></i> Perfil
                     </a>
-                    <a class="dropdown-item" th:href="@{/settings}">
-                        <i class="fas fa-cog mr-2"></i> Configuración
+                    <a class="dropdown-item" th:href="@{/configuracion}">
+                        <i class="fas fa-list-ul mr-2"></i> Personalizar Opciones
                     </a>
                     <div class="dropdown-divider"></div>
                     <form method="post" th:action="@{/logout}" th:object="${_csrf.parameterName}"

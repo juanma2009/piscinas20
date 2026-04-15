@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Activar Cuenta</title>
+    <!-- Incluye aquí el mismo head que tengas en tu login, o los estilos básicos de Bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body class="bg-light">
+    <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+        <div class="card shadow-lg p-4" style="width: 100%; max-width: 450px;">
+            <div id="appContainer">
+                <div class="text-center mb-4">
+                    <h3>Activación de Cuenta</h3>
+                    <p class="text-muted" id="userGreeting">Validando tu enlace de seguridad...</p>
+                </div>
+                
+                <form id="activationForm" style="display: none;">
+                    <div class="form-group">
+                        <label class="font-weight-bold">Nueva Contraseña</label>
+                        <input type="password" id="newPassword" class="form-control" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold">Confirmar Contraseña</label>
+                        <input type="password" id="confirmPassword" class="form-control" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-success btn-block mt-4">Guardar y Activar Mí Cuenta</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const plainToken = urlParams.get('token');
+        
+        const uiContainer = document.getElementById('appContainer');
+        const form = document.getElementById('activationForm');
+
+        if (!plainToken) {
+            uiContainer.innerHTML = "<div class='alert alert-danger'>Enlace de activación incompleto. Falta el token de seguridad.</div>";
+            return;
+        }
+
+        try {
+            const validateRes = await fetch(`/api/auth/validar-activacion?token=${plainToken}`);
+            const validacion = await validateRes.json();
+
+            if (!validateRes.ok) {
+                uiContainer.innerHTML = `<div class='alert alert-danger'>${validacion.message}</div>`;
+                return;
+            }
+
+            document.getElementById('userGreeting').innerText = `Hola ${validacion.username}, establece tu contraseña permanente.`;
+            form.style.display = 'block';
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const pwd1 = document.getElementById('newPassword').value;
+                const pwd2 = document.getElementById('confirmPassword').value;
+                if(pwd1 !== pwd2) { alert("Las contraseñas ingresadas no coinciden."); return; }
+
+                const csrfHdr = document.querySelector('meta[name="_csrf_header"]').content;
+                const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+
+                const res = await fetch('/api/auth/activar-perfil', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', [csrfHdr]: csrfToken},
+                    body: JSON.stringify({ token: plainToken, password: pwd1 })
+                });
+
+                if (res.ok) {
+                    uiContainer.innerHTML = "<div class='alert alert-success mt-4 text-center'><h4>¡Cuenta Activada!</h4><p>Tu contraseña ha sido guardada de forma segura.</p><a class='btn btn-primary mt-3' href='/login'>Ir a Iniciar Sesión</a></div>";
+                } else {
+                    const errorData = await res.json();
+                    alert(errorData.message);
+                }
+            });
+        } catch (error) {
+            uiContainer.innerHTML = "<div class='alert alert-danger'>Error de conexión con el servidor.</div>";
+        }
+    });
+    </script>
+</body>
+</html>

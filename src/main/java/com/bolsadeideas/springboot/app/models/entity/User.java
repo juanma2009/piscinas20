@@ -36,8 +36,14 @@ public class User {
 
     private String apellido;
 
-    @Column(unique = true)
+    @Column
     private String email;
+
+    private String puesto;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30, columnDefinition = "varchar(30) default 'ACTIVO'")
+    private UserStatus status = UserStatus.ACTIVO;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id")

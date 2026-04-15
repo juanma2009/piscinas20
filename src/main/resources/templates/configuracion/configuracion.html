@@ -4,7 +4,7 @@
       layout:decorate="admin/admin_layout">
 <head>
     <meta charset="UTF-8">
-    <title>Configuración de Listados</title>
+    <title>Personalizar Opciones</title>
 </head>
 
 <body>
@@ -13,8 +13,8 @@
         <div id="globalMessage"></div>
         <section class="content-header">
             <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-cog mr-2"></i> Configuración de Listados
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div><i class="fas fa-list-ul mr-2"></i> Personalizar Opciones de Formulario</div>
                 </div>
 
                 <div class="toolbar">
@@ -30,28 +30,30 @@
                 </div>
 
                 <div class="card-body">
+                    <p class="text-muted small mb-4">Añade o edita opciones personalizadas para los menús de tus pedidos (Metales, Servicios, etc.).</p>
+                    
                     <!-- Nav Tabs -->
                     <ul class="nav nav-tabs mb-4" id="configTabs" role="tablist">
                         <li class="nav-item">
-                            <button class="nav-link active" data-toggle="tab" data-target="#servicios">Servicios</button>
+                            <a class="nav-link active" data-toggle="tab" href="#servicios" role="tab">Servicios</a>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link" data-toggle="tab" data-target="#metales">Metales</button>
+                            <a class="nav-link" data-toggle="tab" href="#metales" role="tab">Metales</a>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link" data-toggle="tab" data-target="#subgrupos">Subgrupos</button>
+                            <a class="nav-link" data-toggle="tab" href="#subgrupos" role="tab">Subgrupos</a>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link" data-toggle="tab" data-target="#estados">Estados</button>
+                            <a class="nav-link" data-toggle="tab" href="#estados" role="tab">Estados</a>
                         </li>
                     </ul>
 
-                    <div class="tab-content">
+                    <div class="tab-content border-0">
                         <!-- Dynamic Sections -->
-                        <div class="tab-pane fade show active" id="servicios"></div>
-                        <div class="tab-pane fade" id="metales"></div>
-                        <div class="tab-pane fade" id="subgrupos"></div>
-                        <div class="tab-pane fade" id="estados"></div>
+                        <div class="tab-pane fade show active" id="servicios" role="tabpanel"></div>
+                        <div class="tab-pane fade" id="metales" role="tabpanel"></div>
+                        <div class="tab-pane fade" id="subgrupos" role="tabpanel"></div>
+                        <div class="tab-pane fade" id="estados" role="tabpanel"></div>
                     </div>
                 </div>
             </div>
@@ -59,26 +61,30 @@
     </div>
 
     <!-- Generic Modal -->
-    <div class="modal fade" id="configModal" tabindex="-1">
-        <div class="modal-dialog">
-            <form class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Añadir / Editar</h5>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+    <div class="modal fade" id="configModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title font-weight-bold">Añadir / Editar</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Nombre</label>
-                        <input type="text" class="form-control" id="modalNombre" required>
+                <div class="modal-body py-4">
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-lg" id="modalNombre" required placeholder="Ej: Oro Blanco, Reparación...">
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Descripción</label>
-                        <input type="text" class="form-control" id="modalDescripcion">
+                    <div class="form-group mb-0">
+                        <label class="font-weight-bold">Descripción</label>
+                        <textarea class="form-control" id="modalDescripcion" rows="3" placeholder="Opcional..."></textarea>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-save mr-1"></i> Guardar
+                    </button>
                 </div>
             </form>
         </div>
@@ -87,20 +93,20 @@
     <!-- CARD BASE TEMPLATE -->
     <template id="card-template">
         <div class="card border shadow-none mb-0">
-            <div class="card-header bg-light text-dark d-flex justify-content-between align-items-center" style="background: #f8f9fa !important; color: #333 !important; text-transform: none !important; border-bottom: 1px solid #dee2e6 !important;">
-                <h5 class="mb-0 font-weight-bold" style="font-size: 1.1rem;"></h5>
-                <button class="btn btn-sm btn-success" data-action="add">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center" style="background: rgba(0,0,0,0.03) !important; color: #333 !important; border-bottom: 1px solid #dee2e6 !important;">
+                <h5 class="mb-0 font-weight-bold" style="font-size: 1rem; text-transform: none;"></h5>
+                <button class="btn btn-sm btn-success shadow-sm" data-action="add">
                     <i class="fas fa-plus mr-1"></i> Añadir
                 </button>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-striped w-100 mb-0">
-                        <thead>
+                    <table class="table table-hover w-100 mb-0">
+                        <thead class="bg-light shadow-sm">
                             <tr>
                                 <th>Nombre</th>
                                 <th>Descripción</th>
-                                <th class="text-center">Acciones</th>
+                                <th class="text-center" style="width: 120px;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -122,28 +128,44 @@
 
             function renderSection(tipo) {
                 const container = $(`#${tipo}`);
+                if (container.length === 0) return;
+                
                 container.empty();
                 const template = document.getElementById('card-template');
                 const clone = document.importNode(template.content, true);
                 const $card = $(clone.firstElementChild);
 
-                $card.find('h5').text(tipo.charAt(0).toUpperCase() + tipo.slice(1));
+                const titulos = {
+                    'servicios': 'Listado de Servicios',
+                    'metales': 'Listado de Metales',
+                    'subgrupos': 'Listado de Subgrupos',
+                    'estados': 'Estados del Pedido'
+                };
+
+                $card.find('h5').text(titulos[tipo] || tipo);
 
                 const table = $card.find('table').DataTable({
-                    ajax: { url: `/api/configuracion/${tipo}`, dataSrc: (json) => json },
+                    ajax: { 
+                        url: `/api/configuracion/${tipo}`, 
+                        dataSrc: (json) => json,
+                        error: function(xhr) {
+                            console.error("Error cargando " + tipo, xhr);
+                            $(container).html('<div class="alert alert-danger mx-3 my-3">Error al conectar con la API de ' + tipo + '</div>');
+                        }
+                    },
                     columns: [
-                        { data: 'nombre' },
-                        { data: 'description', defaultContent: '' },
+                        { data: 'nombre', className: 'font-weight-bold' },
+                        { data: 'description', defaultContent: '<span class="text-muted italic">Sin descripción</span>' },
                         {
                             data: 'id',
                             orderable: false,
                             className: 'text-center',
                             render: id => `
                                 <div class="btn-group">
-                                    <button class="btn btn-sm btn-outline-primary mr-1" data-action="edit" data-id="${id}">
+                                    <button class="btn btn-sm btn-outline-primary mr-1" data-action="edit" data-id="${id}" title="Editar">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger" data-action="del" data-id="${id}">
+                                    <button class="btn btn-sm btn-outline-danger" data-action="del" data-id="${id}" title="Eliminar">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>`
@@ -153,12 +175,13 @@
                     pageLength: 10,
                     lengthMenu: [10, 25, 50],
                     autoWidth: false,
-                    scrollX: true
+                    scrollX: true,
+                    dom: 'tp' // Solo tabla y paginación para diseño más limpio
                 });
 
                 tables[tipo] = table;
 
-                $card.find('[data-action=add]').on('click', () => {
+                $card.find('[data-action=add]').on('click', function() {
                     current = { tipo, id: null };
                     modalForm[0].reset();
                     $modal.find('.modal-title').text(`Añadir a ${tipo}`);
@@ -175,17 +198,25 @@
                     $modal.modal('show');
                 });
 
-                $card.on('click', '[data-action=del]', function() {
+                $card.on('click', '[data-action=del]', async function() {
                     const id = $(this).data('id');
-                    if (confirm('¿Estás seguro de eliminar este elemento?')) {
+                    const row = $(this).closest('tr');
+                    const nombre = table.row(row).data().nombre;
+                    
+                    const confirmado = await mostrarConfirmacion(
+                        '🗑️ Eliminar Opción',
+                        `¿Estás seguro de que deseas eliminar <b>"${nombre}"</b> de los listados?<br><small class="text-danger">Esta acción no se puede deshacer.</small>`
+                    );
+                    
+                    if (confirmado) {
                         $.ajax({
                             url: `/api/configuracion/${tipo}/${id}`,
                             type: 'DELETE',
                             success: () => {
                                 table.ajax.reload();
-                                showAlert('Elemento eliminado correctamente', 'success');
+                                mostrarMensaje('✅ Eliminado', 'Se ha eliminado la opción correctamente.', 'success');
                             },
-                            error: () => showAlert('Error al eliminar el elemento', 'danger')
+                            error: () => mostrarMensaje('❌ Error', 'No se ha podido eliminar el elemento.', 'danger')
                         });
                     }
                 });
@@ -209,25 +240,17 @@
                     success: () => {
                         $modal.modal('hide');
                         tables[current.tipo].ajax.reload();
-                        showAlert('Guardado correctamente', 'success');
+                        mostrarMensaje('✅ Guardado', 'La opción se ha guardado correctamente.', 'success');
                     },
-                    error: () => showAlert('Error al guardar', 'danger')
+                    error: () => mostrarMensaje('❌ Error', 'Ha ocurrido un problema al guardar.', 'danger')
                 });
             });
 
-            function showAlert(msg, type) {
-                const alert = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                    ${msg}
-                    <button type="button" class="close" data-dismiss="alert">&times;</button>
-                </div>`;
-                $('#globalMessage').html(alert);
-                setTimeout(() => $('.alert').alert('close'), 3000);
-            }
-
             $(document).ready(() => {
                 tipos.forEach(renderSection);
+                
                 // Fix for DataTable responsiveness on tab change
-                $('button[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+                $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
                     $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
                 });
             });
