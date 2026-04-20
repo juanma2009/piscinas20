@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="admin/admin_layout.html">
+<head>
+    <title>Abrir Orden de Producción</title>
+    <style>
+        .form-section { background:#f8f9fa; border-radius:10px; padding:1.5rem; margin-bottom:1rem; }
+        .form-section h6 { font-weight:700; color:#6f42c1; border-bottom:2px solid #6f42c1; padding-bottom:.5rem; margin-bottom:1rem; }
+        .lote-row { display:grid; grid-template-columns:1fr auto auto; gap:.75rem; align-items:center; margin-bottom:.75rem; }
+        .lote-card {
+            background:#fff; border:1px solid #dee2e6; border-radius:8px;
+            padding:.75rem 1rem; display:flex; align-items:center; gap:.75rem;
+        }
+        .badge-lote {
+            background:#212529; color:#00ff88; font-family:monospace;
+            font-size:.72rem; padding:.2rem .5rem; border-radius:4px; border:1px solid #00ff88;
+            white-space:nowrap;
+        }
+        .peso-disponible { font-size:.8rem; color:#6c757d; }
+        #loteRows .lote-entry { background:#fff; border:1px solid #dee2e6; border-radius:8px; padding:1rem; margin-bottom:.75rem; }
+        .total-entrada { background:linear-gradient(135deg,#6f42c1,#4a2678); color:#fff; border-radius:10px; padding:1rem 1.5rem; font-size:1.4rem; font-weight:700; text-align:center; }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+<div class="container-fluid px-2 px-md-3">
+<section class="content-header">
+<div class="card">
+    <div class="card-header" style="background:linear-gradient(135deg,#6f42c1,#4a2678);color:#fff;">
+        <i class="fas fa-fire mr-2"></i><strong th:text="${titulo}">Abrir Orden de Producción</strong>
+    </div>
+
+    <div class="toolbar d-none d-md-flex">
+        <a th:href="@{/produccion}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-list mr-1"></i> Órdenes
+        </a>
+        <a th:href="@{/inventario}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-warehouse mr-1"></i> Inventario
+        </a>
+    </div>
+
+    <div class="card-body">
+        <form th:action="@{/produccion/nueva}" method="post" id="formOrden">
+
+            <!-- Campo oculto pedidoId (opcional, si viene desde un pedido) -->
+            <input type="hidden" name="pedidoId" th:value="${pedidoIdParam}"/>
+
+            <!-- ① Descripción -->
+            <div class="form-section">
+                <h6><i class="fas fa-pencil-alt mr-2"></i>Descripción del Trabajo</h6>
+                <div class="form-group mb-0">
+                    <input type="text" name="descripcion" class="form-control form-control-lg"
+                           required placeholder="Ej: Anillo solitario oro 18k para cliente García..."/>
+                    <small class="text-muted">Describe brevemente el trabajo que se va a realizar</small>
+                </div>
+            </div>
+
+            <!-- ② Selección de lotes y pesos -->
+            <div class="form-section">
+                <h6><i class="fas fa-gem mr-2"></i>Material a Consumir (Lotes)</h6>
+                <p class="text-muted small mb-3">
+                    Selecciona los lotes de los que se tomará material y cuántos gramos se usarán en este trabajo.
+                    Solo se muestran lotes con peso disponible.
+                </p>
+
+                <div id="loteRows">
+                    <!-- Fila inicial -->
+                    <div class="lote-entry" id="fila-0">
+                        <div class="row align-items-end">
+                            <div class="col-md-7">
+                                <label class="font-weight-bold small">Lote <span class="text-danger">*</span></label>
+                                <select name="compraIds" class="form-control lote-select" required onchange="actualizarDisponible(this)">
+                                    <option value="">-- Seleccionar lote --</option>
+                                    <option th:each="l : ${lotesDisponibles}"
+                                            th:value="${l.id}"
+                                            th:data-disponible="${l.pesoActualGr}"
+                                            th:text="${(l.codigoLote != null ? l.codigoLote : 'Lote #' + l.id)
+                                                       + ' — ' + l.producto?.nombre
+                                                       + ' (' + #numbers.formatDecimal(l.pesoActualGr,1,3) + 'g disp.)'}">
+                                    </option>
+                                </select>
+                                <small class="text-muted disponible-info"></small>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="font-weight-bold small">Gramos a usar <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="number" name="pesosGr" step="0.001" min="0.001"
+                                           class="form-control peso-input" placeholder="0.000" oninput="calcularTotal()"/>
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">g</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                        onclick="eliminarFila(this)" style="display:none;" id="btn-del-0">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="agregarLote()">
+                    <i class="fas fa-plus mr-1"></i> Añadir otro lote
+                </button>
+            </div>
+
+            <!-- ③ Total y resumen -->
+            <div class="form-section">
+                <h6><i class="fas fa-balance-scale mr-2"></i>Resumen de Entrada</h6>
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <p class="text-muted mb-0">
+                            Total de gramos que entran en la orden.<br>
+                            <strong>Regla: entrada = producto final + merma + reciclaje</strong><br>
+                            (lo verificarás al cerrar la orden)
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="total-entrada">
+                            Total entrada: <span id="totalEntrada">0.000 g</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="d-flex justify-content-center mt-3" style="gap:1rem;">
+                <button type="submit" class="btn btn-success px-5 btn-lg">
+                    <i class="fas fa-fire mr-2"></i> Abrir Orden y Consumir Lotes
+                </button>
+                <a th:href="@{/produccion}" class="btn btn-secondary px-4">
+                    <i class="fas fa-times mr-2"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+</section>
+</div>
+</div>
+
+<div layout:fragment="script">
+    <script>
+        let filaCount = 1;
+
+        // Plantilla HTML para una nueva fila de lote
+        const opcionesLotes = document.querySelector('.lote-select').innerHTML;
+
+        function agregarLote() {
+            const idx = filaCount++;
+            const div = document.createElement('div');
+            div.className = 'lote-entry';
+            div.id = 'fila-' + idx;
+            div.innerHTML = `
+                <div class="row align-items-end">
+                    <div class="col-md-7">
+                        <label class="font-weight-bold small">Lote</label>
+                        <select name="compraIds" class="form-control lote-select" onchange="actualizarDisponible(this)">
+                            ${opcionesLotes}
+                        </select>
+                        <small class="text-muted disponible-info"></small>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="font-weight-bold small">Gramos a usar</label>
+                        <div class="input-group">
+                            <input type="number" name="pesosGr" step="0.001" min="0.001"
+                                   class="form-control peso-input" placeholder="0.000" oninput="calcularTotal()"/>
+                            <div class="input-group-append"><span class="input-group-text">g</span></div>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                onclick="eliminarFila(this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>`;
+            document.getElementById('loteRows').appendChild(div);
+            // Mostrar botón eliminar en la primera fila si hay más de 1
+            if (document.querySelectorAll('.lote-entry').length > 1) {
+                document.getElementById('btn-del-0').style.display = 'block';
+            }
+        }
+
+        function eliminarFila(btn) {
+            btn.closest('.lote-entry').remove();
+            const filas = document.querySelectorAll('.lote-entry');
+            if (filas.length === 1) {
+                const btnDel = document.getElementById('btn-del-0');
+                if (btnDel) btnDel.style.display = 'none';
+            }
+            calcularTotal();
+        }
+
+        function actualizarDisponible(sel) {
+            const opt = sel.options[sel.selectedIndex];
+            const disp = opt.getAttribute('data-disponible');
+            const info = sel.closest('.col-md-7').querySelector('.disponible-info');
+            if (disp && disp !== 'null') {
+                info.textContent = '⚖️ Disponible en este lote: ' + parseFloat(disp).toFixed(3) + 'g';
+                // Sugerir el total disponible en el campo de peso
+                const pesoInput = sel.closest('.row').querySelector('.peso-input');
+                if (pesoInput && !pesoInput.value) {
+                    pesoInput.value = parseFloat(disp).toFixed(3);
+                    calcularTotal();
+                }
+            } else {
+                info.textContent = '';
+            }
+        }
+
+        function calcularTotal() {
+            let total = 0;
+            document.querySelectorAll('.peso-input').forEach(inp => {
+                total += parseFloat(inp.value) || 0;
+            });
+            document.getElementById('totalEntrada').textContent = total.toFixed(3) + ' g';
+        }
+    </script>
+</div>
+</body>
+</html>

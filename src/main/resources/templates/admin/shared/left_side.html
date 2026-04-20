@@ -39,194 +39,213 @@
         <nav class="mt-2">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                 <!-- Add icons to the links using the .nav-icon class with font-awesome or any other icon font library -->
-                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'USER')">
-                    <a class="nav-link special-link" th:href="'/balance/listarBalance'">
-                        <i class="nav-icon fas fa-balance-scale"></i>
-                        Balances
-                    </a>
-                </li>
-                <li class="nav-item" sec:authorize="hasRole('SUPER_ADMIN')">
-                    <a class="nav-link special-link" th:href="@{'/superadmin/dashboard'}">
-                        <i class="nav-icon fas fa-user-shield"></i> CRM Super Admin
-                        <i class="right fas fa-angle-left"></i>
-                    </a>
-                    <ul class="nav item nav-treeview">
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{'/superadmin/empresas'}">
-                                <i class="fas fa-building nav-icon"></i> Gestión de Clientes
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{'/superadmin/ingresos'}">
-                                <i class="fas fa-hand-holding-usd nav-icon"></i> Control Ingresos
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{'/superadmin/gastos'}">
-                                <i class="fas fa-server nav-icon"></i> Gastos App
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{'/superadmin/incidencias'}">
-                                <i class="fas fa-bug nav-icon"></i> Incidencias CRM
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-                    <a class="nav-link special-link">
-                        <i class="nav-icon fas fa-users"></i>Administracion
-                        <i class="right fas fa-angle-left"></i>
-                    </a>
-                    <ul class="nav item nav-treeview" sec:authorize="hasRole('ADMIN')">
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{'/users/new'}">
-                                Crear usuarios <span class="badge badge-secondary" th:text="${countCliente}"></span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{'/users'}">
-                                Listar usuarios <span class="badge badge-secondary" th:text="${countCliente}"></span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{'/configuracion'}">
-                                <i class="fas fa-list-ul nav-icon"></i> Personalizar Opciones
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{/admin/roles}">
-                                <i class="fas fa-user-tag nav-icon"></i> Crear Roles
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <!-- Mi Perfil (Accesible para todos) -->
+                <!-- 1. Dashboard -->
                 <li class="nav-item">
-                    <hr class="border-secondary mx-3 my-2" />
-                    <a class="nav-link" th:href="@{/user/profile}">
-                        <i class="nav-icon fas fa-user-circle"></i>
-                        Mi Perfil
+                    <a class="nav-link active" th:href="@{/listar}">
+                        <i class="nav-icon fas fa-home"></i>
+                        <p>Dashboard</p>
                     </a>
                 </li>
+
+                <!-- 2. Clientes -->
                 <li class="nav-item">
-                    <a class="nav-link special-link">
-                        <i class="nav-icon fas fa-users"></i>
-                        Clientes
-                        <i class="right fas fa-angle-left"></i>
+                    <a class="nav-link">
+                        <i class="nav-icon fas fa-folder"></i>
+                        <p>
+                            Clientes
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
                     </a>
-                    <ul class="nav item nav-treeview">
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/form'}">
+                                <i class="fas fa-user-plus nav-icon"></i>
+                                <p>Crear cliente</p>
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" th:href="@{'/listar'}">
-
-                                Lista Clientes <span class="badge badge-secondary" th:text="${countCliente}"></span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link"  th:href="@{'/form'}">
-
-                                Crear Cliente
+                                <i class="fas fa-list nav-icon"></i>
+                                <p>Listar clientes</p>
                             </a>
                         </li>
                     </ul>
                 </li>
-                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'USER')">
-                    <a class="nav-link special-link">
-                        <i class="nav-icon fas fa-briefcase"></i>
-                        Trabajos
-                        <i class="right fas fa-angle-left"></i>
+
+                <!-- 3. Pedidos -->
+                <li class="nav-item">
+                    <a class="nav-link">
+                        <i class="nav-icon fas fa-copy"></i>
+                        <p>
+                            Pedidos
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
                             <a class="nav-link" th:href="@{'/pedidos/form'}">
-                                Crear Pedido
+                                <i class="fas fa-file-alt nav-icon"></i>
+                                <p>Crear pedido</p>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" th:href="@{'/pedidos/listarPedidos'}">
-
-                                Listar Pedidos <span class="badge badge-secondary" th:text="${countAlbaranes}"></span>
+                                <i class="fas fa-th-list nav-icon"></i>
+                                <p>Listar pedidos</p>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" th:href="@{'/pedidos/listarFotosPedidos'}">
-
-                                Listar Fotos Pedidos <span class="badge badge-secondary" th:text="${countAlbaranes}"></span>
+                                <i class="fas fa-camera nav-icon"></i>
+                                <p>Fotos de pedidos</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link"  th:href="@{'/albaranes/listarAlbaranes'}">
-
-                                Listar Facturas <span class="badge badge-secondary" th:text="${countAlbaranes}"></span>
+                            <a class="nav-link" th:href="@{'/albaranes/listarAlbaranes'}">
+                                <i class="fas fa-file-invoice nav-icon"></i>
+                                <p>Facturas</p>
                             </a>
                         </li>
                     </ul>
                 </li>
+
+                <!-- 4. Taller / Citas -->
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{'/citas/listar'}">
+                        <i class="nav-icon fas fa-wrench"></i>
+                        <p>Taller / Citas</p>
+                    </a>
+                </li>
+
+                <!-- 5. Compras / Joyería -->
                 <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-                    <a class="nav-link special-link">
-                        <i class="nav-icon fas fa-shopping-cart"></i>
-                        Compras
-                        <i class="right fas fa-angle-left"></i>
+                    <a class="nav-link">
+                        <i class="nav-icon fas fa-gem"></i>
+                        <p>
+                            Compras / Joyería
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a class="nav-link" th:href="@{'/proveedor/form'}">
-                                Crear Proveedor
+                            <a class="nav-link" th:href="@{'/inventario'}">
+                                <i class="fas fa-warehouse nav-icon"></i>
+                                <p>Inventario / Stock</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link"  th:href="@{'/proveedor/listarProveedor'}">
-                                Listar Proveedor
+                            <a class="nav-link" th:href="@{'/inventario/compras/nueva'}">
+                                <i class="fas fa-cart-plus nav-icon"></i>
+                                <p>Registrar Compra</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link"  th:href="@{'/materiales/form'}">
+                            <a class="nav-link" th:href="@{'/inventario/compras'}">
+                                <i class="fas fa-history nav-icon"></i>
+                                <p>Historial / Lotes</p>
+                            </a>
+                        </li>
 
-                                Comprar Material
+                        <!-- Separador visual -->
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/produccion'}">
+                                <i class="fas fa-fire nav-icon" style="color:#fd7e14"></i>
+                                <p>Órdenes Producción</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link"  th:href="@{'/materiales/listarMaterial'}">
-                                Listar Material
+                            <a class="nav-link" th:href="@{'/produccion/nueva'}">
+                                <i class="fas fa-plus-circle nav-icon" style="color:#28a745"></i>
+                                <p>Nueva Orden</p>
                             </a>
                         </li>
-                        <!--   <li class="nav-item">
-                               <a class="nav-link"  th:href="@{'/facturas/listarFacturasSinContabilizar'}">
-                                   Listar Facturas
-                               </a>
-                           </li> -->
+
+                        <!-- Materiales y proveedores -->
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/materiales/listarMaterial'}">
+                                <i class="fas fa-boxes nav-icon"></i>
+                                <p>Materiales</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/proveedor/listarProveedor'}">
+                                <i class="fas fa-building nav-icon"></i>
+                                <p>Proveedores</p>
+                            </a>
+                        </li>
                     </ul>
                 </li>
-                <li class="nav-item" hidden="hidden">
-                    <a class="nav-link special-link"  href="#">
-                        <i class="nav-icon fas fa-money-bill"></i>
-                        Cobros Clientes
+
+                <!-- 6. Gestión -->
+                <li class="nav-item">
+                    <a class="nav-link">
+                        <i class="nav-icon fas fa-balance-scale"></i>
+                        <p>
+                            Gestión
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
                     </a>
                     <ul class="nav nav-treeview">
-                        <li class="nav-item"><a class="nav-link"  href="#"><i class="far fa-circle nav-icon"></i> Pagados</a></li>
-                        <li class="nav-item"><a class="nav-link"  href="#"><i class="far fa-circle nav-icon"></i> Pendientes</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/balance/listarBalance'}">
+                                <i class="fas fa-file-invoice-dollar nav-icon"></i>
+                                <p>Balance</p>
+                            </a>
+                        </li>
                     </ul>
                 </li>
-                <li class="nav-item" hidden="hidden">
-                    <a class="nav-link special-link"  href="#">
-                        <i class="nav-icon fas fa-exclamation-triangle"></i>
-                        Incidencias
+
+                <!-- 7. Administración -->
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link">
+                        <i class="nav-icon fas fa-cog"></i>
+                        <p>
+                            Administración
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
                     </a>
                     <ul class="nav nav-treeview">
-                        <li class="nav-item"><a class="nav-link"  href="#"><i class="far fa-circle nav-icon"></i> Proceso</a></li>
-                        <li class="nav-item"><a class="nav-link"  href="#"><i class="far fa-circle nav-icon"></i> Terminadas</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/users/new'}">
+                                <i class="fas fa-user-plus nav-icon"></i>
+                                <p>Crear usuarios</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/users'}">
+                                <i class="fas fa-users nav-icon"></i>
+                                <p>Listar Usuario</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/admin/roles'}">
+                                <i class="fas fa-shield-alt nav-icon"></i>
+                                <p>Roles</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{'/configuracion'}">
+                                <i class="fas fa-tools nav-icon"></i>
+                                <p>Personalizar Opciones</p>
+                            </a>
+                        </li>
                     </ul>
                 </li>
+
+                <!-- 8. Mi Perfil -->
                 <li class="nav-item">
-                    <a class="nav-link"  th:href="@{'/notifications/notifications'}">
-                        <i class="nav-icon fas fa-bell"></i>
-                        Notificaciones <span class="badge badge-secondary" id="notificationCount"></span>
+                    <a class="nav-link" th:href="@{/user/profile}">
+                        <i class="nav-icon fas fa-user-circle"></i>
+                        <p>Mi perfil</p>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link special-link" th:href="@{'/citas/listar'}">
-                        <i class="nav-icon far fa-calendar-alt"></i>
-                        Citas / Taller
+
+                <!-- Super Admin Menu (Hidden for normal users) -->
+                <li class="nav-item" sec:authorize="hasRole('SUPER_ADMIN')">
+                    <hr class="border-secondary mx-3">
+                    <a class="nav-link" th:href="@{'/superadmin/dashboard'}">
+                        <i class="nav-icon fas fa-user-shield text-warning"></i>
+                        <p>Super Admin</p>
                     </a>
                 </li>
             </ul>

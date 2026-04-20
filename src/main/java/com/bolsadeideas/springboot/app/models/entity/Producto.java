@@ -9,7 +9,6 @@ import java.io.Serializable;
 import java.util.Date;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 
@@ -59,6 +58,22 @@ public class Producto implements Serializable {
 	@Temporal(TemporalType.DATE)
 	@Column(name = "create_at")
 	private Date createAt;
+
+	/**
+	 * ─── EXTENSIÓN JOYERÍA (todos opcionales, compatibles con datos existentes) ───
+	 * Tipo de material precioso: ORO, PLATA, PLATINO, OTRO
+	 */
+	private String tipoMaterial;
+
+	/** Pureza / ley: 18k, 14k, 9k, 925, 950, etc. */
+	private String pureza;
+
+	/** Unidad de medida del stock: GR (gramos), UDS (unidades), ML (mililitros) */
+	@Column(columnDefinition = "VARCHAR(10) DEFAULT 'UDS'")
+	private String unidadMedida = "UDS";
+
+	/** Precio de referencia por gramo (para materiales nobles) */
+	private Double precioPorGramo;
 
 	@PrePersist
 	public void prePersist() {

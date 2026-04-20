@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="admin/admin_layout.html">
+<head>
+    <title>Historial de Compras</title>
+    <link rel="stylesheet" th:href="@{/css/table.css}"/>
+    <style>
+        .badge-lote {
+            background: #212529; color: #00ff88;
+            font-family: monospace; font-size: .75rem;
+            padding: .25rem .5rem; border-radius: 4px;
+            border: 1px solid #00ff88; display:inline-block;
+        }
+        .badge-tipo-ORO     { background:#fff3cd; color:#856404; border:1px solid #ffc107; }
+        .badge-tipo-PLATA   { background:#e9ecef; color:#495057; border:1px solid #adb5bd; }
+        .badge-tipo-PLATINO { background:#cff4fc; color:#055160; border:1px solid #0dcaf0; }
+        .peso-bar { height:4px; background:#e9ecef; border-radius:2px; margin-top:3px; }
+        .peso-bar-fill { height:100%; background:#00b894; border-radius:2px; transition: width .4s; }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+<div class="container-fluid px-2 px-md-3">
+<section class="content-header">
+    <div class="card">
+        <div class="card-header" style="background:linear-gradient(135deg,#0062cc,#004085);color:#fff;">
+            <i class="fas fa-shopping-cart mr-2"></i><strong>Historial de Compras / Lotes</strong>
+        </div>
+
+        <div class="toolbar d-none d-md-flex">
+            <a th:href="@{/inventario}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-warehouse mr-1"></i> Dashboard
+            </a>
+            <a th:href="@{/inventario/compras/nueva}" class="btn btn-success btn-sm">
+                <i class="fas fa-plus mr-1"></i> Nueva Compra
+            </a>
+            <a th:href="@{/materiales/listarMaterial}" class="btn btn-outline-info btn-sm">
+                <i class="fas fa-boxes mr-1"></i> Materiales
+            </a>
+            <a th:href="@{/proveedor/listarProveedor}" class="btn btn-outline-info btn-sm">
+                <i class="fas fa-truck mr-1"></i> Proveedores
+            </a>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover datatable w-100" data-dt="auto">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Código Lote</th>
+                            <th>Material / Tipo / Pureza</th>
+                            <th>Proveedor</th>
+                            <th class="text-center">Cant.</th>
+                            <th class="text-center">Peso Lote</th>
+                            <th class="text-right">Precio/ud</th>
+                            <th class="text-right">Total</th>
+                            <th>Albarán</th>
+                            <th>Usuario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="c : ${compras}">
+                        <!-- Fecha -->
+                        <td th:text="${#temporals.format(c.fechaCompra, 'dd/MM/yy HH:mm')}" class="small"></td>
+
+                        <!-- Código de Lote -->
+                        <td>
+                            <a th:if="${c.codigoLote != null}"
+                               th:href="@{/produccion/lote/{id}(id=${c.id})}"
+                               class="badge-lote" title="Ver historial del lote"
+                               th:text="${c.codigoLote}"></a>
+                            <span th:if="${c.codigoLote == null}" class="text-muted small">—</span>
+                        </td>
+
+                        <!-- Material -->
+                        <td>
+                            <span class="font-weight-bold" th:text="${c.producto?.nombre}"></span>
+                            <small class="text-muted d-block" th:text="${c.producto?.codigo}"></small>
+                            <!-- Badges tipo/pureza si es material noble -->
+                            <span th:if="${c.tipoMaterial != null}"
+                                  th:class="${'badge badge-tipo-' + c.tipoMaterial + ' mr-1'}"
+                                  th:text="${c.tipoMaterial}"></span>
+                            <span th:if="${c.pureza != null}"
+                                  class="badge badge-secondary"
+                                  th:text="${c.pureza}"></span>
+                        </td>
+
+                        <!-- Proveedor -->
+                        <td th:text="${c.proveedor?.vnombre ?: '—'}"></td>
+
+                        <!-- Cantidad -->
+                        <td class="text-center">
+                            <span class="badge badge-success"
+                                  th:text="${'+' + #numbers.formatDecimal(c.cantidad,1,3)
+                                             + (c.producto?.unidadMedida != null ? ' ' + c.producto.unidadMedida : ' uds')}">
+                            </span>
+                        </td>
+
+                        <!-- Peso del lote (barra de consumo) -->
+                        <td class="text-center" style="min-width:120px;">
+                            <span th:if="${c.pesoInicialGr != null}">
+                                <small class="font-weight-bold">
+                                    <span th:text="${#numbers.formatDecimal(c.pesoActualGr,1,3)}"></span>g
+                                    <span class="text-muted">/ <span th:text="${#numbers.formatDecimal(c.pesoInicialGr,1,3)}"></span>g</span>
+                                </small>
+                                <!-- Barra visual de peso restante -->
+                                <div class="peso-bar">
+                                    <div class="peso-bar-fill"
+                                         th:style="${'width:' + (c.pesoInicialGr > 0 ? #numbers.formatDecimal(c.pesoActualGr * 100 / c.pesoInicialGr, 1, 0) : 0) + '%'}">
+                                    </div>
+                                </div>
+                            </span>
+                            <span th:if="${c.pesoInicialGr == null}" class="text-muted small">—</span>
+                        </td>
+
+                        <!-- Precio unitario -->
+                        <td class="text-right"
+                            th:text="${#numbers.formatDecimal(c.precioUnitario, 1, 4) + ' €'}"></td>
+
+                        <!-- Total -->
+                        <td class="text-right font-weight-bold text-success"
+                            th:text="${#numbers.formatDecimal(c.precioTotal, 1, 2) + ' €'}"></td>
+
+                        <!-- Albarán -->
+                        <td th:text="${c.numAlbaran ?: '—'}"></td>
+
+                        <!-- Usuario -->
+                        <td><small th:text="${c.usuarioRegistro}"></small></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="admin/admin_layout.html">
+<head>
+    <title>Historial de Lote</title>
+    <style>
+        .badge-lote {
+            background:#212529; color:#00ff88; font-family:monospace;
+            font-size:.9rem; padding:.3rem .7rem; border-radius:6px; border:1px solid #00ff88;
+        }
+        .badge-tipo-ORO     { background:#fff3cd; color:#856404; border:1px solid #ffc107; }
+        .badge-tipo-PLATA   { background:#e9ecef; color:#495057; border:1px solid #adb5bd; }
+        .badge-tipo-PLATINO { background:#cff4fc; color:#055160; border:1px solid #0dcaf0; }
+        .panel { background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,.08); padding:1.25rem; margin-bottom:1.5rem; }
+        .panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
+        .panel-header h6 { font-weight:700; margin:0; }
+        .lote-header-card {
+            background:linear-gradient(135deg,#212529,#343a40); color:#fff;
+            border-radius:12px; padding:1.5rem 2rem; margin-bottom:1.5rem;
+        }
+        .peso-bar { height:8px; background:#495057; border-radius:4px; margin-top:.5rem; }
+        .peso-bar-fill { height:100%; background:linear-gradient(90deg,#00b894,#00cec9); border-radius:4px; }
+        .peso-bar-fill.low { background:linear-gradient(90deg,#fd7e14,#dc3545); }
+        .timeline-dot {
+            width:12px; height:12px; border-radius:50%; background:#6f42c1;
+            flex-shrink:0; margin-top:4px;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+<div class="container-fluid px-2 px-md-3">
+<section class="content-header">
+<div class="card">
+    <div class="card-header" style="background:linear-gradient(135deg,#212529,#343a40);color:#fff;">
+        <i class="fas fa-search mr-2"></i><strong th:text="${titulo}">Historial del Lote</strong>
+    </div>
+
+    <div class="toolbar d-none d-md-flex">
+        <a th:href="@{/produccion}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-list mr-1"></i> Órdenes
+        </a>
+        <a th:href="@{/inventario/compras}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-gem mr-1"></i> Todos los Lotes
+        </a>
+        <a th:href="@{/inventario}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-warehouse mr-1"></i> Inventario
+        </a>
+    </div>
+
+    <div class="card-body">
+
+        <!-- ① Cabecera del lote -->
+        <div class="lote-header-card">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <span class="badge-lote" th:text="${lote.codigoLote ?: ('Lote #' + lote.id)}"></span>
+                    <h4 class="mt-2 mb-1" th:text="${lote.producto?.nombre}"></h4>
+                    <div>
+                        <span th:if="${lote.tipoMaterial != null}"
+                              th:class="${'badge badge-tipo-' + lote.tipoMaterial + ' mr-1'}"
+                              th:text="${lote.tipoMaterial}"></span>
+                        <span th:if="${lote.pureza != null}" class="badge badge-secondary" th:text="${lote.pureza}"></span>
+                    </div>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="text-muted small">Peso inicial</div>
+                    <div style="font-size:1.5rem; font-weight:700;"
+                         th:text="${lote.pesoInicialGr != null ? #numbers.formatDecimal(lote.pesoInicialGr,1,3) + ' g' : '—'}">
+                    </div>
+                    <div class="text-muted small mt-2">Peso actual disponible</div>
+                    <div style="font-size:1.8rem; font-weight:700; color:#00ff88;"
+                         th:text="${lote.pesoActualGr != null ? #numbers.formatDecimal(lote.pesoActualGr,1,3) + ' g' : '—'}">
+                    </div>
+                    <!-- Barra de consumo -->
+                    <div th:if="${lote.pesoInicialGr != null and lote.pesoInicialGr > 0}" class="peso-bar mt-2">
+                        <div class="peso-bar-fill"
+                             th:classappend="${(lote.pesoActualGr / lote.pesoInicialGr) < 0.2 ? 'low' : ''}"
+                             th:style="${'width:' + #numbers.formatDecimal(lote.pesoActualGr * 100 / lote.pesoInicialGr, 1, 0) + '%'}">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="text-muted small">Proveedor</div>
+                    <div th:text="${lote.proveedor?.vnombre ?: '—'}"></div>
+                    <div class="text-muted small mt-2">Fecha compra</div>
+                    <div th:if="${lote.fechaCompra != null}"
+                         th:text="${#temporals.format(lote.fechaCompra,'dd/MM/yyyy')}"></div>
+                    <div class="text-muted small mt-2">Precio total</div>
+                    <div th:if="${lote.precioTotal != null}"
+                         th:text="${#numbers.formatDecimal(lote.precioTotal,1,2) + ' €'}"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+
+            <!-- ② Usos del lote (timeline) -->
+            <div class="col-md-6">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h6><i class="fas fa-history mr-2 text-primary"></i>Historial de Consumos
+                            <span class="badge badge-primary ml-2" th:text="${usos.size()}">0</span>
+                        </h6>
+                    </div>
+                    <div th:if="${#lists.isEmpty(usos)}" class="text-center text-muted py-3">
+                        Sin consumos registrados para este lote
+                    </div>
+                    <div th:unless="${#lists.isEmpty(usos)}">
+                        <div th:each="uso : ${usos}" class="d-flex gap-3 mb-3" style="gap:.75rem;">
+                            <div class="timeline-dot"></div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <strong th:text="${#numbers.formatDecimal(uso.pesoUsadoGr,1,3) + ' g consumidos'}"></strong>
+                                    <small class="text-muted" th:text="${#temporals.format(uso.fechaUso,'dd/MM/yy HH:mm')}"></small>
+                                </div>
+                                <div class="text-muted small" th:text="${uso.motivo ?: '—'}"></div>
+                                <div th:if="${uso.pedidoId != null}" class="small">
+                                    Pedido: <span class="badge badge-info" th:text="${'#' + uso.pedidoId}"></span>
+                                </div>
+                                <div th:if="${uso.ordenProduccionId != null}" class="small">
+                                    Orden prod.: <span class="badge badge-secondary"
+                                                       th:text="${'#' + uso.ordenProduccionId}"></span>
+                                </div>
+                                <small class="text-muted" th:text="${uso.usuarioRegistro}"></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ③ Órdenes que usaron este lote -->
+            <div class="col-md-6">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h6><i class="fas fa-fire mr-2 text-warning"></i>Órdenes de Producción
+                            <span class="badge badge-warning ml-2" th:text="${ordenes.size()}">0</span>
+                        </h6>
+                    </div>
+                    <div th:if="${#lists.isEmpty(ordenes)}" class="text-center text-muted py-3">
+                        Este lote no se ha usado en ninguna orden de producción
+                    </div>
+                    <table th:unless="${#lists.isEmpty(ordenes)}" class="table table-sm mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Descripción</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-right">Producto</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="op : ${ordenes}">
+                                <td th:text="${op.id}"></td>
+                                <td class="small" th:text="${op.descripcion}"></td>
+                                <td class="text-center">
+                                    <span th:class="${'badge badge-' + op.estado}"
+                                          th:text="${op.estado}"></span>
+                                </td>
+                                <td class="text-right small">
+                                    <span th:if="${op.pesoProductoGr != null}"
+                                          th:text="${#numbers.formatDecimal(op.pesoProductoGr,1,3) + 'g'}"></span>
+                                    <span th:if="${op.pesoProductoGr == null}" class="text-muted">—</span>
+                                </td>
+                                <td class="small"
+                                    th:text="${op.fechaInicio != null ? #temporals.format(op.fechaInicio,'dd/MM/yy') : '—'}">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+</section>
+</div>
+</div>
+</body>
+</html>

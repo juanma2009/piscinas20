@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="admin/admin_layout.html">
+<head>
+    <title>Registrar Compra</title>
+    <style>
+        .form-section { background:#f8f9fa; border-radius:10px; padding:1.5rem; margin-bottom:1rem; }
+        .form-section h6 { font-weight:700; color:#0062cc; border-bottom:2px solid #0062cc; padding-bottom:.5rem; margin-bottom:1rem; }
+        .form-section.joyeria { background: linear-gradient(135deg,#fff8e1,#fff3cd); border:1px solid #ffc107; }
+        .form-section.joyeria h6 { color:#856404; border-color:#856404; }
+        .total-box {
+            background: linear-gradient(135deg,#0062cc,#004085);
+            color:#fff; border-radius:10px; padding:1rem 1.5rem;
+            font-size:1.4rem; font-weight:700; text-align:center;
+        }
+        .lote-preview {
+            background:#212529; color:#00ff88; font-family:monospace;
+            border-radius:8px; padding:.6rem 1rem; font-size:1rem;
+            letter-spacing:.05em; text-align:center; border:1px solid #00ff88;
+        }
+        #seccionJoyeria { transition: all .3s ease; }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+<div class="container-fluid px-2 px-md-3">
+<section class="content-header">
+    <div class="card">
+        <div class="card-header" style="background:linear-gradient(135deg,#0062cc,#004085);color:#fff;">
+            <i class="fas fa-cart-plus mr-2"></i><strong th:text="${titulo}">Registrar Compra</strong>
+        </div>
+
+        <div class="toolbar d-none d-md-flex">
+            <a th:href="@{/inventario}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-warehouse mr-1"></i> Dashboard
+            </a>
+            <a th:href="@{/inventario/compras}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-list mr-1"></i> Historial Compras
+            </a>
+            <a th:href="@{/materiales/listarMaterial}" class="btn btn-outline-info btn-sm">
+                <i class="fas fa-boxes mr-1"></i> Materiales
+            </a>
+            <a th:href="@{/proveedor/listarProveedor}" class="btn btn-outline-info btn-sm">
+                <i class="fas fa-truck mr-1"></i> Proveedores
+            </a>
+        </div>
+
+        <div class="card-body">
+            <form th:action="@{/inventario/compras/guardar}" method="post" id="formCompra">
+
+                <!-- ① Material y Proveedor -->
+                <div class="form-section">
+                    <h6><i class="fas fa-box mr-2"></i>Material y Proveedor</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Material <span class="text-danger">*</span></label>
+                                <select name="productoId" id="selectMaterial" class="form-control" required>
+                                    <option value="">-- Seleccionar material --</option>
+                                    <option th:each="p : ${productos}"
+                                            th:value="${p.id}"
+                                            th:text="${p.nombre + ' — ' + p.codigo + ' | Stock: ' + p.cantidad
+                                                       + (p.unidadMedida != null ? ' ' + p.unidadMedida : ' uds')}"
+                                            th:attr="data-precio=${p.precioCompra},
+                                                     data-tipo=${p.tipoMaterial},
+                                                     data-pureza=${p.pureza},
+                                                     data-unidad=${p.unidadMedida},
+                                                     data-preciogr=${p.precioPorGramo}">
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Proveedor</label>
+                                <select name="proveedorId" class="form-control">
+                                    <option value="0">-- Sin proveedor --</option>
+                                    <option th:each="pv : ${proveedores}"
+                                            th:value="${pv.nproveedor}"
+                                            th:text="${pv.vnombre}">
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ② Sección Joyería — aparece automáticamente si el material tiene tipoMaterial -->
+                <div class="form-section joyeria" id="seccionJoyeria" style="display:none;">
+                    <h6><i class="fas fa-gem mr-2"></i>Datos de Lote (Material Noble)</h6>
+                    <div class="row align-items-end">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Tipo de Material</label>
+                                <select name="tipoMaterial" id="selectTipo" class="form-control" onchange="actualizarLote()">
+                                    <option value="">-- Tipo --</option>
+                                    <option value="ORO">🥇 Oro</option>
+                                    <option value="PLATA">🥈 Plata</option>
+                                    <option value="PLATINO">💎 Platino</option>
+                                    <option value="OTRO">🔩 Otro</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Pureza / Ley</label>
+                                <select name="pureza" id="selectPureza" class="form-control" onchange="actualizarLote()">
+                                    <option value="">-- Pureza --</option>
+                                    <optgroup label="Oro">
+                                        <option value="24k">24k (999‰)</option>
+                                        <option value="18k">18k (750‰)</option>
+                                        <option value="14k">14k (585‰)</option>
+                                        <option value="9k">9k (375‰)</option>
+                                    </optgroup>
+                                    <optgroup label="Plata">
+                                        <option value="999">Ag 999‰</option>
+                                        <option value="925">Ag 925‰</option>
+                                        <option value="800">Ag 800‰</option>
+                                    </optgroup>
+                                    <optgroup label="Platino">
+                                        <option value="950">Pt 950‰</option>
+                                        <option value="900">Pt 900‰</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Peso en gramos</label>
+                                <div class="input-group">
+                                    <input type="number" name="pesoGramos" id="inputPeso" step="0.001" min="0.001"
+                                           class="form-control" placeholder="0.000"/>
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">g</span>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Si no se indica, se usa la cantidad</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Precio por gramo (€)</label>
+                                <div class="input-group">
+                                    <input type="number" id="inputPrecioGr" step="0.0001" min="0"
+                                           class="form-control" placeholder="0.00" oninput="calcularDesdePorGramo()"/>
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">€/g</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Vista previa del código de lote -->
+                    <div class="row mt-1">
+                        <div class="col-12">
+                            <small class="font-weight-bold text-muted">
+                                <i class="fas fa-tag mr-1"></i>Código de lote que se generará al guardar:
+                            </small>
+                            <div class="lote-preview mt-1" id="lotePreview">— Selecciona tipo y pureza —</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ③ Cantidad y Precio -->
+                <div class="form-section">
+                    <h6><i class="fas fa-calculator mr-2"></i>Cantidad y Precio</h6>
+                    <div class="row align-items-end">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="font-weight-bold" id="labelCantidad">
+                                    Cantidad <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" name="cantidad" id="inputCantidad" step="0.001" min="0.001"
+                                       class="form-control" required placeholder="0.000" oninput="calcularTotal()"/>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Precio unitario (€) <span class="text-danger">*</span></label>
+                                <input type="number" name="precioUnitario" id="inputPrecio" step="0.01" min="0"
+                                       class="form-control" required placeholder="0.00" oninput="calcularTotal()"/>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Nº Albarán / Factura</label>
+                                <input type="text" name="numAlbaran" class="form-control" placeholder="Opcional"/>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="total-box mb-3">
+                                Total: <span id="totalDisplay">0.00 €</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ④ Notas -->
+                <div class="form-section">
+                    <h6><i class="fas fa-sticky-note mr-2"></i>Notas</h6>
+                    <div class="form-group mb-0">
+                        <textarea name="notas" class="form-control" rows="2"
+                                  placeholder="Información adicional sobre la compra..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="d-flex justify-content-center mt-3" style="gap:1rem;">
+                    <button type="submit" class="btn btn-success px-5">
+                        <i class="fas fa-save mr-2"></i> Guardar Compra y Actualizar Stock
+                    </button>
+                    <a th:href="@{/inventario}" class="btn btn-secondary px-4">
+                        <i class="fas fa-times mr-2"></i> Cancelar
+                    </a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</section>
+</div>
+</div>
+
+<div layout:fragment="script">
+    <script>
+        const hoy = new Date();
+        const fechaStr = hoy.getFullYear().toString()
+            + String(hoy.getMonth()+1).padStart(2,'0')
+            + String(hoy.getDate()).padStart(2,'0');
+
+        document.getElementById('selectMaterial').addEventListener('change', function() {
+            const opt      = this.options[this.selectedIndex];
+            const precio   = opt.getAttribute('data-precio');
+            const tipo     = opt.getAttribute('data-tipo');
+            const pureza   = opt.getAttribute('data-pureza');
+            const unidad   = opt.getAttribute('data-unidad');
+            const preciogr = opt.getAttribute('data-preciogr');
+
+            if (precio && precio !== 'null') {
+                document.getElementById('inputPrecio').value = parseFloat(precio).toFixed(2);
+                calcularTotal();
+            }
+
+            const seccion = document.getElementById('seccionJoyeria');
+            if (tipo && tipo !== 'null' && tipo !== '') {
+                seccion.style.display = 'block';
+                setSelectValue('selectTipo', tipo);
+                setSelectValue('selectPureza', pureza);
+                if (preciogr && preciogr !== 'null') {
+                    document.getElementById('inputPrecioGr').value = parseFloat(preciogr).toFixed(4);
+                }
+                document.getElementById('labelCantidad').innerHTML =
+                    'Cantidad' + (unidad === 'GR' ? ' (g)' : '') + ' <span class="text-danger">*</span>';
+            } else {
+                seccion.style.display = 'none';
+                document.getElementById('labelCantidad').innerHTML = 'Cantidad <span class="text-danger">*</span>';
+            }
+            actualizarLote();
+        });
+
+        function setSelectValue(id, val) {
+            const sel = document.getElementById(id);
+            if (!sel || !val || val === 'null') return;
+            for (let i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].value === val) { sel.selectedIndex = i; break; }
+            }
+        }
+
+        function actualizarLote() {
+            const tipo   = document.getElementById('selectTipo').value;
+            const pureza = document.getElementById('selectPureza').value;
+            const preview = document.getElementById('lotePreview');
+            if (tipo && pureza) {
+                const t = tipo.substring(0, 3).toUpperCase();
+                const p = pureza.toUpperCase().replace('.','');
+                preview.textContent = t + '-' + p + '-' + fechaStr + '-XXX';
+                preview.style.color = '#00ff88';
+                preview.style.borderColor = '#00ff88';
+            } else if (tipo) {
+                preview.textContent = tipo.substring(0,3).toUpperCase() + '-XX-' + fechaStr + '-XXX';
+                preview.style.color = '#ffc107';
+                preview.style.borderColor = '#ffc107';
+            } else {
+                preview.textContent = '— Selecciona tipo y pureza —';
+                preview.style.color = '#6c757d';
+                preview.style.borderColor = '#6c757d';
+            }
+        }
+
+        function calcularDesdePorGramo() {
+            const preciogr = parseFloat(document.getElementById('inputPrecioGr').value) || 0;
+            const peso     = parseFloat(document.getElementById('inputPeso').value) ||
+                             parseFloat(document.getElementById('inputCantidad').value) || 0;
+            if (preciogr > 0 && peso > 0) {
+                document.getElementById('inputPrecio').value = preciogr.toFixed(4);
+                calcularTotal();
+            }
+        }
+
+        function calcularTotal() {
+            const cant   = parseFloat(document.getElementById('inputCantidad').value) || 0;
+            const precio = parseFloat(document.getElementById('inputPrecio').value) || 0;
+            document.getElementById('totalDisplay').textContent = (cant * precio).toFixed(2) + ' €';
+        }
+    </script>
+</div>
+</body>
+</html>

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="admin/admin_layout.html">
+<head>
+    <title>Cerrar Orden de Producción</title>
+    <style>
+        .form-section { background:#f8f9fa; border-radius:10px; padding:1.5rem; margin-bottom:1rem; }
+        .form-section h6 { font-weight:700; color:#0062cc; border-bottom:2px solid #0062cc; padding-bottom:.5rem; margin-bottom:1rem; }
+        .form-section.merma { background:linear-gradient(135deg,#fff8e1,#fff3cd); border:1px solid #ffc107; }
+        .form-section.merma h6 { color:#856404; border-color:#856404; }
+        .balance-box {
+            border-radius:12px; padding:1rem 1.5rem;
+            font-size:1rem; font-weight:600;
+        }
+        .balance-ok   { background:#d4edda; color:#155724; border:1px solid #28a745; }
+        .balance-err  { background:#f8d7da; color:#721c24; border:1px solid #dc3545; }
+        .entrada-badge {
+            background:linear-gradient(135deg,#6f42c1,#4a2678); color:#fff;
+            border-radius:10px; padding:1rem 1.5rem; font-size:1.5rem; font-weight:700; text-align:center;
+        }
+        .reciclaje-card {
+            border:2px solid transparent; border-radius:10px; padding:1rem; cursor:pointer; transition:all .2s;
+        }
+        .reciclaje-card.selected-LOTE    { border-color:#28a745; background:#f0fdf4; }
+        .reciclaje-card.selected-GENERAL { border-color:#ffc107; background:#fffbf0; }
+        .reciclaje-card.selected-NINGUNO { border-color:#adb5bd; background:#f8f9fa; }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+<div class="container-fluid px-2 px-md-3">
+<section class="content-header">
+<div class="card">
+    <div class="card-header" style="background:linear-gradient(135deg,#0062cc,#004085);color:#fff;">
+        <i class="fas fa-flag-checkered mr-2"></i>
+        <strong th:text="${titulo}">Cerrar Orden de Producción</strong>
+    </div>
+
+    <div class="toolbar d-none d-md-flex">
+        <a th:href="@{/produccion}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-list mr-1"></i> Órdenes
+        </a>
+        <a th:href="@{/inventario}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-warehouse mr-1"></i> Inventario
+        </a>
+    </div>
+
+    <div class="card-body">
+
+        <!-- Alerta si ya terminada -->
+        <div th:if="${warn}" class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle mr-2"></i><span th:text="${warn}"></span>
+        </div>
+
+        <!-- Resumen de la orden -->
+        <div class="form-section">
+            <h6><i class="fas fa-info-circle mr-2"></i>Resumen de la Orden</h6>
+            <div class="row">
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Descripción</small>
+                    <strong th:text="${orden.descripcion}"></strong>
+                </div>
+                <div class="col-md-2">
+                    <small class="text-muted d-block">Inicio</small>
+                    <span th:text="${#temporals.format(orden.fechaInicio,'dd/MM/yyyy HH:mm')}"></span>
+                </div>
+                <div class="col-md-2">
+                    <small class="text-muted d-block">Pedido</small>
+                    <span th:if="${orden.pedidoId != null}" th:text="${'#' + orden.pedidoId}"></span>
+                    <span th:if="${orden.pedidoId == null}" class="text-muted">—</span>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Peso total en proceso</small>
+                    <div class="entrada-badge"
+                         th:text="${#numbers.formatDecimal(orden.pesoEntradaGr,1,3) + ' g'}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form th:action="@{/produccion/{id}/cerrar(id=${orden.id})}" method="post" id="formCerrar">
+
+            <!-- ① Pesos resultantes -->
+            <div class="form-section">
+                <h6><i class="fas fa-balance-scale mr-2"></i>Balance de Masa (debe cuadrar con la entrada)</h6>
+                <p class="text-muted small">
+                    <strong>Regla:</strong>
+                    Peso entrada (<strong th:text="${#numbers.formatDecimal(orden.pesoEntradaGr,1,3) + 'g'}"></strong>)
+                    = Producto + Merma + Reciclaje
+                </p>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="font-weight-bold text-success">
+                                <i class="fas fa-ring mr-1"></i>Peso Producto Final (g) <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="number" name="pesoProductoGr" id="pesoProducto"
+                                       step="0.001" min="0" class="form-control form-control-lg"
+                                       placeholder="0.000" required oninput="verificarBalance()"/>
+                                <div class="input-group-append">
+                                    <span class="input-group-text">g</span>
+                                </div>
+                            </div>
+                            <small class="text-muted">Gramos en la pieza terminada que va al cliente</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="font-weight-bold text-danger">
+                                <i class="fas fa-smoke mr-1"></i>Merma Irrecuperable (g) <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="number" name="pesoMermaGr" id="pesoMerma"
+                                       step="0.001" min="0" value="0" class="form-control form-control-lg"
+                                       placeholder="0.000" required oninput="verificarBalance()"/>
+                                <div class="input-group-append">
+                                    <span class="input-group-text">g</span>
+                                </div>
+                            </div>
+                            <small class="text-muted">Polvo, vapor, ácidos — pérdida total</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="font-weight-bold" style="color:#6f42c1;">
+                                <i class="fas fa-recycle mr-1"></i>Reciclaje Recuperado (g) <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="number" name="pesoReciclajeGr" id="pesoReciclaje"
+                                       step="0.001" min="0" value="0" class="form-control form-control-lg"
+                                       placeholder="0.000" required oninput="verificarBalance()"/>
+                                <div class="input-group-append">
+                                    <span class="input-group-text">g</span>
+                                </div>
+                            </div>
+                            <small class="text-muted">Limaduras, recortes recuperables</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verificador de balance en tiempo real -->
+                <div id="balanceCheck" class="balance-box mt-2" style="display:none;"></div>
+            </div>
+
+            <!-- ② Tipo de reciclaje -->
+            <div class="form-section merma">
+                <h6><i class="fas fa-recycle mr-2"></i>¿Cómo se gestiona el reciclaje?</h6>
+                <input type="hidden" name="tipoReciclaje" id="tipoReciclajeInput" value="NINGUNO"/>
+
+                <div class="row">
+                    <!-- LOTE -->
+                    <div class="col-md-4 mb-3">
+                        <div class="reciclaje-card" id="card-LOTE" onclick="seleccionarTipo('LOTE')">
+                            <h5 class="mb-1">🔁 Reciclaje de Lote</h5>
+                            <p class="text-muted small mb-2">
+                                Las limaduras son del mismo material de esta orden.<br>
+                                Se genera un <strong>nuevo lote hijo</strong> con la misma pureza.
+                            </p>
+                            <span class="badge badge-success">Trazabilidad TOTAL</span>
+                        </div>
+                    </div>
+                    <!-- GENERAL -->
+                    <div class="col-md-4 mb-3">
+                        <div class="reciclaje-card" id="card-GENERAL" onclick="seleccionarTipo('GENERAL')">
+                            <h5 class="mb-1">📦 Chatarra General</h5>
+                            <p class="text-muted small mb-2">
+                                Limaduras de varios trabajos mezcladas, o no se sabe el lote exacto.<br>
+                                Se <strong>acumula en un producto genérico</strong> de chatarra.
+                            </p>
+                            <span class="badge badge-warning">Trazabilidad PARCIAL</span>
+                        </div>
+                    </div>
+                    <!-- NINGUNO -->
+                    <div class="col-md-4 mb-3">
+                        <div class="reciclaje-card selected-NINGUNO" id="card-NINGUNO" onclick="seleccionarTipo('NINGUNO')">
+                            <h5 class="mb-1">✗ Sin reciclaje</h5>
+                            <p class="text-muted small mb-2">
+                                No hay material recuperable. Todo lo que no es producto final es pérdida.<br>
+                                Solo queda registrado como merma informativa.
+                            </p>
+                            <span class="badge badge-secondary">Solo registro</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selector de producto chatarra (visible solo si tipo=GENERAL) -->
+                <div id="seccionGeneral" style="display:none;" class="mt-2">
+                    <div class="form-group mb-0">
+                        <label class="font-weight-bold">Producto de chatarra donde acumular <span class="text-danger">*</span></label>
+                        <select name="productoMermaId" id="selectChatarra" class="form-control">
+                            <option value="">-- Seleccionar producto chatarra --</option>
+                            <option th:each="pc : ${productosChatarra}"
+                                    th:value="${pc.id}"
+                                    th:text="${pc.nombre + ' (stock actual: ' + #numbers.formatDecimal(pc.cantidad,1,3) + ')'}">
+                            </option>
+                        </select>
+                        <small class="text-muted">
+                            Si no aparece el producto de chatarra, créalo primero en el catálogo de materiales con "chatarra" en el nombre.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="d-flex justify-content-center mt-3" style="gap:1rem;">
+                <button type="submit" id="btnCerrar" class="btn btn-success px-5 btn-lg" disabled>
+                    <i class="fas fa-flag-checkered mr-2"></i> Cerrar Orden
+                </button>
+                <a th:href="@{/produccion}" class="btn btn-secondary px-4">
+                    <i class="fas fa-times mr-2"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+</section>
+</div>
+</div>
+
+<div layout:fragment="script">
+    <script th:inline="javascript">
+        const pesoEntrada = /*[[${orden.pesoEntradaGr}]]*/ 0;
+
+        function verificarBalance() {
+            const prod = parseFloat(document.getElementById('pesoProducto').value)    || 0;
+            const merm = parseFloat(document.getElementById('pesoMerma').value)       || 0;
+            const rec  = parseFloat(document.getElementById('pesoReciclaje').value)   || 0;
+            const total = prod + merm + rec;
+            const diff  = Math.abs(total - pesoEntrada);
+            const el    = document.getElementById('balanceCheck');
+            const btn   = document.getElementById('btnCerrar');
+
+            el.style.display = 'block';
+
+            if (diff <= 0.01) {
+                el.className = 'balance-box balance-ok';
+                el.innerHTML = `✅ Balance correcto — Entrada: ${pesoEntrada.toFixed(3)}g = Producto ${prod.toFixed(3)}g + Merma ${merm.toFixed(3)}g + Reciclaje ${rec.toFixed(3)}g`;
+                btn.disabled = false;
+            } else {
+                el.className = 'balance-box balance-err';
+                el.innerHTML = `❌ No cuadra — Entrada: ${pesoEntrada.toFixed(3)}g | Suma salidas: ${total.toFixed(3)}g | Diferencia: ${(total - pesoEntrada).toFixed(3)}g`;
+                btn.disabled = true;
+            }
+        }
+
+        function seleccionarTipo(tipo) {
+            document.getElementById('tipoReciclajeInput').value = tipo;
+            ['LOTE','GENERAL','NINGUNO'].forEach(t => {
+                const card = document.getElementById('card-' + t);
+                card.className = 'reciclaje-card' + (t === tipo ? ' selected-' + t : '');
+            });
+            document.getElementById('seccionGeneral').style.display = tipo === 'GENERAL' ? 'block' : 'none';
+            const chatSel = document.getElementById('selectChatarra');
+            chatSel.required = (tipo === 'GENERAL');
+        }
+    </script>
+</div>
+</body>
+</html>
