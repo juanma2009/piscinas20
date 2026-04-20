@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorator="admin/admin_layout">
+      layout:decorate="admin/admin_layout.html">
 
 <head>
     <meta charset="utf-8"/>
@@ -14,6 +14,27 @@
             <div class="card">
                 <div class="card-header">
                     <i class="fas fa-boxes mr-2"></i> <span th:text="${titulo}"></span>
+                </div>
+
+                <div class="toolbar d-none d-md-flex">
+                    <a th:href="@{/materiales/listarMaterial}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-boxes mr-1"></i> Inventario
+                    </a>
+                    <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list mr-1"></i> Pedidos
+                    </a>
+                    <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-images mr-1"></i> Galería
+                    </a>
+                    <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-users mr-1"></i> Clientes
+                    </a>
+                    <a th:href="@{/proveedor/listarProveedor}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-truck mr-1"></i> Proveedores
+                    </a>
+                    <a th:href="@{/proveedor/form}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-address-book mr-1"></i> Crear Proveedor
+                    </a>
                 </div>
 
                 <div class="card-body">

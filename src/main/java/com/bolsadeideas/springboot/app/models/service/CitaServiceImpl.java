@@ -96,6 +96,21 @@ public class CitaServiceImpl implements ICitaService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<Cita> findByFiltros(Long clienteId, Cita.EstadoCita estado, Cita.TipoCita tipo, LocalDateTime inicio, LocalDateTime fin) {
+        // Filtramos en Java para evitar el error de PostgreSQL con parámetros nulos en JPQL
+        // ERROR: could not determine data type of parameter $N (con LocalDateTime null)
+        return citaRepository.findAllWithEntities().stream()
+            .filter(c -> clienteId == null || (c.getCliente() != null && clienteId.equals(c.getCliente().getId())))
+            .filter(c -> estado == null || estado.equals(c.getEstado()))
+            .filter(c -> tipo == null || tipo.equals(c.getTipo()))
+            .filter(c -> inicio == null || (c.getFechaCita() != null && !c.getFechaCita().isBefore(inicio)))
+            .filter(c -> fin == null || (c.getFechaCita() != null && !c.getFechaCita().isAfter(fin)))
+            .sorted(java.util.Comparator.comparing(Cita::getFechaCita, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+            .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<CitaHistorial> getHistorialByCitaId(Long citaId) {
         return citaHistorialDao.findByCitaIdOrderByFechaModificacionDesc(citaId);
     }

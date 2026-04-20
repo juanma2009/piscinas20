@@ -43,6 +43,48 @@ public class CitaController {
     public String listar(Model model) {
         model.addAttribute("titulo", "Listado de Citas");
         model.addAttribute("citas", citaService.findAllWithEntities());
+        model.addAttribute("clientes", clienteService.findAll());
+        model.addAttribute("tipos", Cita.TipoCita.values());
+        model.addAttribute("estados", Cita.EstadoCita.values());
+        return "citas/listar";
+    }
+
+    @PostMapping("/buscar")
+    public String buscar(
+            @RequestParam(required = false) String cliente,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta,
+            Model model) {
+
+        Long clienteId = (cliente != null && !cliente.isEmpty()) ? Long.parseLong(cliente) : null;
+        Cita.EstadoCita estadoEnum = (estado != null && !estado.isEmpty()) ? Cita.EstadoCita.valueOf(estado) : null;
+        Cita.TipoCita tipoEnum = (tipo != null && !tipo.isEmpty()) ? Cita.TipoCita.valueOf(tipo) : null;
+
+        java.time.LocalDateTime inicio = null;
+        java.time.LocalDateTime fin = null;
+
+        try {
+            // Navegadores a veces envian YYYY-MM-DDTHH:mm (16 chars) o YYYY-MM-DDTHH:mm:ss
+            if (fechaDesde != null && !fechaDesde.isEmpty()) {
+                String fDesde = fechaDesde.length() == 16 ? fechaDesde + ":00" : fechaDesde;
+                inicio = java.time.LocalDateTime.parse(fDesde);
+            }
+            if (fechaHasta != null && !fechaHasta.isEmpty()) {
+                String fHasta = fechaHasta.length() == 16 ? fechaHasta + ":00" : fechaHasta;
+                fin = java.time.LocalDateTime.parse(fHasta);
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing dates in CitaController: " + e.getMessage());
+        }
+
+        model.addAttribute("titulo", "Resultado de Búsqueda de Citas");
+        model.addAttribute("citas", citaService.findByFiltros(clienteId, estadoEnum, tipoEnum, inicio, fin));
+        model.addAttribute("clientes", clienteService.findAll());
+        model.addAttribute("estados", Cita.EstadoCita.values());
+        model.addAttribute("tipos", Cita.TipoCita.values());
+
         return "citas/listar";
     }
 
@@ -54,6 +96,7 @@ public class CitaController {
         model.put("clientes", clienteService.findAll());
         model.put("tipos", Cita.TipoCita.values());
         model.put("estados", Cita.EstadoCita.values());
+        model.put("pedidos", java.util.Collections.emptyList());
         return "citas/form";
     }
 
@@ -71,6 +114,7 @@ public class CitaController {
         model.put("titulo", "Programar Cita para: " + cliente.getNombre());
         model.put("tipos", Cita.TipoCita.values());
         model.put("estados", Cita.EstadoCita.values());
+        model.put("pedidos", pedidoService.findAllByClienteIds(clienteId));
         return "citas/form";
     }
 
@@ -110,6 +154,9 @@ public class CitaController {
         model.put("cita", cita);
         if (cita.getCliente() != null) {
             model.put("clienteId", cita.getCliente().getId());
+            model.put("pedidos", pedidoService.findAllByClienteIds(cita.getCliente().getId()));
+        } else {
+            model.put("pedidos", java.util.Collections.emptyList());
         }
         model.put("titulo", "Editar Cita");
         model.put("tipos", Cita.TipoCita.values());
@@ -150,6 +197,19 @@ public class CitaController {
         
         flash.addFlashAttribute("success", mensajeFlash);
         return "redirect:/citas/listar";
+    }
+
+    @GetMapping("/pedidosPorCliente/{clienteId}")
+    @ResponseBody
+    public java.util.List<java.util.Map<String, Object>> pedidosPorCliente(@PathVariable Long clienteId) {
+        return pedidoService.findAllByClienteIds(clienteId).stream()
+            .map(p -> {
+                java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+                m.put("npedido", p.getNpedido());
+                m.put("ref", p.getRef() != null ? p.getRef() : "");
+                return m;
+            })
+            .collect(java.util.stream.Collectors.toList());
     }
 
     @GetMapping("/eliminar/{id}")

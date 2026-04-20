@@ -1,11 +1,35 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorator="admin/admin_layout">
+      layout:decorate="admin/admin_layout.html">
 
 <head>
     <meta charset="utf-8"/>
     <title>Inventario de Materiales</title>
+    <!-- Solo CSS propio (jQuery/Bootstrap/DataTables ya vienen del layout) -->
+    <link rel="stylesheet" th:href="@{/css/table.css}"/>
+
+    <style>
+        /* ✅ En móvil y tablets: botones e iconos mucho más grandes para mejor usabilidad */
+        @media (max-width: 1024px) {
+            .toolbar .btn {
+                width:auto !important;
+                padding: 10px 18px !important;
+                font-size: 16px !important;
+            }
+
+            .table .btn-sm {
+                padding: 10px !important;
+                font-size: 1.4rem !important;
+                margin-right: 10px !important;
+                min-width: 45px;
+                min-height: 45px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 
 <div layout:fragment="content">
@@ -16,9 +40,24 @@
                     <i class="fas fa-boxes mr-2"></i> Inventario de Materiales
                 </div>
 
-                <div class="toolbar">
-                    <a th:href="@{/materiales/form}" class="btn btn-outline-primary btn-sm">
+                <div class="toolbar d-none d-md-flex">
+                    <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list mr-1"></i> Pedidos
+                    </a>
+                    <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-images mr-1"></i> Galería
+                    </a>
+                    <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-users mr-1"></i> Clientes
+                    </a>
+                    <a th:href="@{/proveedor/listarProveedor}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-truck mr-1"></i> Proveedores
+                    </a>
+                    <a th:href="@{/materiales/form}" class="btn btn-success btn-sm">
                         <i class="fas fa-plus mr-1"></i> Crear Material
+                    </a>
+                    <a th:href="@{/proveedor/form}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-address-book mr-1"></i> Crear Proveedor
                     </a>
                     <button type="button" class="btn btn-outline-primary btn-sm" id="toggleBusqueda">
                         <i class="fas fa-search mr-1"></i> Filtros
@@ -27,17 +66,29 @@
 
                 <div class="card-body">
                     <div id="formBusqueda" style="display:none; margin-bottom: 1.5rem;">
-                        <form th:action="@{/materiales/buscar}" method="post" class="row">
-                            <div class="col-12 col-md-4 mb-2">
-                                <label for="nombre" class="form-label">Material</label>
-                                <input type="text" id="nombre" name="nombre" class="form-control form-control-sm">
+                        <form th:action="@{/materiales/buscar}" method="post" class="row bg-light p-3 rounded shadow-sm">
+                            <div class="col-12 col-md-5 mb-2">
+                                <label for="nombre" class="form-label font-weight-bold">Nombre del Material</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-box"></i></span>
+                                    </div>
+                                    <input type="text" id="nombre" name="nombre" class="form-control" placeholder="Ej: Oro 18k">
+                                </div>
                             </div>
-                            <div class="col-12 col-md-4 mb-2">
-                                <label for="n_proveedor" class="form-label">Proveedor</label>
-                                <input type="text" id="n_proveedor" name="n_proveedor" class="form-control form-control-sm">
+                            <div class="col-12 col-md-5 mb-2">
+                                <label for="n_proveedor" class="form-label font-weight-bold">Nombre del Proveedor</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-truck"></i></span>
+                                    </div>
+                                    <input type="text" id="n_proveedor" name="n_proveedor" class="form-control" placeholder="Ej: Proveedor S.A.">
+                                </div>
                             </div>
-                            <div class="col-12 col-md-4 d-flex align-items-end mb-2">
-                                <button type="submit" class="btn btn-primary btn-sm w-100">Buscar</button>
+                            <div class="col-12 col-md-2 d-flex align-items-end mb-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-filter mr-1"></i> Buscar
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -48,39 +99,37 @@
                                data-dt="auto">
                             <thead class="table-dark text-center align-middle">
                             <tr>
-                                <th>Id</th>
+                                <th>#</th>
                                 <th>Código</th>
                                 <th>Nombre</th>
-                                <th>Precio Compra</th>
+                                <th class="col-hide-mobile">Precio Compra</th>
                                 <th>PVP</th>
                                 <th>Proveedor</th>
-                                <th>Stock</th>
-                                <th>Acciones</th>
+                                <th class="text-center">Stock</th>
+                                <th class="text-center">ACCIONES</th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr th:each="materiales:${material}">
-                                <td th:text="${materiales.id}"></td>
-                                <td th:text="${materiales.codigo}"></td>
-                                <td th:text="${materiales.nombre}"></td>
-                                <td class="text-right" th:text="${materiales.precioCompra} + ' €'"></td>
-                                <td class="text-right font-weight-bold" th:text="${#numbers.formatDecimal(materiales.precio, 0, 'DEFAULT', 2, 'DEFAULT')}+' €'"></td>
-                                <td th:text="${materiales.nproveedor.vnombre}"></td>
+                                <td th:text="${materiales.id}" class="text-center"></td>
+                                <td th:text="${materiales.codigo}" class="font-italic text-muted"></td>
+                                <td th:text="${materiales.nombre}" class="font-weight-bold"></td>
+                                <td class="text-right col-hide-mobile" th:text="${materiales.precioCompra} + ' €'"></td>
+                                <td class="text-right font-weight-bold text-primary" th:text="${#numbers.formatDecimal(materiales.precio, 0, 'DEFAULT', 2, 'DEFAULT')}+' €'"></td>
+                                <td th:text="${materiales.nproveedor != null ? materiales.nproveedor.vnombre : 'Sin proveedor'}"></td>
                                 <td class="text-center">
                                     <span class="badge" th:classappend="${materiales.cantidad > 5} ? 'badge-success' : 'badge-danger'" th:text="${materiales.cantidad}"></span>
                                 </td>
-                                <td class="text-center">
-                                    <div class="btn-group">
-                                        <a class="btn btn-outline-primary btn-sm"
-                                           th:href="@{/materiales/form/} + ${materiales.id}" title="Editar">
-                                            <i class="fas fa-pencil-alt"></i>
-                                        </a>
-                                        <a class="btn btn-outline-danger btn-sm"
-                                           th:href="@{/materiales/eliminar/} + ${materiales.id}"
-                                           onclick="return confirm('¿Estás seguro que quieres eliminar el material?');" title="Eliminar">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
-                                    </div>
+                                <td class="text-nowrap text-center">
+                                    <a class="btn btn-outline-primary btn-sm"
+                                       th:href="@{/materiales/form/} + ${materiales.id}" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a class="btn btn-outline-danger btn-sm"
+                                       th:href="@{/materiales/eliminar/} + ${materiales.id}"
+                                       onclick="return confirm('¿Estás seguro que quieres eliminar este material?');" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
                                 </td>
                             </tr>
                             </tbody>

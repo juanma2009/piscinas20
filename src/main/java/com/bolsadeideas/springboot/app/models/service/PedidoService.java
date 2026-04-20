@@ -46,6 +46,8 @@ public interface PedidoService {
 
 	public Iterable<Pedido> findAllByClienteAndEstado(String idcliente,String estado);
 
+    List<Pedido> findAllByClienteIds(Long clienteId);
+
 	public Map<String, Integer> contarPedidosPorMes(Long clienteId) ;
 
 	List<Integer> obtenerAniosConPedidos(Long clienteId);

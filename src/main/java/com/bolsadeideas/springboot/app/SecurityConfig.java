@@ -33,6 +33,7 @@ public class SecurityConfig {
                 .antMatchers("/superadmin/**").hasRole("SUPER_ADMIN")
                 .antMatchers("/roles/**").hasRole("ADMIN")
                 .antMatchers(HttpMethod.GET, "/api/google/drive/preview/**").authenticated()
+                .antMatchers("/inventario/**").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .formLogin()
@@ -53,7 +54,7 @@ public class SecurityConfig {
                 .headers()
                 .contentSecurityPolicy(
   "default-src 'self'; " +
-  "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://cdn.ckeditor.com https://code.jquery.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net/npm/chart.js https://cdn.datatables.net https://stackpath.bootstrapcdn.com; " +
+  "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://cdn.ckeditor.com https://code.jquery.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cdn.datatables.net https://stackpath.bootstrapcdn.com; " +
   "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://code.jquery.com https://cdn.datatables.net https://stackpath.bootstrapcdn.com; " +
   "img-src 'self' data: https: blob:; " +
   "font-src 'self' https://cdnjs.cloudflare.com; " +

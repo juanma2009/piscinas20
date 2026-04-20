@@ -97,13 +97,30 @@ html, body {
                             <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
                         </button>
                     </form>
-
-
                 </div>
             </li>
         </ul>
-
 </nav>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+    $(document).ready(function () {
+        function fetchNotificationCount() {
+            $.ajax({
+                url: '/notifications/count',
+                method: 'GET',
+                success: function (data) {
+                    $('.navbar-badge').text(data);
+                },
+                error: function (error) {
+                    console.error('Error fetching notification count:', error);
+                }
+            });
+        }
+        fetchNotificationCount();
+        setInterval(fetchNotificationCount, 30000); // 30s
+    });
+</script>
 <!-- /.navbar -->
 </body>
 </html>

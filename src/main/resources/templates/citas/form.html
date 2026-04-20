@@ -1,39 +1,28 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{admin/admin_layout}">
+      layout:decorate="admin/admin_layout.html">
 <head>
     <title th:text="${titulo}"></title>
     <style>
-        .card{
-            border-radius:10px;
-            box-shadow:0 2px 6px rgba(0,0,0,.08);
-            overflow:hidden;
+        /* ✅ En móvil y tablets: botones e iconos mucho más grandes para mejor usabilidad */
+        @media (max-width: 1024px) {
+            .toolbar .btn {
+                width: auto !important;
+                padding: 10px 18px !important;
+                font-size: 16px !important;
+            }
         }
-        .card-header{
-            background: linear-gradient(135deg, #0062cc, #004085);
-            color:#fff;
-            font-weight:700;
-            text-transform:uppercase;
-            padding:15px;
-        }
-        .toolbar{
-            display:flex;
-            flex-wrap:wrap;
-            gap:.5rem;
-            align-items:center;
-            padding: .75rem 1rem 0 1rem;
-        }
-        .nav-tabs .nav-link{
+        .nav-tabs .nav-link {
             color: #0062cc;
             font-weight: 600;
         }
-        .nav-tabs .nav-link.active{
+        .nav-tabs .nav-link.active {
             background: linear-gradient(135deg, #0062cc, #004085);
             color: #fff;
             border-color: #0062cc;
         }
-        .nav-tabs .nav-link:hover{
+        .nav-tabs .nav-link:hover {
             border-color: #0062cc;
         }
     </style>
@@ -48,15 +37,24 @@
                     <i class="fas fa-edit mr-2"></i> <span th:text="${titulo}"></span>
                 </div>
 
-                <div class="toolbar">
+                <div class="toolbar d-none d-md-flex">
                     <a th:href="@{/citas/listar}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-list mr-1"></i> Listado de Citas
                     </a>
                     <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-tasks mr-1"></i> Listado de Trabajos
+                        <i class="fas fa-tasks mr-1"></i> Pedidos
+                    </a>
+                    <a th:href="@{/pedidos/listarFotosPedidos}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-images mr-1"></i> Galería
                     </a>
                     <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-user mr-1"></i> Clientes
+                        <i class="fas fa-users mr-1"></i> Clientes
+                    </a>
+                    <a th:href="@{/proveedor/listarProveedor}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-truck mr-1"></i> Proveedores
+                    </a>
+                    <a th:href="@{/materiales/listarMaterial}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-boxes mr-1"></i> Inventario
                     </a>
                 </div>
 
@@ -88,7 +86,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Cliente</label>
-                                    <select th:if="${cita.id == null and cita.cliente == null}" th:field="*{cliente}" class="form-control" required>
+                                    <select th:if="${cita.id == null and cita.cliente == null}" id="selectCliente" th:field="*{cliente}" class="form-control" required>
                                         <option value="">-- Seleccionar Cliente --</option>
                                         <option th:each="c : ${clientes}" th:value="${c.id}" th:text="${c.nombre + ' ' + c.apellido}"></option>
                                     </select>
@@ -100,12 +98,22 @@
                                 </div>
                             </div>
 
-                            <!-- Pedido Asociado (si existe) -->
-                            <div class="col-md-6" th:if="${cita.pedido != null}">
+                            <!-- Pedido por Referencia -->
+                            <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>Pedido Asociado</label>
-                                    <input type="text" class="form-control" th:value="'Ref #' + ${cita.pedido.ref}" disabled />
-                                    <input type="hidden" name="pedido" th:value="${cita.pedido.npedido}" />
+                                    <label for="selectPedido">Pedido (Referencia)</label>
+                                    <select id="selectPedido" name="pedido" class="form-control">
+                                        <option value="">-- Sin pedido asociado --</option>
+                                        <!-- Si ya hay pedidos cargados desde el servidor (edición / cliente preseleccionado) -->
+                                        <option th:each="p : ${pedidos}"
+                                                th:value="${p.npedido}"
+                                                th:text="${(p.ref != null and p.ref != '') ? p.ref : '#' + p.npedido}"
+                                                th:selected="${cita.pedido != null and cita.pedido.npedido == p.npedido}">
+                                        </option>
+                                    </select>
+                                    <small class="form-text text-muted" th:if="${cita.id == null and cita.cliente == null}">
+                                        Selecciona primero un cliente para ver sus pedidos.
+                                    </small>
                                 </div>
                             </div>
                         </div>
@@ -213,6 +221,39 @@
             </div>
         </section>
     </div>
+</div>
+
+<div layout:fragment="script">
+    <script>
+        $(document).ready(function () {
+            // Solo activo en creación libre (cuando existe el selectCliente)
+            var $selectCliente = $('#selectCliente');
+            if ($selectCliente.length === 0) return;
+
+            $selectCliente.on('change', function () {
+                var clienteId = $(this).val();
+                var $selectPedido = $('#selectPedido');
+
+                $selectPedido.html('<option value="">-- Cargando pedidos... --</option>');
+
+                if (!clienteId) {
+                    $selectPedido.html('<option value="">-- Sin pedido asociado --</option>');
+                    return;
+                }
+
+                $.getJSON('/citas/pedidosPorCliente/' + clienteId, function (pedidos) {
+                    var options = '<option value="">-- Sin pedido asociado --</option>';
+                    $.each(pedidos, function (i, p) {
+                        var label = (p.ref && p.ref.trim() !== '') ? p.ref : '#' + p.npedido;
+                        options += '<option value="' + p.npedido + '">' + label + '</option>';
+                    });
+                    $selectPedido.html(options);
+                }).fail(function () {
+                    $selectPedido.html('<option value="">-- Error al cargar pedidos --</option>');
+                });
+            });
+        });
+    </script>
 </div>
 
 </body>

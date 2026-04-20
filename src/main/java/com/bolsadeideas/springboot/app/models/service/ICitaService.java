@@ -17,5 +17,6 @@ public interface ICitaService {
     List<Cita> findByCliente(Long clienteId);
     List<Cita> findByPedido(Long pedidoId);
     List<Cita> findByRangoFechas(LocalDateTime inicio, LocalDateTime fin);
+    List<Cita> findByFiltros(Long clienteId, Cita.EstadoCita estado, Cita.TipoCita tipo, LocalDateTime inicio, LocalDateTime fin);
     List<CitaHistorial> getHistorialByCitaId(Long citaId);
 }

@@ -268,7 +268,12 @@ public class PedidoServiceImpl implements PedidoService {
 	@Override
 	public Iterable<Pedido> findAllByClienteAndEstado(String idcliente, String estado) {
 		return pedidoDao.findByClienteOrEstadoReport(idcliente,estado);
+	}
 
+	@Override
+	@Transactional(readOnly = true)
+	public List<Pedido> findAllByClienteIds(Long clienteId) {
+		return pedidoDao.findByClienteIds(clienteId);
 	}
 
 	@Override
