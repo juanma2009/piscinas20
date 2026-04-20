@@ -44,9 +44,44 @@
         <a th:href="@{/inventario}" class="btn btn-outline-primary btn-sm">
             <i class="fas fa-warehouse mr-1"></i> Inventario
         </a>
+        <button type="button" class="btn btn-tutorial-toggle btn-sm ml-auto" onclick="$('#tutorialCerrar').slideToggle()">
+            <i class="fas fa-graduation-cap"></i> ¿Cómo cerrar una orden? (Regla de Balance)
+        </button>
     </div>
 
     <div class="card-body">
+        <!-- Tutorial -->
+        <div id="tutorialCerrar" class="tutorial-box premium mb-4" style="display:none;">
+            <h5><i class="fas fa-balance-scale"></i> Guía: El Balance de Masas</h5>
+            <div class="tutorial-body">
+                <p>Al cerrar una orden, debemos justificar qué pasó con todo el metal que sacamos del inventario:</p>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="tutorial-step">
+                            <div class="tutorial-step-icon"><i class="fas fa-equals"></i></div>
+                            <div><strong>Regla de Oro:</strong> Peso Entrada = Peso Producto + Merma + Reciclaje.</div>
+                        </div>
+                        <div class="tutorial-step">
+                            <div class="tutorial-step-icon">1</div>
+                            <div><strong>Peso Producto:</strong> Lo que pesa la joya terminada que se entrega al cliente.</div>
+                        </div>
+                        <div class="tutorial-step">
+                            <div class="tutorial-step-icon">2</div>
+                            <div><strong>Merma (Pérdida):</strong> Polvo o metal que se pierde en el pulido y no es recuperable.</div>
+                        </div>
+                        <div class="tutorial-step">
+                            <div class="tutorial-step-icon">3</div>
+                            <div><strong>Reciclaje:</strong> Retales o limaduras que guardas para fundir en el futuro.</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center border-left border-white-50">
+                        <div class="h3 mt-2"><i class="fas fa-calculator"></i></div>
+                        <p>El sistema te avisará si los pesos no cuadran con lo que salió del inventario.</p>
+                        <p class="small text-white-50 font-italic">¡Un buen balance asegura que no pierdas dinero en metal!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Alerta si ya terminada -->
         <div th:if="${warn}" class="alert alert-warning">
@@ -67,7 +102,10 @@
                 </div>
                 <div class="col-md-2">
                     <small class="text-muted d-block">Pedido</small>
-                    <span th:if="${orden.pedidoId != null}" th:text="${'#' + orden.pedidoId}"></span>
+                    <a th:if="${orden.pedidoId != null}" th:href="@{'/pedidos/ver/' + ${orden.pedidoId}}"
+                       class="text-info font-weight-bold">
+                        <i class="fas fa-file-invoice mr-1"></i> <span th:text="${'#' + orden.pedidoId}"></span>
+                    </a>
                     <span th:if="${orden.pedidoId == null}" class="text-muted">—</span>
                 </div>
                 <div class="col-md-4">

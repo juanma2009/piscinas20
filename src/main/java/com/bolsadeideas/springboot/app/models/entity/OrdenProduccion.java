@@ -39,8 +39,14 @@ public class OrdenProduccion implements Serializable {
     private Empresa empresa;
 
     /** Pedido del cliente al que corresponde esta producción (opcional) */
-    @Column(name = "pedido_id")
-    private Long pedidoId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pedido_id")
+    private Pedido pedido;
+
+    /** Helper: obtiene el ID del pedido sin cargar la entidad completa */
+    public Long getPedidoId() {
+        return pedido != null ? pedido.getNpedido() : null;
+    }
 
     private String descripcion;
 

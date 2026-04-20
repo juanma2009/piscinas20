@@ -620,9 +620,59 @@
                 <a th:href="@{/form}" class="btn btn-outline-primary btn-sm">
                     <i class="fas fa-user-plus"></i> Nuevo Cliente
                 </a>
+                <a th:href="@{'/produccion/nueva?pedidoId=' + ${pedido.npedido}}" 
+                   class="btn btn-outline-danger btn-sm" sec:authorize="hasRole('ADMIN')">
+                    <i class="fas fa-fire"></i> Abrir Orden
+                </a>
+                <button type="button" class="btn btn-tutorial-toggle btn-sm ml-auto" onclick="$('#tutorialPedido').slideToggle()">
+                    <i class="fas fa-graduation-cap"></i> ¿Cómo pasarlo a taller?
+                </button>
             </div>
 
             <div class="card-body">
+                <!-- Tutorial -->
+                <div id="tutorialPedido" class="tutorial-box premium mb-4" style="display:none;">
+                    <h5><i class="fas fa-magic"></i> De la Venta al Taller</h5>
+                    <div class="tutorial-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-7">
+                                <p>Has registrado una venta, ¿ahora qué? Si la joya debe fabricarse, sigue estos pasos:</p>
+                                <div class="tutorial-step">
+                                    <div class="tutorial-step-icon"><i class="fas fa-fire"></i></div>
+                                    <div><strong>Botón "Abrir Orden":</strong> Crea un vínculo directo entre este pedido y el taller de joyería.</div>
+                                </div>
+                                <div class="tutorial-step">
+                                    <div class="tutorial-step-icon"><i class="fas fa-file-invoice"></i></div>
+                                    <div><strong>Continuidad:</strong> Al abrir la orden, se copiarán automáticamente los detalles de la pieza y el número de pedido.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-5 text-center">
+                                <div class="wf-container mt-2">
+                                   <div class="wf-node">
+                                       <div class="wf-icon-box">
+                                           <img th:src="@{/img/tutorial/pedido.png}" alt="Pedido">
+                                       </div>
+                                       <div class="wf-label">Pedido</div>
+                                   </div>
+                                   <div class="wf-arrow"><i class="fas fa-chevron-right"></i></div>
+                                   <div class="wf-node">
+                                       <div class="wf-icon-box">
+                                           <img th:src="@{/img/tutorial/taller.png}" alt="Taller">
+                                       </div>
+                                       <div class="wf-label">Taller</div>
+                                   </div>
+                                   <div class="wf-arrow"><i class="fas fa-chevron-right"></i></div>
+                                   <div class="wf-node">
+                                       <div class="wf-icon-box">
+                                           <img th:src="@{/img/tutorial/producto.png}" alt="Producto">
+                                       </div>
+                                       <div class="wf-label">Producto</div>
+                                   </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <!-- Pestañas de navegación -->
                 <ul class="nav nav-tabs" id="pedidoTabs" role="tablist">
                     <li class="nav-item">

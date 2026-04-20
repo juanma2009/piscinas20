@@ -38,15 +38,40 @@
             <a th:href="@{/inventario/compras}" class="btn btn-outline-primary btn-sm">
                 <i class="fas fa-list mr-1"></i> Historial Compras
             </a>
-            <a th:href="@{/materiales/listarMaterial}" class="btn btn-outline-info btn-sm">
-                <i class="fas fa-boxes mr-1"></i> Materiales
-            </a>
-            <a th:href="@{/proveedor/listarProveedor}" class="btn btn-outline-info btn-sm">
-                <i class="fas fa-truck mr-1"></i> Proveedores
-            </a>
+            <button type="button" class="btn btn-tutorial-toggle btn-sm ml-auto" onclick="$('#tutorialCompra').slideToggle()">
+                <i class="fas fa-graduation-cap"></i> ¿Cómo registrar compras de joyería?
+            </button>
         </div>
 
         <div class="card-body">
+            <!-- Tutorial -->
+            <div id="tutorialCompra" class="tutorial-box premium mb-4" style="display:none;">
+                <h5><i class="fas fa-lightbulb"></i> Guía: Registro de Material Noble</h5>
+                <div class="tutorial-body">
+                    <p>En esta página registras la entrada de material al inventario. Para joyería, es vital crear un <strong>Lote Trazable</strong>.</p>
+                    <div class="row">
+                        <div class="col-md-7">
+                            <div class="tutorial-step">
+                                <div class="tutorial-step-icon">1</div>
+                                <div><strong>Selecciona el Material:</strong> Oro, Plata, etc. El sistema detectará si es material noble.</div>
+                            </div>
+                            <div class="tutorial-step">
+                                <div class="tutorial-step-icon">2</div>
+                                <div><strong>Activa el Lote:</strong> Pulsa el interruptor "¿Crear lote trazable?" si no se activa solo.</div>
+                            </div>
+                            <div class="tutorial-step">
+                                <div class="tutorial-step-icon">3</div>
+                                <div><strong>Define Pureza y Peso:</strong> Esto generará un código único (ej: ORO-18K-...) que usarás en el taller.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-5 text-center">
+                            <i class="fas fa-gem fa-5x mb-2" style="opacity:0.3;"></i>
+                            <p class="small text-white-50">Solo las compras registradas como LOTE aparecerán en las Órdenes de Producción.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <form th:action="@{/inventario/compras/guardar}" method="post" id="formCompra">
 
                 <!-- ① Material y Proveedor -->
@@ -86,10 +111,20 @@
                     </div>
                 </div>
 
-                <!-- ② Sección Joyería — aparece automáticamente si el material tiene tipoMaterial -->
-                <div class="form-section joyeria" id="seccionJoyeria" style="display:none;">
-                    <h6><i class="fas fa-gem mr-2"></i>Datos de Lote (Material Noble)</h6>
-                    <div class="row align-items-end">
+                <!-- ② Sección Joyería — aparece si el material tiene tipoMaterial o se activa manualmente -->
+                <div class="form-section joyeria" id="seccionJoyeria">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2" style="border-color:#856404 !important;">
+                        <h6 class="mb-0 border-0 pb-0"><i class="fas fa-gem mr-2"></i>Datos de Lote (Material Noble)</h6>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="checkLote" onchange="toggleLote(this.checked)">
+                            <label class="custom-control-label font-weight-bold" for="checkLote" style="color:#856404; cursor:pointer;">
+                                ¿Crear lote trazable?
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="camposLote" style="display:none;">
+                    <div class="row">
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label class="font-weight-bold">Tipo de Material</label>
@@ -162,10 +197,14 @@
                     </div>
                 </div>
 
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ③ Cantidad y Precio -->
                 <div class="form-section">
                     <h6><i class="fas fa-calculator mr-2"></i>Cantidad y Precio</h6>
-                    <div class="row align-items-end">
+                    <div class="row">
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label class="font-weight-bold" id="labelCantidad">
@@ -189,6 +228,7 @@
                             </div>
                         </div>
                         <div class="col-md-3">
+                            <label class="d-block">&nbsp;</label>
                             <div class="total-box mb-3">
                                 Total: <span id="totalDisplay">0.00 €</span>
                             </div>
@@ -242,9 +282,10 @@
                 calcularTotal();
             }
 
-            const seccion = document.getElementById('seccionJoyeria');
+            const checkLote = document.getElementById('checkLote');
             if (tipo && tipo !== 'null' && tipo !== '') {
-                seccion.style.display = 'block';
+                checkLote.checked = true;
+                toggleLote(true);
                 setSelectValue('selectTipo', tipo);
                 setSelectValue('selectPureza', pureza);
                 if (preciogr && preciogr !== 'null') {
@@ -253,11 +294,26 @@
                 document.getElementById('labelCantidad').innerHTML =
                     'Cantidad' + (unidad === 'GR' ? ' (g)' : '') + ' <span class="text-danger">*</span>';
             } else {
-                seccion.style.display = 'none';
+                checkLote.checked = false;
+                toggleLote(false);
                 document.getElementById('labelCantidad').innerHTML = 'Cantidad <span class="text-danger">*</span>';
             }
             actualizarLote();
         });
+
+        function toggleLote(show) {
+            const campos = document.getElementById('camposLote');
+            campos.style.display = show ? 'block' : 'none';
+            // Hacer campos requeridos si se muestra la sección
+            document.getElementById('selectTipo').required = show;
+            document.getElementById('selectPureza').required = show;
+            if (!show) {
+                document.getElementById('selectTipo').value = '';
+                document.getElementById('selectPureza').value = '';
+                document.getElementById('inputPeso').value = '';
+                actualizarLote();
+            }
+        }
 
         function setSelectValue(id, val) {
             const sel = document.getElementById(id);

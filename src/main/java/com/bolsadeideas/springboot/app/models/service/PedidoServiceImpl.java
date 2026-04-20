@@ -199,8 +199,9 @@ public class PedidoServiceImpl implements PedidoService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<Pedido> findAllPedidos() {
-		return List.of();
+		return pedidoDao.findAllOrderByNpedidoDesc();
 	}
 
 	@Override

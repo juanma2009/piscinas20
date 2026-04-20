@@ -52,4 +52,15 @@ public interface PedidoDao extends PagingAndSortingRepository<Pedido, Long> {
 	@Query("SELECT p FROM Pedido p JOIN FETCH p.cliente WHERE p.npedido = :id")
 	Pedido findByIdWithCliente(Long id);
 
+	@Query("SELECT p FROM Pedido p JOIN FETCH p.cliente ORDER BY p.npedido DESC")
+	List<Pedido> findAllOrderByNpedidoDesc();
+
+	@Query("SELECT COUNT(p) FROM Pedido p WHERE p.estado IN ('PENDIENTE', 'EN PROCESO', 'EN_PROCESO')")
+	long countActivePedidos();
+
+	@Query("SELECT p FROM Pedido p JOIN FETCH p.cliente WHERE p.activo = true ORDER BY p.npedido DESC")
+	List<Pedido> findTop5RecentOrderByNpedidoDesc(org.springframework.data.domain.Pageable pageable);
+
+	@Query("SELECT p.estado, COUNT(p) FROM Pedido p WHERE p.activo = true GROUP BY p.estado")
+	List<Object[]> countOrdersByStatus();
 }

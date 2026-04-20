@@ -32,6 +32,7 @@ public class InventarioJoyeriaService {
     @Autowired private LoteUsoRepository           loteUsoRepo;
     @Autowired private OrdenProduccionRepository   ordenRepo;
     @Autowired private OrdenProduccionLoteRepository ordenLoteRepo;
+    @Autowired private PedidoDao                   pedidoDao;
 
     // ══════════════════════════════════════════════════════════════════════════
     //  1. CÓDIGO DE LOTE
@@ -120,7 +121,9 @@ public class InventarioJoyeriaService {
         LoteUso uso = new LoteUso();
         uso.setCompra(lote);
         uso.setPesoUsadoGr(pesoGr);
-        uso.setPedidoId(pedidoId);
+        if (pedidoId != null) {
+            uso.setPedido(pedidoDao.findById(pedidoId).orElse(null));
+        }
         uso.setOrdenProduccionId(ordenProduccionId);
         uso.setMotivo(motivo);
         uso.setUsuarioRegistro(usuario);
@@ -191,6 +194,19 @@ public class InventarioJoyeriaService {
         orden.setEstado(OrdenProduccion.EstadoOrden.TERMINADO);
         orden.setFechaFin(LocalDateTime.now());
         orden.setUsuarioRegistro(usuario);
+
+        // ── ACTUALIZACIÓN AUTOMÁTICA DEL PEDIDO ──────────────────────────
+        if (orden.getPedido() != null) {
+            Pedido p = orden.getPedido();
+            // Solo marcar como TERMINADO si no quedan más órdenes EN_PROCESO para este pedido
+            long ordenesPendientes = ordenRepo.countByPedidoNpedidoAndEstado(p.getNpedido(), OrdenProduccion.EstadoOrden.EN_PROCESO);
+            
+            if (ordenesPendientes == 0) {
+                p.setEstado("TERMINADO");
+                p.setFechaFinalizado(new java.util.Date());
+                pedidoDao.save(p);
+            }
+        }
 
         // ── Registrar merma irrecuperable ────────────────────────────────────
         if (pesoMermaGr > 0) {
@@ -309,7 +325,10 @@ public class InventarioJoyeriaService {
         double totalEntrada = lotesYPesos.values().stream().mapToDouble(Double::doubleValue).sum();
 
         OrdenProduccion orden = new OrdenProduccion();
-        orden.setPedidoId(pedidoId);
+        if (pedidoId != null) {
+            Pedido p = pedidoDao.findById(pedidoId).orElse(null);
+            orden.setPedido(p);
+        }
         orden.setDescripcion(descripcion);
         orden.setPesoEntradaGr(totalEntrada);
         orden.setUsuarioRegistro(usuario);
@@ -349,7 +368,7 @@ public class InventarioJoyeriaService {
     /** ¿Qué lotes se usaron en un pedido? */
     @Transactional(readOnly = true)
     public List<LoteUso> lotesUsadosEnPedido(Long pedidoId) {
-        return loteUsoRepo.findByPedidoIdOrderByFechaUsoDesc(pedidoId);
+        return loteUsoRepo.findByPedidoId(pedidoId);
     }
 
     // ══════════════════════════════════════════════════════════════════════════

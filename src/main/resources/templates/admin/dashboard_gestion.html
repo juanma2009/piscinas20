@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="/admin/admin_layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Gestión | Taller de Joyería</title>
+    <meta name="description" content="Panel de control con los indicadores clave del negocio: facturación, pedidos activos, clientes nuevos y compras del mes.">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* ── Design Tokens ─────────────────────────────────────────── */
+        :root {
+            --clr-bg: #f0f2f8;
+            --clr-card: #ffffff;
+            --clr-text: #1a1d2e;
+            --clr-muted: #6b7280;
+            --clr-border: #e5e7eb;
+            --clr-1: #667eea;
+            --clr-1b: #764ba2;
+            --clr-2: #11998e;
+            --clr-2b: #38ef7d;
+            --clr-3: #f093fb;
+            --clr-3b: #f5576c;
+            --clr-4: #4facfe;
+            --clr-4b: #00f2fe;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,.07);
+            --shadow-md: 0 8px 32px rgba(0,0,0,.12);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        /* ── Page wrapper ──────────────────────────────────────────── */
+        .dash-wrapper {
+            background: var(--clr-bg);
+            min-height: 100vh;
+            padding: 28px 32px;
+            font-family: 'Source Sans Pro', sans-serif;
+        }
+        @media (max-width: 768px) {
+            .dash-wrapper { padding: 15px; }
+        }
+
+        /* ── Header ────────────────────────────────────────────────── */
+        .dash-header {
+            margin-bottom: 28px;
+        }
+        .dash-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--clr-text);
+            margin: 0 0 4px;
+        }
+        .dash-header p {
+            color: var(--clr-muted);
+            margin: 0;
+            font-size: .95rem;
+        }
+
+        /* ── KPI Grid ──────────────────────────────────────────────── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 28px;
+        }
+        @media (max-width: 1300px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 600px)  { .kpi-grid { grid-template-columns: 1fr; } }
+
+        .kpi-card {
+            background: var(--clr-card);
+            border-radius: var(--radius);
+            padding: 24px 24px 20px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+            transition: transform .2s ease, box-shadow .2s ease;
+            cursor: default;
+        }
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+        .kpi-card.c1::before { background: linear-gradient(90deg, var(--clr-1), var(--clr-1b)); }
+        .kpi-card.c2::before { background: linear-gradient(90deg, var(--clr-2), var(--clr-2b)); }
+        .kpi-card.c3::before { background: linear-gradient(90deg, var(--clr-3), var(--clr-3b)); }
+        .kpi-card.c4::before { background: linear-gradient(90deg, var(--clr-4), var(--clr-4b)); }
+        .kpi-card.c5::before { background: linear-gradient(90deg, #f7971e, #ffd200); }
+
+        .kpi-icon-wrap {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 16px;
+            font-size: 1.3rem;
+            color: #fff;
+        }
+        .c1 .kpi-icon-wrap { background: linear-gradient(135deg, var(--clr-1), var(--clr-1b)); }
+        .c2 .kpi-icon-wrap { background: linear-gradient(135deg, var(--clr-2), var(--clr-2b)); }
+        .c3 .kpi-icon-wrap { background: linear-gradient(135deg, var(--clr-3), var(--clr-3b)); }
+        .c4 .kpi-icon-wrap { background: linear-gradient(135deg, var(--clr-4), var(--clr-4b)); }
+        .c5 .kpi-icon-wrap { background: linear-gradient(135deg, #f7971e, #ffd200); }
+
+        .kpi-label {
+            font-size: .8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--clr-muted);
+            margin-bottom: 6px;
+        }
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--clr-text);
+            line-height: 1;
+        }
+        .kpi-sub {
+            font-size: .8rem;
+            color: var(--clr-muted);
+            margin-top: 6px;
+        }
+        .kpi-bg-icon {
+            position: absolute;
+            right: 16px; bottom: 12px;
+            font-size: 4rem;
+            opacity: .05;
+            color: var(--clr-text);
+        }
+
+        /* ── Middle row: Three columns (Charts + Activity) ────────── */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr 1fr;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+        @media (max-width: 1400px) { .charts-row { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 1000px) { .charts-row { grid-template-columns: 1fr; } }
+
+        .chart-card, .activity-card, .table-card {
+            background: var(--clr-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--clr-text);
+            margin: 0 0 18px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .section-title i { color: var(--clr-1); }
+
+        /* ── Activity feed ─────────────────────────────────────────── */
+        .activity-feed { list-style: none; margin: 0; padding: 0; }
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--clr-border);
+        }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-dot {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .8rem;
+            color: #fff;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .activity-dot.green  { background: linear-gradient(135deg, #38ef7d, #11998e); }
+        .activity-dot.blue   { background: linear-gradient(135deg, var(--clr-1), var(--clr-1b)); }
+        .activity-dot.orange { background: linear-gradient(135deg, #f7971e, #ffd200); }
+        .activity-dot.red    { background: linear-gradient(135deg, #f5576c, #f093fb); }
+        .activity-dot.grey   { background: linear-gradient(135deg, #bdc3c7, #2c3e50); }
+
+        .act-text { font-size: .88rem; color: var(--clr-text); font-weight: 600; }
+        .act-sub  { font-size: .78rem; color: var(--clr-muted); margin-top: 2px; }
+
+        /* ── Bottom row: Tables ─────────────────────────────────────── */
+        .bottom-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 1200px) { .bottom-row { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 800px) { .bottom-row { grid-template-columns: 1fr; } }
+
+        .table-card table { width: 100%; border-collapse: collapse; }
+        .table-card th {
+            font-size: .75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--clr-muted);
+            padding: 0 0 10px;
+            text-align: left;
+            border-bottom: 2px solid var(--clr-border);
+        }
+        .table-card td {
+            padding: 10px 0;
+            font-size: .88rem;
+            border-bottom: 1px solid var(--clr-border);
+            color: var(--clr-text);
+        }
+        .table-card tr:last-child td { border-bottom: none; }
+
+        .badge-estado {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: .75rem;
+            font-weight: 700;
+        }
+        .badge-en-proceso { background: #fff3cd; color: #856404; }
+        .badge-terminado  { background: #d1fae5; color: #065f46; }
+        .badge-pendiente  { background: #e5edff; color: #3730a3; }
+        .badge-cancelado  { background: #fee2e2; color: #991b1b; }
+
+        .avatar-sm {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--clr-1), var(--clr-1b));
+            color: #fff;
+            font-size: .75rem;
+            font-weight: 700;
+            display: inline-flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .client-row { display: flex; align-items: center; gap: 10px; }
+
+        /* ── View all link ─────────────────────────────────────────── */
+        .view-all {
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--clr-1);
+            text-decoration: none;
+            margin-left: auto;
+        }
+        .view-all:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div layout:fragment="content">
+    <div class="dash-wrapper">
+
+        <!-- ── Header ──────────────────────────────────────────────── -->
+        <div class="dash-header">
+            <h1>
+                👋 Hola, <span th:text="${nombreUsuario}">Usuario</span>
+            </h1>
+            <p>
+                Aquí tienes el resumen de tu taller hoy,
+                <strong th:text="${#dates.format(#dates.createNow(), 'dd MMMM yyyy')}">hoy</strong>
+            </p>
+        </div>
+
+        <!-- ── Quick Actions ────────────────────────────────────────── -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="table-card d-flex align-items-center flex-wrap gap-3 py-3" style="gap: 15px;">
+                    <span style="font-weight: 700; color: var(--clr-muted); margin-right: 10px;">
+                        <i class="fas fa-bolt mr-1"></i> Acciones rápidas:
+                    </span>
+                    <a th:href="@{/pedidos/form}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                        <i class="fas fa-plus-circle mr-1"></i> Nuevo Pedido
+                    </a>
+                    <a th:href="@{/form}" class="btn btn-info rounded-pill px-4 shadow-sm text-white">
+                        <i class="fas fa-user-plus mr-1"></i> Nuevo Cliente
+                    </a>
+                    <a th:href="@{/produccion/nueva}" class="btn btn-warning rounded-pill px-4 shadow-sm text-white">
+                        <i class="fas fa-fire mr-1"></i> Nueva Orden
+                    </a>
+                    <a th:href="@{/citas/listar}" class="btn btn-success rounded-pill px-4 shadow-sm">
+                        <i class="fas fa-calendar-plus mr-1"></i> Nueva Cita
+                    </a>
+                    <a th:href="@{/inventario/compras/nueva}" class="btn btn-dark rounded-pill px-4 shadow-sm">
+                        <i class="fas fa-shopping-cart mr-1"></i> Registrar Compra
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── KPI Cards ────────────────────────────────────────────── -->
+        <div class="kpi-grid">
+
+            <!-- Facturación total -->
+            <div class="kpi-card c1">
+                <div class="kpi-icon-wrap"><i class="fas fa-euro-sign"></i></div>
+                <div class="kpi-label">Facturación Total</div>
+                <div class="kpi-value"
+                     th:text="${#numbers.formatDecimal(facturacionTotal, 1, 'POINT', 0, 'COMMA') + ' €'}">0 €</div>
+                <div class="kpi-sub">Suma de todas las facturas</div>
+                <i class="fas fa-receipt kpi-bg-icon"></i>
+            </div>
+
+            <!-- Pedidos activos -->
+            <div class="kpi-card c2">
+                <div class="kpi-icon-wrap"><i class="fas fa-clipboard-list"></i></div>
+                <div class="kpi-label">Pedidos Activos</div>
+                <div class="kpi-value" th:text="${pedidosActivos}">0</div>
+                <div class="kpi-sub">Pendientes + En proceso</div>
+                <i class="fas fa-ring kpi-bg-icon"></i>
+            </div>
+
+            <!-- Clientes nuevos en el mes -->
+            <div class="kpi-card c3">
+                <div class="kpi-icon-wrap"><i class="fas fa-user-plus"></i></div>
+                <div class="kpi-label">Clientes Nuevos Este Mes</div>
+                <div class="kpi-value" th:text="${clientesNuevosMes}">0</div>
+                <div class="kpi-sub" th:text="'Mes de ' + ${#dates.format(#dates.createNow(), 'MMMM yyyy')}">este mes</div>
+                <i class="fas fa-users kpi-bg-icon"></i>
+            </div>
+
+            <!-- Compras del mes -->
+            <div class="kpi-card c4">
+                <div class="kpi-icon-wrap"><i class="fas fa-shopping-cart"></i></div>
+                <div class="kpi-label">Compras del Mes</div>
+                <div class="kpi-value"
+                     th:text="${#numbers.formatDecimal(comprasMes, 1, 'POINT', 0, 'COMMA') + ' €'}">0 €</div>
+                <div class="kpi-sub">Material comprado en el mes</div>
+                <i class="fas fa-gem kpi-bg-icon"></i>
+            </div>
+
+            <!-- Beneficio del mes -->
+            <div class="kpi-card c5">
+                <div class="kpi-icon-wrap"><i class="fas fa-hand-holding-usd"></i></div>
+                <div class="kpi-label">Beneficio Este Mes</div>
+                <div class="kpi-value"
+                     th:style="${beneficioMes < 0 ? 'color:var(--clr-3b)' : 'color:var(--clr-2)'}"
+                     th:text="${#numbers.formatDecimal(beneficioMes, 1, 'POINT', 0, 'COMMA') + ' €'}">0 €</div>
+                <div class="kpi-sub">Facturación - Compras</div>
+                <i class="fas fa-chart-line kpi-bg-icon"></i>
+            </div>
+
+        </div>
+
+        <!-- ── Charts & Production Activity Row ────────────────────── -->
+        <div class="charts-row">
+
+            <!-- Chart 1: Sales vs Purchases -->
+            <div class="chart-card">
+                <div class="section-title">
+                    <i class="fas fa-balance-scale"></i>
+                    Ventas vs Compras
+                </div>
+                <div style="height: 180px; position: relative;">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 2: Order Status Distribution -->
+            <div class="chart-card">
+                <div class="section-title">
+                    <i class="fas fa-pie-chart"></i>
+                    Pedidos
+                </div>
+                <div style="height: 180px; position: relative;">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Activity Feed: Production (Moved here) -->
+            <div class="activity-card">
+                <div class="section-title">
+                    <i class="fas fa-bolt"></i>
+                    Producción
+                    <a class="view-all" th:href="@{/produccion}">Ver &rsaquo;</a>
+                </div>
+                <ul class="activity-feed">
+                    <li class="activity-item" th:each="orden : ${ordenesRecientes}" th:if="${orden != null}">
+                        <div class="activity-dot"
+                             th:classappend="${orden.estado.name() == 'TERMINADO' ? 'green' : (orden.estado.name() == 'EN_PROCESO' ? 'blue' : (orden.estado.name() == 'CANCELADO' ? 'red' : 'orange'))}"
+                             style="width: 28px; height: 28px; font-size: .7rem;">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <div style="overflow: hidden;">
+                            <div class="act-text" style="font-size: .8rem;" th:text="'Orden #' + ${orden.id}">Orden</div>
+                            <div class="act-sub" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .7rem;"
+                                 th:text="${(orden.descripcion != null ? orden.descripcion : 'Sin descripción')}">...</div>
+                        </div>
+                    </li>
+                    <li class="activity-item" th:if="${#lists.isEmpty(ordenesRecientes)}">
+                        <div class="act-sub">Sin actividad</div>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+        <!-- ── Bottom: Clients + Orders ─────────────────────────────── -->
+        <div class="bottom-row">
+
+            <!-- Recent clients -->
+            <div class="table-card">
+                <div class="section-title">
+                    <i class="fas fa-users"></i>
+                    Clientes recientes
+                    <a class="view-all" th:href="@{/listar}">Ver todos &rsaquo;</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Email</th>
+                            <th>Alta</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="cli : ${clientesRecientes}" th:if="${cli != null}">
+                            <td>
+                                <div class="client-row">
+                                    <span class="avatar-sm"
+                                          th:text="${cli.nombre != null ? cli.nombre.substring(0,1).toUpperCase() : '?'}">J</span>
+                                    <span th:text="${cli.nombre + ' ' + (cli.apellido != null ? cli.apellido : '')}">Nombre</span>
+                                </div>
+                            </td>
+                            <td th:text="${cli.email != null ? cli.email : '—'}">email</td>
+                            <td th:text="${cli.createAt != null ? #dates.format(cli.createAt,'dd/MM/yy') : '—'}">fecha</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(clientesRecientes)}">
+                            <td colspan="3" style="color:var(--clr-muted);text-align:center;padding:20px;">
+                                No hay clientes registrados todavía
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Upcoming Appointments -->
+            <div class="table-card">
+                <div class="section-title">
+                    <i class="fas fa-calendar-alt"></i>
+                    Citas programadas
+                    <a class="view-all" th:href="@{/citas/listar}">Ver todas &rsaquo;</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Pedido</th>
+                            <th>Tipo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="cita : ${citasProximas}" th:if="${cita != null}">
+                            <td>
+                                <div style="font-weight:700;" th:text="${#temporals.format(cita.fechaCita, 'dd/MM/yy')}">fecha</div>
+                                <div style="font-size:.7rem;color:var(--clr-muted);" th:text="${#temporals.format(cita.fechaCita, 'HH:mm')}">hora</div>
+                            </td>
+                            <td>
+                                <a th:if="${cita.pedido != null}" th:href="@{'/pedidos/ver/' + ${cita.pedido.npedido}}"
+                                   style="color:var(--clr-1);font-weight:700;text-decoration:none;"
+                                   th:text="'#' + ${cita.pedido.npedido}">#0</a>
+                                <span th:if="${cita.pedido == null}" style="color:var(--clr-muted);">—</span>
+                            </td>
+                            <td>
+                                <span class="badge-estado"
+                                      th:classappend="${cita.tipo.name() == 'RECOGIDA_PEDIDO' ? 'badge-terminado' : 'badge-pendiente'}"
+                                      th:text="${cita.tipo.name() == 'RECOGIDA_PEDIDO' ? 'Recogida' : 'Entrega'}">Tipo</span>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(citasProximas)}">
+                            <td colspan="3" style="color:var(--clr-muted);text-align:center;padding:20px;">
+                                No hay citas programadas
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Recent orders -->
+            <div class="table-card">
+                <div class="section-title">
+                    <i class="fas fa-copy"></i>
+                    Pedidos recientes
+                    <a class="view-all" th:href="@{/pedidos/listarPedidos}">Ver todos &rsaquo;</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>N.º</th>
+                            <th>Cliente</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="ped : ${pedidosRecientes}" th:if="${ped != null}">
+                            <td>
+                                <a th:href="@{'/pedidos/ver/' + ${ped.npedido}}"
+                                   style="color:var(--clr-1);font-weight:700;text-decoration:none;"
+                                   th:text="'#' + ${ped.npedido}">#0</a>
+                            </td>
+                            <td th:text="${ped.cliente != null ? ped.cliente.nombre + ' ' + (ped.cliente.apellido != null ? ped.cliente.apellido : '') : '—'}">Cliente</td>
+                            <td>
+                                <span class="badge-estado"
+                                      th:classappend="${ped.estado == 'TERMINADO' ? 'badge-terminado' :
+                                                       (ped.estado == 'EN PROCESO' or ped.estado == 'EN_PROCESO') ? 'badge-en-proceso' :
+                                                       (ped.estado == 'CANCELADO') ? 'badge-cancelado' : 'badge-pendiente'}"
+                                      th:text="${ped.estado != null ? ped.estado : 'Pendiente'}">Estado</span>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(pedidosRecientes)}">
+                            <td colspan="3" style="color:var(--clr-muted);text-align:center;padding:20px;">
+                                No hay pedidos registrados todavía
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<th:block layout:fragment="script">
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var labelsGrafico = /*[[${labelsGrafico}]]*/ ['L','M','X','J','V','S','D'];
+    var dataCompras   = /*[[${dataCompras}]]*/ [0,0,0,0,0,0,0];
+    var dataVentas    = /*[[${dataVentas}]]*/ [0,0,0,0,0,0,0];
+    var dataBeneficio = /*[[${dataBeneficio}]]*/ [0,0,0,0,0,0,0];
+    var statusDistrib = /*[[${statusDistrib}]]*/ {};
+
+    var ctx = document.getElementById('revenueChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labelsGrafico,
+            datasets: [
+                {
+                    label: 'Ventas (€)',
+                    data: dataVentas,
+                    borderColor: '#11998e',
+                    backgroundColor: 'rgba(17,153,142,0.05)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#11998e',
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Compras (€)',
+                    data: dataCompras,
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102,126,234,0.05)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#667eea',
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Beneficio (€)',
+                    data: dataBeneficio,
+                    borderColor: '#f7971e',
+                    borderDash: [5, 5],
+                    borderWidth: 2,
+                    pointBackgroundColor: '#f7971e',
+                    fill: false,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) { return ' ' + ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + ' €'; }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,.05)' },
+                    ticks: { font: { size: 9 }, callback: function(v) { return v + '€'; } }
+                },
+                x: { grid: { display: false }, ticks: { font: { size: 9 } } }
+            }
+        }
+    });
+
+    // Chart 2: Status
+    var statusCtx = document.getElementById('statusChart').getContext('2d');
+    var statusLabels = Object.keys(statusDistrib);
+    var statusData = Object.values(statusDistrib);
+
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                data: statusData,
+                backgroundColor: [
+                    '#667eea', // blue
+                    '#11998e', // green/teal
+                    '#f093fb', // purple/pink
+                    '#f7971e', // orange
+                    '#f5576c'  // red
+                ],
+                borderWidth: 0,
+                hoverOffset: 15
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 12, padding: 15, font: { size: 11 } }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+    /*]]>*/
+</script>
+</th:block>
+
+</body>
+</html>

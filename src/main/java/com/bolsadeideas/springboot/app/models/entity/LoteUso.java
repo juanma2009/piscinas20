@@ -37,8 +37,14 @@ public class LoteUso implements Serializable {
     private CompraInventario compra;
 
     /** Pedido/trabajo al que se destina este consumo (opcional) */
-    @Column(name = "pedido_id")
-    private Long pedidoId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pedido_id")
+    private Pedido pedido;
+
+    /** Helper: obtiene el ID del pedido sin cargar la entidad completa */
+    public Long getPedidoId() {
+        return pedido != null ? pedido.getNpedido() : null;
+    }
 
     /** Orden de producción asociada (opcional) */
     @Column(name = "orden_produccion_id")

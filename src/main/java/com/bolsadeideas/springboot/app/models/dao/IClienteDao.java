@@ -46,4 +46,11 @@ public interface IClienteDao extends PagingAndSortingRepository<Cliente, Long>{
     @Query("select c from Cliente c where c.nombre=?1")
     Cliente findByUsername(String username);
 
+    @Query("SELECT COUNT(c) FROM Cliente c WHERE c.createAt >= :desde AND c.createAt < :hasta")
+    long countNewClientsInPeriod(@org.springframework.data.repository.query.Param("desde") java.util.Date desde,
+                                  @org.springframework.data.repository.query.Param("hasta") java.util.Date hasta);
+
+    @Query("SELECT c FROM Cliente c ORDER BY c.createAt DESC")
+    java.util.List<Cliente> findTop5ByOrderByCreateAtDesc(org.springframework.data.domain.Pageable pageable);
+
 }

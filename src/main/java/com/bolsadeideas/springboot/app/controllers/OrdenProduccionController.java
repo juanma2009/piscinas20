@@ -5,6 +5,7 @@ import com.bolsadeideas.springboot.app.models.dao.IProductoDao;
 import com.bolsadeideas.springboot.app.models.dao.OrdenProduccionRepository;
 import com.bolsadeideas.springboot.app.models.entity.CompraInventario;
 import com.bolsadeideas.springboot.app.models.entity.OrdenProduccion;
+import com.bolsadeideas.springboot.app.models.entity.Pedido;
 import com.bolsadeideas.springboot.app.models.entity.Producto;
 import com.bolsadeideas.springboot.app.models.service.InventarioJoyeriaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,7 @@ public class OrdenProduccionController {
     @Autowired private OrdenProduccionRepository ordenRepo;
     @Autowired private CompraInventarioRepository compraRepo;
     @Autowired private IProductoDao productoDao;
+    @Autowired private com.bolsadeideas.springboot.app.models.dao.PedidoDao pedidoDao;
 
     // ══════════════════════════════════════════════════════════════════════════
     //  LISTADO DE ÓRDENES
@@ -66,6 +68,12 @@ public class OrdenProduccionController {
                 .collect(Collectors.toList());
 
         model.addAttribute("lotesDisponibles", lotesDisponibles);
+        
+        if (pedidoId != null) {
+            Pedido pedido = pedidoDao.findById(pedidoId).orElse(null);
+            model.addAttribute("pedido", pedido);
+        }
+        
         model.addAttribute("pedidoIdParam", pedidoId);
         model.addAttribute("titulo", "Abrir Orden de Producción");
         return "produccion/formOrden";

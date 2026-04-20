@@ -20,6 +20,8 @@
         .peso-disponible { font-size:.8rem; color:#6c757d; }
         #loteRows .lote-entry { background:#fff; border:1px solid #dee2e6; border-radius:8px; padding:1rem; margin-bottom:.75rem; }
         .total-entrada { background:linear-gradient(135deg,#6f42c1,#4a2678); color:#fff; border-radius:10px; padding:1rem 1.5rem; font-size:1.4rem; font-weight:700; text-align:center; }
+        .pedido-info-box { background:#e7f3ff; border:1px solid #b8daff; border-radius:10px; padding:1rem; margin-bottom:1rem; display:flex; align-items:center; gap:1rem; }
+        .pedido-info-box i { font-size:1.5rem; color:#007bff; }
     </style>
 </head>
 <body>
@@ -38,20 +40,87 @@
         <a th:href="@{/inventario}" class="btn btn-outline-primary btn-sm">
             <i class="fas fa-warehouse mr-1"></i> Inventario
         </a>
+        <button type="button" class="btn btn-tutorial-toggle btn-sm ml-auto" onclick="$('#tutorialOrden').slideToggle()">
+            <i class="fas fa-graduation-cap"></i> Tutorial: Abrir Trabajo en Taller
+        </button>
     </div>
 
     <div class="card-body">
+        <!-- Tutorial -->
+        <div id="tutorialOrden" class="tutorial-box premium mb-4" style="display:none;">
+            <h5><i class="fas fa-hammer"></i> Guía: Inicio de Producción</h5>
+            <div class="tutorial-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p>Aquí vinculas un pedido de cliente con el trabajo real del taller:</p>
+                        <div class="tutorial-step">
+                            <div class="tutorial-step-icon">1</div>
+                            <div><strong>Descripción:</strong> Se auto-completa si vienes de un pedido, pero puedes ajustarla.</div>
+                        </div>
+                        <div class="tutorial-step">
+                            <div class="tutorial-step-icon">2</div>
+                            <div><strong>Consumo de Lotes:</strong> Selecciona de qué lingote o bolsa de material vas a sacar el metal.</div>
+                        </div>
+                        <div class="tutorial-step">
+                            <div class="tutorial-step-icon">3</div>
+                            <div><strong>Peso de Entrada:</strong> Indica exactamente cuánto metal entregas al joyero. Este peso se restará del inventario.</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <div class="wf-container mt-3">
+                            <div class="wf-node">
+                                <div class="wf-icon-box">
+                                    <img th:src="@{/img/tutorial/pedido.png}" alt="Pedido">
+                                </div>
+                                <div class="wf-label">Pedido</div>
+                            </div>
+                            <div class="wf-arrow"><i class="fas fa-chevron-right"></i></div>
+                            <div class="wf-node">
+                                <div class="wf-icon-box">
+                                    <img th:src="@{/img/tutorial/taller.png}" alt="Taller">
+                                </div>
+                                <div class="wf-label">Taller</div>
+                            </div>
+                            <div class="wf-arrow"><i class="fas fa-chevron-right"></i></div>
+                            <div class="wf-node">
+                                <div class="wf-icon-box">
+                                    <img th:src="@{/img/tutorial/producto.png}" alt="Producto">
+                                </div>
+                                <div class="wf-label">Producto</div>
+                            </div>
+                        </div>
+                        <p class="small text-white-50 mt-3">El flujo conecta Ventas -> Taller -> Cliente Final.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <form th:action="@{/produccion/nueva}" method="post" id="formOrden">
 
             <!-- Campo oculto pedidoId (opcional, si viene desde un pedido) -->
             <input type="hidden" name="pedidoId" th:value="${pedidoIdParam}"/>
+
+            <!-- Información del Pedido vinculado -->
+            <div th:if="${pedido != null}" class="pedido-info-box">
+                <i class="fas fa-file-invoice"></i>
+                <div class="flex-grow-1">
+                    <h6 class="mb-0">Trabajo para Pedido #<span th:text="${pedido.npedido}"></span></h6>
+                    <small class="text-muted">
+                        Cliente: <strong th:text="${pedido.cliente.nombre + ' ' + pedido.cliente.apellido}"></strong> | 
+                        Pieza: <strong th:text="${pedido.pieza}"></strong> | 
+                        Peso est.: <strong th:text="${pedido.peso}"></strong>g
+                    </small>
+                </div>
+                <div class="badge badge-primary">VINCULADO</div>
+            </div>
 
             <!-- ① Descripción -->
             <div class="form-section">
                 <h6><i class="fas fa-pencil-alt mr-2"></i>Descripción del Trabajo</h6>
                 <div class="form-group mb-0">
                     <input type="text" name="descripcion" class="form-control form-control-lg"
-                           required placeholder="Ej: Anillo solitario oro 18k para cliente García..."/>
+                           required th:value="${(pedido.pieza != null ? pedido.pieza : '') + ' ' + (pedido.tipo != null ? pedido.tipo : '') + (pedido.ref != null && !pedido.ref.isEmpty() ? ' [Ref: ' + pedido.ref + ']' : '') + (pedido.observaciones != null ? ' - ' + pedido.observaciones : '')}"
+                           placeholder="Ej: Anillo solitario oro 18k para cliente García..."/>
                     <small class="text-muted">Describe brevemente el trabajo que se va a realizar</small>
                 </div>
             </div>
@@ -67,7 +136,7 @@
                 <div id="loteRows">
                     <!-- Fila inicial -->
                     <div class="lote-entry" id="fila-0">
-                        <div class="row align-items-end">
+                        <div class="row">
                             <div class="col-md-7">
                                 <label class="font-weight-bold small">Lote <span class="text-danger">*</span></label>
                                 <select name="compraIds" class="form-control lote-select" required onchange="actualizarDisponible(this)">
@@ -92,7 +161,8 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-2 d-flex align-items-end">
+                            <div class="col-md-2">
+                                <label class="d-block">&nbsp;</label>
                                 <button type="button" class="btn btn-outline-danger btn-sm w-100"
                                         onclick="eliminarFila(this)" style="display:none;" id="btn-del-0">
                                     <i class="fas fa-trash"></i>
@@ -149,13 +219,31 @@
         // Plantilla HTML para una nueva fila de lote
         const opcionesLotes = document.querySelector('.lote-select').innerHTML;
 
+        // Pre-rellenar descripción si viene de un pedido
+        document.addEventListener('DOMContentLoaded', function() {
+            const descInput = document.querySelector('input[name="descripcion"]');
+            
+            /*[# th:if="${pedido != null}"]*/
+            const pedidoId = [[${pedido?.npedido}]];
+            const clienteNombre = "[[${pedido?.cliente?.nombre}]]";
+            const clienteApellido = "[[${pedido?.cliente?.apellido}]]";
+            const pieza = "[[${pedido?.pieza != null ? pedido.pieza : 'Trabajo taller'}]]";
+            
+            if (pedidoId && !descInput.value) {
+                descInput.value = `Pedido #${pedidoId} - ${clienteNombre} ${clienteApellido}: ${pieza}`;
+                calcularTotal();
+            }
+            /*[/]*/
+        });
+
         function agregarLote() {
             const idx = filaCount++;
             const div = document.createElement('div');
             div.className = 'lote-entry';
             div.id = 'fila-' + idx;
             div.innerHTML = `
-                <div class="row align-items-end">
+            div.innerHTML = `
+                <div class="row">
                     <div class="col-md-7">
                         <label class="font-weight-bold small">Lote</label>
                         <select name="compraIds" class="form-control lote-select" onchange="actualizarDisponible(this)">
@@ -171,7 +259,8 @@
                             <div class="input-group-append"><span class="input-group-text">g</span></div>
                         </div>
                     </div>
-                    <div class="col-md-2 d-flex align-items-end">
+                    <div class="col-md-2">
+                        <label class="d-block">&nbsp;</label>
                         <button type="button" class="btn btn-outline-danger btn-sm w-100"
                                 onclick="eliminarFila(this)">
                             <i class="fas fa-trash"></i>

@@ -32,7 +32,8 @@ public interface IFacturaDao extends PagingAndSortingRepository<Factura, Long>{
 
 	@Query("SELECT SUM(f.total) FROM Factura f")
 	Double findTotalFacturas();
-	
-	
 
+	@Query("SELECT SUM(f.total) FROM Factura f WHERE f.createAt BETWEEN :desde AND :hasta")
+	Double findTotalFacturasEnPeriodo(@org.springframework.data.repository.query.Param("desde") java.util.Date desde,
+									   @org.springframework.data.repository.query.Param("hasta") java.util.Date hasta);
 }

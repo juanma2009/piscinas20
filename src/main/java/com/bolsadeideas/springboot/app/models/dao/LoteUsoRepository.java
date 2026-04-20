@@ -13,7 +13,8 @@ public interface LoteUsoRepository extends JpaRepository<LoteUso, Long> {
     List<LoteUso> findByCompraIdOrderByFechaUsoDesc(Long compraId);
 
     /** Todos los usos vinculados a un pedido */
-    List<LoteUso> findByPedidoIdOrderByFechaUsoDesc(Long pedidoId);
+    @Query("SELECT u FROM LoteUso u WHERE u.pedido.npedido = :npedido ORDER BY u.fechaUso DESC")
+    List<LoteUso> findByPedidoId(@Param("npedido") Long npedido);
 
     /** Usos de una orden de producción */
     List<LoteUso> findByOrdenProduccionId(Long ordenProduccionId);

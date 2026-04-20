@@ -37,9 +37,59 @@
         <a th:href="@{/inventario/compras}" class="btn btn-outline-info btn-sm">
             <i class="fas fa-gem mr-1"></i> Lotes
         </a>
+        <button type="button" class="btn btn-tutorial-toggle btn-sm ml-auto" onclick="$('#tutorialListar').slideToggle()">
+            <i class="fas fa-graduation-cap"></i> Gestión del Taller
+        </button>
     </div>
 
     <div class="card-body">
+        <!-- Tutorial -->
+        <div id="tutorialListar" class="tutorial-box premium mb-4" style="display:none;">
+            <h5><i class="fas fa-tools"></i> Guía: Control de Taller</h5>
+            <div class="tutorial-body">
+                <p>Aquí controlas el estado de todos los trabajos de joyería pendientes y terminados:</p>
+                <div class="row align-items-center">
+                    <div class="col-md-7">
+                        <div class="tutorial-step">
+                            <div class="tutorial-step-icon"><i class="fas fa-clock"></i></div>
+                            <div><strong>En Proceso:</strong> Órdenes abiertas donde el metal ya salió del inventario pero la joya no está terminada.</div>
+                        </div>
+                        <div class="tutorial-step">
+                            <div class="tutorial-step-icon"><i class="fas fa-check-double"></i></div>
+                            <div><strong>Cerrar Orden:</strong> Cuando el joyero termina, usa el botón "Cerrar" para registrar pesos finales y devolver sobrantes al stock.</div>
+                        </div>
+                        <div class="tutorial-step">
+                            <div class="tutorial-step-icon"><i class="fas fa-link"></i></div>
+                            <div><strong>Vinculación:</strong> Verás el número de Pedido asociado para saber qué cliente está esperando la joya.</div>
+                        </div>
+                    </div>
+                    <div class="col-md-5 text-center">
+                        <div class="wf-container mt-2">
+                           <div class="wf-node">
+                               <div class="wf-icon-box">
+                                   <img th:src="@{/img/tutorial/pedido.png}" alt="Pedido">
+                               </div>
+                               <div class="wf-label">Pedido</div>
+                           </div>
+                           <div class="wf-arrow"><i class="fas fa-chevron-right"></i></div>
+                           <div class="wf-node">
+                               <div class="wf-icon-box">
+                                   <img th:src="@{/img/tutorial/taller.png}" alt="Taller">
+                               </div>
+                               <div class="wf-label">Taller</div>
+                           </div>
+                           <div class="wf-arrow"><i class="fas fa-chevron-right"></i></div>
+                           <div class="wf-node">
+                               <div class="wf-icon-box">
+                                   <img th:src="@{/img/tutorial/producto.png}" alt="Producto">
+                               </div>
+                               <div class="wf-label">Producto</div>
+                           </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Flash messages -->
         <div th:if="${success}" class="alert alert-success alert-dismissible" role="alert">
@@ -87,7 +137,11 @@
                                       th:text="${#numbers.formatDecimal(op.pesoEntradaGr,1,3) + ' g'}"></span>
                             </td>
                             <td>
-                                <span th:if="${op.pedidoId != null}" th:text="${'#' + op.pedidoId}"></span>
+                                <a th:if="${op.pedidoId != null}" th:href="@{'/pedidos/ver/' + ${op.pedidoId}}"
+                                   class="text-info font-weight-bold" style="text-decoration:underline;">
+                                    <i class="fas fa-file-invoice mr-1" th:if="${op.estado == T(com.bolsadeideas.springboot.app.models.entity.OrdenProduccion.EstadoOrden).EN_PROCESO}"></i>
+                                    <span th:text="${'#' + op.pedidoId}"></span>
+                                </a>
                                 <span th:if="${op.pedidoId == null}" class="text-muted">—</span>
                             </td>
                             <td class="small" th:text="${#temporals.format(op.fechaInicio,'dd/MM/yy HH:mm')}"></td>
@@ -153,7 +207,11 @@
                             <td class="small"
                                 th:text="${op.fechaFin != null ? #temporals.format(op.fechaFin,'dd/MM/yy') : '—'}"></td>
                             <td>
-                                <span th:if="${op.pedidoId != null}" th:text="${'#' + op.pedidoId}"></span>
+                                <a th:if="${op.pedidoId != null}" th:href="@{'/pedidos/ver/' + ${op.pedidoId}}"
+                                   class="text-info font-weight-bold" style="text-decoration:underline;">
+                                    <i class="fas fa-file-invoice mr-1" th:if="${op.estado == T(com.bolsadeideas.springboot.app.models.entity.OrdenProduccion.EstadoOrden).EN_PROCESO}"></i>
+                                    <span th:text="${'#' + op.pedidoId}"></span>
+                                </a>
                                 <span th:if="${op.pedidoId == null}" class="text-muted">—</span>
                             </td>
                         </tr>

@@ -138,13 +138,7 @@
                 <i class="fas fa-boxes mr-1"></i> Materiales
             </a>
             <a th:href="@{/inventario/compras}" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-shopping-cart mr-1"></i> Historial Compras
-            </a>
-            <a th:href="@{/pedidos/listarPedidos}" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-list mr-1"></i> Pedidos
-            </a>
-            <a th:href="@{/listar}" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-users mr-1"></i> Clientes
+                <i class="fas fa-history mr-1"></i> Compras
             </a>
             <a th:href="@{/proveedor/listarProveedor}" class="btn btn-outline-info btn-sm">
                 <i class="fas fa-truck mr-1"></i> Proveedores
@@ -152,9 +146,60 @@
             <a th:href="@{/inventario/compras/nueva}" class="btn btn-success btn-sm">
                 <i class="fas fa-plus mr-1"></i> Nueva Compra
             </a>
+            <button type="button" class="btn btn-tutorial-toggle btn-sm ml-auto" onclick="$('#tutorialDash').slideToggle()">
+                <i class="fas fa-graduation-cap"></i> Guía del Centro de Inventario
+            </button>
         </div>
 
         <div class="card-body">
+            <!-- Tutorial -->
+            <div id="tutorialDash" class="tutorial-box premium mb-4" style="display:none;">
+                <h5><i class="fas fa-warehouse"></i> Guía: Entendiendo el Inventario de Joyería</h5>
+                <div class="tutorial-body">
+                    <p>Bienvenido al módulo de control de stock. Aquí gestionas tanto los productos terminados como la materia prima:</p>
+                    <div class="row align-items-center">
+                        <div class="col-md-7">
+                            <div class="tutorial-step">
+                                <div class="tutorial-step-icon"><i class="fas fa-cubes"></i></div>
+                                <div><strong>Materiales y Lotes:</strong> El metal se controla por "Lotes". Cada compra de oro/plata genera un lote único para asegurar la trazabilidad en el taller.</div>
+                            </div>
+                            <div class="tutorial-step">
+                                <div class="tutorial-step-icon"><i class="fas fa-chart-line"></i></div>
+                                <div><strong>Movimientos:</strong> Cada vez que registras una compra (entrada) o cierras una orden (salida), el stock se actualiza automáticamente.</div>
+                            </div>
+                            <div class="tutorial-step">
+                                <div class="tutorial-step-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                                <div><strong>Alertas:</strong> El sistema avisa en naranja cuando un material baja de su "Stock Mínimo" configurado.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-5 text-center">
+                             <div class="wf-container mt-2">
+                                <div class="wf-node">
+                                    <div class="wf-icon-box">
+                                        <img th:src="@{/img/tutorial/pedido.png}" alt="Pedido">
+                                    </div>
+                                    <div class="wf-label">Pedido</div>
+                                </div>
+                                <div class="wf-arrow"><i class="fas fa-chevron-right"></i></div>
+                                <div class="wf-node">
+                                    <div class="wf-icon-box">
+                                        <img th:src="@{/img/tutorial/taller.png}" alt="Taller">
+                                    </div>
+                                    <div class="wf-label">Taller</div>
+                                </div>
+                                <div class="wf-arrow"><i class="fas fa-chevron-right"></i></div>
+                                <div class="wf-node">
+                                    <div class="wf-icon-box">
+                                        <img th:src="@{/img/tutorial/producto.png}" alt="Producto">
+                                    </div>
+                                    <div class="wf-label">Producto</div>
+                                </div>
+                             </div>
+                             <p class="small text-white-50 mt-3">El inventario es la base de tu taller de joyería.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- ══════════════════════════════════════════
                  SECCIÓN 1: KPI — COMPRAS
@@ -334,7 +379,12 @@
                                 </div>
                                 <div class="form-group col-md-4">
                                     <label class="small font-weight-bold">Ref. Pedido</label>
-                                    <input type="text" name="referenciaPedido" class="form-control form-control-sm" placeholder="Opcional"/>
+                                    <select name="referenciaPedido" class="form-control form-control-sm">
+                                        <option value="">Opcional...</option>
+                                        <option th:each="ped : ${pedidos}" 
+                                                th:value="${'#' + ped.npedido}" 
+                                                th:text="${'#' + ped.npedido + (ped.ref != null && !ped.ref.isEmpty() ? ' [' + ped.ref + ']' : '') + ' - ' + ped.cliente?.nombre + ' ' + ped.cliente?.apellido}"></option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="form-row">

@@ -10,7 +10,8 @@ import java.util.List;
 public interface OrdenProduccionRepository extends JpaRepository<OrdenProduccion, Long> {
 
     /** Órdenes de un pedido concreto */
-    List<OrdenProduccion> findByPedidoIdOrderByFechaInicioDesc(Long pedidoId);
+    @Query("SELECT o FROM OrdenProduccion o WHERE o.pedido.npedido = :npedido ORDER BY o.fechaInicio DESC")
+    List<OrdenProduccion> findByPedidoId(@Param("npedido") Long npedido);
 
     /** Órdenes en proceso */
     List<OrdenProduccion> findByEstadoOrderByFechaInicioDesc(OrdenProduccion.EstadoOrden estado);
@@ -27,4 +28,7 @@ public interface OrdenProduccionRepository extends JpaRepository<OrdenProduccion
     @Query("SELECT DISTINCT opl.ordenProduccion FROM OrdenProduccionLote opl " +
            "WHERE opl.compra.id = :compraId")
     List<OrdenProduccion> findOrdenesPorLote(@Param("compraId") Long compraId);
+
+    /** Contar órdenes activas de un pedido */
+    long countByPedidoNpedidoAndEstado(Long npedido, OrdenProduccion.EstadoOrden estado);
 }

@@ -9,6 +9,7 @@ import com.bolsadeideas.springboot.app.models.entity.MovimientoStock;
 import com.bolsadeideas.springboot.app.models.entity.OrdenProduccion;
 import com.bolsadeideas.springboot.app.models.entity.Producto;
 import com.bolsadeideas.springboot.app.models.service.InventarioJoyeriaService;
+import com.bolsadeideas.springboot.app.models.service.PedidoService;
 import com.bolsadeideas.springboot.app.models.service.ProveedorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +48,9 @@ public class InventarioController {
 
     @Autowired
     private OrdenProduccionRepository ordenRepo;
+
+    @Autowired
+    private PedidoService pedidoService;
 
     // ─────────────────────────────────────────────
     //  DASHBOARD PRINCIPAL
@@ -120,6 +124,9 @@ public class InventarioController {
         // Órdenes de producción en proceso
         model.addAttribute("ordenesEnProceso",
                 ordenRepo.findByEstadoOrderByFechaInicioDesc(OrdenProduccion.EstadoOrden.EN_PROCESO));
+
+        // Pedidos para asignar consumo
+        model.addAttribute("pedidos", pedidoService.findAllPedidos());
 
         model.addAttribute("titulo", "Centro de Inventario");
         return "inventario/dashboard";

@@ -16,8 +16,8 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString(exclude = {"archivosAdjuntos", "comentarios"})
-@EqualsAndHashCode(exclude = {"archivosAdjuntos", "comentarios"})
+@ToString(exclude = {"archivosAdjuntos", "comentarios", "empresa"})
+@EqualsAndHashCode(exclude = {"archivosAdjuntos", "comentarios", "empresa"})
 @Table(name = "PEDIDO")
 @Filter(name = "tenantFilter", condition = "empresa_id = :tenantId")
 public class Pedido implements Serializable {

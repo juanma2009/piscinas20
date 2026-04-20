@@ -25,4 +25,7 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
 
     @Query("select c from Cita c where c.fechaCita between ?1 and ?2 order by c.fechaCita asc")
     List<Cita> findByRangoFechas(LocalDateTime inicio, LocalDateTime fin);
+
+    @Query("select c from Cita c left join fetch c.cliente left join fetch c.pedido where c.estado = 'PROGRAMADA' and c.fechaCita >= ?1 order by c.fechaCita asc")
+    List<Cita> findUpcomingAppointments(LocalDateTime now, org.springframework.data.domain.Pageable pageable);
 }
