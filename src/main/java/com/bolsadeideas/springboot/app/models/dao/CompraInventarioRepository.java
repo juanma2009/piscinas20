@@ -25,6 +25,9 @@ public interface CompraInventarioRepository extends JpaRepository<CompraInventar
     @Query("SELECT COALESCE(SUM(c.cantidad), 0) FROM CompraInventario c WHERE c.producto.id = :pid AND c.fechaCompra BETWEEN :desde AND :hasta")
     Double cantidadCompradaPorProducto(@Param("pid") Long pid, @Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 
+    /** Últimas 5 compras */
+    List<CompraInventario> findTop5ByOrderByFechaCompraDesc();
+
     /** Últimas 10 compras */
     List<CompraInventario> findTop10ByOrderByFechaCompraDesc();
 

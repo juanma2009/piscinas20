@@ -109,6 +109,7 @@ public class AdminDashboardController {
         model.addAttribute("dataVentas", dataVentas);
         model.addAttribute("dataBeneficio", dataBeneficio);
         model.addAttribute("statusDistrib", statusDistrib);
+        model.addAttribute("metalsJson", dashboardService.getExternalMetalsData("EUR", "XAU"));
         
         model.addAttribute("nombreUsuario", usuario);
 

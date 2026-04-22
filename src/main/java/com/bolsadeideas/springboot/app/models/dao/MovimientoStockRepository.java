@@ -23,6 +23,9 @@ public interface MovimientoStockRepository extends JpaRepository<MovimientoStock
            "WHERE m.tipo = 'SALIDA' AND m.producto.id = :pid AND m.fecha BETWEEN :desde AND :hasta")
     Double salidasPorProductoEnPeriodo(@Param("pid") Long pid, @Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 
+    /** Últimos 5 movimientos */
+    List<MovimientoStock> findTop5ByOrderByFechaDesc();
+
     /** Últimos 20 movimientos */
     List<MovimientoStock> findTop20ByOrderByFechaDesc();
 

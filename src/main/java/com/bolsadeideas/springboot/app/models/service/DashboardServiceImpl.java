@@ -108,4 +108,33 @@ public class DashboardServiceImpl implements IDashboardService {
         Double total = facturaDao.findTotalFacturasEnPeriodo(inicio, fin);
         return total != null ? total : 0.0;
     }
+
+    @Override
+    public String getExternalMetalsData(String currency, String symbol) {
+        if (currency == null || currency.isBlank()) currency = "EUR";
+        if (symbol == null || symbol.isBlank()) symbol = "XAU";
+        try {
+            java.net.URL url = new java.net.URL("https://www.gem-logic.com/es/api/live-gold-price/" + currency + "/" + symbol);
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            
+            java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
+            StringBuilder content = new StringBuilder();
+            String inputLine;
+            while ((inputLine = in.readLine()) != null) {
+                content.append(inputLine);
+            }
+            in.close();
+            conn.disconnect();
+            String res = content.toString();
+            System.out.println("API Gem Logic Response: " + res);
+            return res;
+        } catch (Exception e) {
+            System.err.println("API Gem Logic ERROR: " + e.getMessage());
+            return "{\"success\": false, \"error\": \"" + e.getMessage() + "\"}";
+        }
+    }
 }

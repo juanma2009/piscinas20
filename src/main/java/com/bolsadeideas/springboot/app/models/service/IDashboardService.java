@@ -21,4 +21,5 @@ public interface IDashboardService {
     Double getFacturacionDia(java.util.Date inicio, java.util.Date fin);
     java.util.Map<String, Long> getPedidosPorStatus();
     Double getFacturacionMesTotal(java.util.Date inicio, java.util.Date fin);
+    String getExternalMetalsData(String currency, String symbol);
 }

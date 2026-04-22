@@ -1,0 +1,198 @@
+openapi: 3.0.3
+info:
+  title: Gem Logic API
+  version: 1.0.0
+paths:
+  /api/marketplaces/:
+    get:
+      operationId: api_marketplaces_list
+      description: Returns a list of all marketplaces available in the system.
+      summary: List all marketplaces
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Marketplaces
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMarketplaceList'
+          description: ''
+  /api/products/{marketplace_id}:
+    get:
+      operationId: api_products_list
+      description: Returns a list of all products available in the system.
+      summary: List all products
+      parameters:
+      - in: path
+        name: marketplace_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Products
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+          description: ''
+  /api/sales/:
+    get:
+      operationId: api_sales_list
+      description: Returns a list of all sales available in the system.
+      summary: List all sales
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Sales
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+          description: ''
+  /api/sales/create/:
+    post:
+      operationId: api_sales_create_create
+      description: Creates a new sale in the system.
+      summary: Create a sale
+      tags:
+      - Sales
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Order'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Order'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+components:
+  schemas:
+    Marketplace:
+      type: object
+      description: Serializer for Marketplace model.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        marketplace:
+          type: string
+          nullable: true
+          maxLength: 120
+      required:
+      - id
+    Order:
+      type: object
+      description: Serializer for Order model.
+      properties:
+        order_id:
+          type: string
+          title: ID
+          maxLength: 120
+      required:
+      - order_id
+    PaginatedMarketplaceList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Marketplace'
+    PaginatedProductList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+    Product:
+      type: object
+      description: Serializer for Product model.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        item_sku:
+          type: string
+          title: SKU
+          maxLength: 120
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          type: integer
+          nullable: true
+        images:
+          type: string
+          readOnly: true
+      required:
+      - created
+      - id
+      - images
+      - item_sku

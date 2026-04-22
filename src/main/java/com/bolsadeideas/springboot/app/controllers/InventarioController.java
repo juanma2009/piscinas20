@@ -8,6 +8,7 @@ import com.bolsadeideas.springboot.app.models.entity.CompraInventario;
 import com.bolsadeideas.springboot.app.models.entity.MovimientoStock;
 import com.bolsadeideas.springboot.app.models.entity.OrdenProduccion;
 import com.bolsadeideas.springboot.app.models.entity.Producto;
+import com.bolsadeideas.springboot.app.models.service.IDashboardService;
 import com.bolsadeideas.springboot.app.models.service.InventarioJoyeriaService;
 import com.bolsadeideas.springboot.app.models.service.PedidoService;
 import com.bolsadeideas.springboot.app.models.service.ProveedorService;
@@ -52,6 +53,9 @@ public class InventarioController {
     @Autowired
     private PedidoService pedidoService;
 
+    @Autowired
+    private IDashboardService dashboardService;
+
     // ─────────────────────────────────────────────
     //  DASHBOARD PRINCIPAL
     // ─────────────────────────────────────────────
@@ -78,15 +82,14 @@ public class InventarioController {
         model.addAttribute("consumoAnio",  movimientoRepo.totalSalidasEnPeriodo(inicioAnio, ahora));
 
         // Productos con stock bajo (< 5 unidades)
-        List<Producto> stockBajo = ((List<Producto>) productoDao.findByCantidadLessThan(5.0)).stream()
-                .limit(10).collect(Collectors.toList());
+        List<Producto> stockBajo = ((List<Producto>) productoDao.findByCantidadLessThan(5.0));
         model.addAttribute("stockBajo", stockBajo);
 
-        // Últimas compras
-        model.addAttribute("ultimasCompras", compraRepo.findTop10ByOrderByFechaCompraDesc());
+        // Últimas compras (Top 5)
+        model.addAttribute("ultimasCompras", compraRepo.findTop5ByOrderByFechaCompraDesc());
 
-        // Últimos movimientos
-        model.addAttribute("ultimosMovimientos", movimientoRepo.findTop20ByOrderByFechaDesc());
+        // Últimos movimientos (Top 5)
+        model.addAttribute("ultimosMovimientos", movimientoRepo.findTop5ByOrderByFechaDesc());
 
         // Top materiales más consumidos este mes
         List<Object[]> topConsumo = movimientoRepo.topProductosConsumidos(inicioMes, ahora);
@@ -118,6 +121,7 @@ public class InventarioController {
                 .filter(c -> c.getCodigoLote() != null
                           && c.getPesoActualGr() != null
                           && c.getPesoActualGr() > 0)
+                .limit(5)
                 .collect(Collectors.toList());
         model.addAttribute("lotesActivos", lotesActivos);
 
@@ -127,6 +131,7 @@ public class InventarioController {
 
         // Pedidos para asignar consumo
         model.addAttribute("pedidos", pedidoService.findAllPedidos());
+        model.addAttribute("metalsJson", dashboardService.getExternalMetalsData("EUR", "XAU"));
 
         model.addAttribute("titulo", "Centro de Inventario");
         return "inventario/dashboard";
@@ -323,5 +328,15 @@ public class InventarioController {
         result.put("compras", compras);
         result.put("consumo", consumo);
         return ResponseEntity.ok(result);
+    }
+
+    // ─────────────────────────────────────────────
+    //  API JSON — Precios de Metales por Moneda
+    // ─────────────────────────────────────────────
+    @GetMapping("/api/metals")
+    @ResponseBody
+    public ResponseEntity<String> metalsJson(@RequestParam(defaultValue = "EUR") String currency,
+                                           @RequestParam(defaultValue = "XAU") String symbol) {
+        return ResponseEntity.ok(dashboardService.getExternalMetalsData(currency, symbol));
     }
 }

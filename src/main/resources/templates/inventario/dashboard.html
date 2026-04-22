@@ -1,13 +1,31 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="admin/admin_layout.html">
+      layout:decorate="~{admin/admin_layout.html}">
 
 <head>
     <title>Centro de Inventario</title>
     <link rel="stylesheet" th:href="@{/css/table.css}"/>
     <style>
         :root {
+            --clr-bg: #f0f2f8;
+            --clr-card: #ffffff;
+            --clr-text: #1a1d2e;
+            --clr-muted: #6b7280;
+            --clr-border: #e5e7eb;
+            --clr-1: #667eea;
+            --clr-1b: #764ba2;
+            --clr-2: #11998e;
+            --clr-2b: #38ef7d;
+            --clr-3: #f093fb;
+            --clr-3b: #f5576c;
+            --clr-4: #4facfe;
+            --clr-4b: #00f2fe;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,.07);
+            --shadow-md: 0 8px 32px rgba(0,0,0,.12);
+            --radius: 16px;
+            --radius-sm: 10px;
+
             --entrada: #28a745;
             --salida:  #dc3545;
             --warning: #ffc107;
@@ -15,104 +33,61 @@
             --dark:    #343a40;
         }
 
-        /* ── KPI Cards ── */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.5rem;
+        /* ── Design from dashboard_gestion ── */
+        .table-card {
+            background: var(--clr-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
         }
+
+        /* ── KPI Cards ── */
         .kpi-card {
             background: #fff;
             border-radius: 12px;
             box-shadow: 0 2px 12px rgba(0,0,0,.08);
-            padding: 1.25rem 1.5rem;
+            padding: 1rem;
+            height: 100%;
             display: flex;
-            align-items: center;
-            gap: 1rem;
-            transition: transform .2s, box-shadow .2s;
+            flex-direction: column;
+            justify-content: center;
+            transition: transform .2s;
         }
-        .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,.12); }
-        .kpi-icon {
-            width: 52px; height: 52px;
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.5rem; flex-shrink: 0;
-        }
-        .kpi-icon.green  { background: #d4edda; color: var(--entrada); }
-        .kpi-icon.red    { background: #f8d7da; color: var(--salida); }
-        .kpi-icon.blue   { background: #d1ecf1; color: var(--info); }
-        .kpi-icon.orange { background: #fff3cd; color: #856404; }
-        .kpi-val  { font-size: 1.6rem; font-weight: 700; line-height: 1; }
-        .kpi-lbl  { font-size: 0.78rem; color: #6c757d; margin-top: 2px; }
-        .kpi-sub  { font-size: 0.7rem; color: #adb5bd; }
+        .kpi-card:hover { transform: translateY(-3px); }
+        .kpi-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; opacity: 0.8; }
+        .kpi-val { font-size: 1.4rem; font-weight: 800; line-height: 1.2; }
+        .kpi-sub { font-size: 0.7rem; opacity: 0.7; margin-top: 4px; }
 
-        /* badge periodo */
-        .periodo-tabs { display: flex; gap: .4rem; margin-bottom: 1rem; flex-wrap: wrap; }
-        .periodo-tabs .btn-periodo {
-            padding: 4px 12px; font-size: .78rem; border-radius: 20px;
-            border: 1px solid #dee2e6; background: #f8f9fa; cursor: pointer;
-            transition: all .2s;
-        }
-        .periodo-tabs .btn-periodo.active, .periodo-tabs .btn-periodo:hover {
-            background: #0062cc; color: #fff; border-color: #0062cc;
-        }
-
-        /* Charts */
-        .chart-card {
+        /* Charts & Panels */
+        .chart-card, .panel, .quick-form {
             background: #fff; border-radius: 12px;
             box-shadow: 0 2px 12px rgba(0,0,0,.08);
             padding: 1.25rem;
             margin-bottom: 1.5rem;
+            height: 100%;
         }
-        .chart-card h6 { font-weight: 700; color: #343a40; margin-bottom: 1rem; }
+        .chart-card h6, .panel-header h6, .quick-form h6 { font-weight: 700; margin-bottom: 1rem; }
 
-        /* Table panel */
-        .panel {
-            background: #fff; border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,.08);
-            padding: 1.25rem;
-            margin-bottom: 1.5rem;
+        .gold-widget-card { background: #fffdf2; border: 1px solid #f2e8c9; }
+        .metal-tab {
+            flex: 1; border: none; background: transparent; padding: 5px 2px; font-size: .65rem;
+            font-weight: 700; border-radius: 5px; cursor: pointer; transition: all .2s; color: #8e835d;
         }
-        .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-        .panel-header h6 { font-weight: 700; margin: 0; }
+        .metal-tab.active { background: #fff; color: #4a3f1a; box-shadow: 0 2px 5px rgba(0,0,0,.05); }
 
-        /* Stock bajo — alerta */
         .stock-row.danger { background: #fff5f5; }
         .stock-row.warning { background: #fffbf0; }
 
-        /* Badge tipo movimiento */
-        .badge-entrada { background: #d4edda; color: #155724; }
-        .badge-salida  { background: #f8d7da; color: #721c24; }
-        .badge-ajuste  { background: #d1ecf1; color: #0c5460; }
-        .badge-consumo { background: #e2d9f3; color: #4a235a; }
-        .badge-merma   { background: #f8d7da; color: #721c24; }
-        .badge-recicin { background: #d4edda; color: #155724; }
-
-        /* Lotes */
         .badge-lote {
             background: #212529; color: #00ff88;
             font-family: monospace; font-size: .72rem;
             padding: .2rem .45rem; border-radius: 4px;
             border: 1px solid #00ff88; display: inline-block;
         }
-        .badge-tipo-ORO     { background:#fff3cd; color:#856404; border:1px solid #ffc107; font-size:.72rem; }
-        .badge-tipo-PLATA   { background:#e9ecef; color:#495057; border:1px solid #adb5bd; font-size:.72rem; }
-        .badge-tipo-PLATINO { background:#cff4fc; color:#055160; border:1px solid #0dcaf0; font-size:.72rem; }
-        .peso-gauge { height: 6px; background: #e9ecef; border-radius: 3px; margin-top: 4px; }
-        .peso-gauge-fill { height: 100%; border-radius: 3px; transition: width .5s;
-                           background: linear-gradient(90deg,#00b894,#00cec9); }
-        .peso-gauge-fill.low { background: linear-gradient(90deg,#fd7e14,#dc3545); }
-
-        .quick-form {
-            background: linear-gradient(135deg, #0062cc10, #00408510);
-            border: 1px solid #dee2e6;
-            border-radius: 12px; padding: 1.25rem;
-            margin-bottom: 1.5rem;
-        }
-
-        @media (max-width: 768px) {
-            .kpi-val { font-size: 1.2rem; }
+        
+        @media (max-width: 576px) {
+            .kpi-val { font-size: 1.1rem; }
+            .kpi-label { font-size: 0.65rem; }
         }
     </style>
 </head>
@@ -122,213 +97,159 @@
 <div class="container-fluid px-2 px-md-3">
 <section class="content-header">
 
-    <!-- Card principal -->
-    <div class="card">
-        <div class="card-header d-flex align-items-center justify-content-between flex-wrap" style="background:linear-gradient(135deg,#0062cc,#004085);color:#fff;">
+    <div class="card shadow-sm border-0">
+        <div class="card-header d-flex align-items-center justify-content-between flex-wrap" style="background:linear-gradient(135deg,#0062cc,#004085);color:#fff; border-radius: 8px 8px 0 0;">
             <span><i class="fas fa-warehouse mr-2"></i><strong>Centro de Inventario</strong></span>
-            <div class="d-flex align-items-center gap-2" style="gap:.5rem;">
-                <span class="badge badge-light text-dark" id="liveTime"></span>
-                <span class="badge badge-warning" id="alertaStockBadge" style="display:none;"><i class="fas fa-exclamation-triangle mr-1"></i><span id="alertaStockNum">0</span> stock bajo</span>
+        </div>
+
+        <!-- ── Quick Actions (Perfect Parity with Dashboard) ── -->
+        <div class="row mb-4 px-4 pt-4">
+            <div class="col-12">
+                <div class="table-card d-flex align-items-center" style="gap: 15px; padding: 20px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;">
+                    <span style="font-weight: 700; color: var(--clr-muted); margin-right: 15px; flex-shrink: 0;">
+                        <i class="fas fa-bolt mr-1"></i> Acciones rápidas:
+                    </span>
+                    <a th:href="@{/pedidos/form}" class="btn btn-primary rounded-pill px-4 shadow-sm" style="flex-shrink: 0;">
+                        <i class="fas fa-plus-circle mr-1"></i> Nuevo Pedido
+                    </a>
+                    <a th:href="@{/form}" class="btn btn-info rounded-pill px-4 shadow-sm text-white" style="flex-shrink: 0;">
+                        <i class="fas fa-user-plus mr-1"></i> Nuevo Cliente
+                    </a>
+                    <a th:href="@{/produccion/nueva}" class="btn btn-warning rounded-pill px-4 shadow-sm text-white" style="flex-shrink: 0;">
+                        <i class="fas fa-fire mr-1"></i> Nueva Orden
+                    </a>
+                    <a th:href="@{/citas/listar}" class="btn btn-success rounded-pill px-4 shadow-sm" style="flex-shrink: 0;">
+                        <i class="fas fa-calendar-plus mr-1"></i> Nueva Cita
+                    </a>
+                    <a th:href="@{/inventario/compras/nueva}" class="btn btn-dark rounded-pill px-4 shadow-sm" style="flex-shrink: 0;">
+                        <i class="fas fa-shopping-cart mr-1"></i> Registrar Compra
+                    </a>
+                </div>
             </div>
         </div>
 
-        <!-- Toolbar -->
-        <div class="toolbar d-none d-md-flex">
-            <a th:href="@{/materiales/listarMaterial}" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-boxes mr-1"></i> Materiales
-            </a>
-            <a th:href="@{/inventario/compras}" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-history mr-1"></i> Compras
-            </a>
-            <a th:href="@{/proveedor/listarProveedor}" class="btn btn-outline-info btn-sm">
-                <i class="fas fa-truck mr-1"></i> Proveedores
-            </a>
-            <a th:href="@{/inventario/compras/nueva}" class="btn btn-success btn-sm">
-                <i class="fas fa-plus mr-1"></i> Nueva Compra
-            </a>
-            <button type="button" class="btn btn-tutorial-toggle btn-sm ml-auto" onclick="$('#tutorialDash').slideToggle()">
-                <i class="fas fa-graduation-cap"></i> Guía del Centro de Inventario
-            </button>
-        </div>
-
-        <div class="card-body">
-            <!-- Tutorial -->
-            <div id="tutorialDash" class="tutorial-box premium mb-4" style="display:none;">
-                <h5><i class="fas fa-warehouse"></i> Guía: Entendiendo el Inventario de Joyería</h5>
-                <div class="tutorial-body">
-                    <p>Bienvenido al módulo de control de stock. Aquí gestionas tanto los productos terminados como la materia prima:</p>
-                    <div class="row align-items-center">
-                        <div class="col-md-7">
-                            <div class="tutorial-step">
-                                <div class="tutorial-step-icon"><i class="fas fa-cubes"></i></div>
-                                <div><strong>Materiales y Lotes:</strong> El metal se controla por "Lotes". Cada compra de oro/plata genera un lote único para asegurar la trazabilidad en el taller.</div>
-                            </div>
-                            <div class="tutorial-step">
-                                <div class="tutorial-step-icon"><i class="fas fa-chart-line"></i></div>
-                                <div><strong>Movimientos:</strong> Cada vez que registras una compra (entrada) o cierras una orden (salida), el stock se actualiza automáticamente.</div>
-                            </div>
-                            <div class="tutorial-step">
-                                <div class="tutorial-step-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                                <div><strong>Alertas:</strong> El sistema avisa en naranja cuando un material baja de su "Stock Mínimo" configurado.</div>
-                            </div>
-                        </div>
-                        <div class="col-md-5 text-center">
-                             <div class="wf-container mt-2">
-                                <div class="wf-node">
-                                    <div class="wf-icon-box">
-                                        <img th:src="@{/img/tutorial/pedido.png}" alt="Pedido">
-                                    </div>
-                                    <div class="wf-label">Pedido</div>
-                                </div>
-                                <div class="wf-arrow"><i class="fas fa-chevron-right"></i></div>
-                                <div class="wf-node">
-                                    <div class="wf-icon-box">
-                                        <img th:src="@{/img/tutorial/taller.png}" alt="Taller">
-                                    </div>
-                                    <div class="wf-label">Taller</div>
-                                </div>
-                                <div class="wf-arrow"><i class="fas fa-chevron-right"></i></div>
-                                <div class="wf-node">
-                                    <div class="wf-icon-box">
-                                        <img th:src="@{/img/tutorial/producto.png}" alt="Producto">
-                                    </div>
-                                    <div class="wf-label">Producto</div>
-                                </div>
-                             </div>
-                             <p class="small text-white-50 mt-3">El inventario es la base de tu taller de joyería.</p>
-                        </div>
+        <div class="card-body bg-light">
+            
+            <!-- KPIs Row -->
+            <div class="row mb-2">
+                <div class="col-lg-3 col-md-6 col-6 mb-3">
+                    <div class="kpi-card text-success">
+                        <div class="kpi-label"><i class="fas fa-shopping-cart mr-1"></i> Compras (Mes)</div>
+                        <div class="kpi-val" th:text="${#numbers.formatCurrency(comprasMes != null ? comprasMes : 0)}">0,00 €</div>
+                        <div class="kpi-sub">Gasto total en materiales</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-6 mb-3">
+                    <div class="kpi-card text-danger">
+                        <div class="kpi-label"><i class="fas fa-burn mr-1"></i> Consumo (Mes)</div>
+                        <div class="kpi-val" th:text="${(consumoMes != null ? #numbers.formatDecimal(consumoMes, 1, 2) : '0,00') + ' uds'}">0,00 uds</div>
+                        <div class="kpi-sub">Salidas para taller</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-6 mb-3">
+                    <div class="kpi-card text-primary">
+                        <div class="kpi-label"><i class="fas fa-boxes mr-1"></i> Stock Bajo</div>
+                        <div class="kpi-val" th:text="${stockBajo.size()}">0</div>
+                        <div class="kpi-sub">Ítems que requieren reposición</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-6 mb-3">
+                    <div class="kpi-card text-info">
+                        <div class="kpi-label"><i class="fas fa-layer-group mr-1"></i> Lotes</div>
+                        <div class="kpi-val" th:text="${lotesActivos.size()}">0</div>
+                        <div class="kpi-sub">Lotes de metal activos</div>
                     </div>
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════
-                 SECCIÓN 1: KPI — COMPRAS
-            ══════════════════════════════════════════ -->
-            <h6 class="text-uppercase text-muted mb-2" style="font-size:.75rem; letter-spacing:1px;">
-                <i class="fas fa-arrow-circle-down mr-1 text-success"></i> ENTRADAS / COMPRAS
-            </h6>
-            <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-icon green"><i class="fas fa-calendar-day"></i></div>
-                    <div>
-                        <div class="kpi-val" id="kpi-comprasHoy">
-                            <span th:text="${#numbers.formatDecimal(comprasHoy, 1, 2) + ' €'}">0 €</span>
-                        </div>
-                        <div class="kpi-lbl">Comprado hoy</div>
-                    </div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon green"><i class="fas fa-calendar-week"></i></div>
-                    <div>
-                        <div class="kpi-val" id="kpi-comprasSemana">
-                            <span th:text="${#numbers.formatDecimal(comprasSemana, 1, 2) + ' €'}">0 €</span>
-                        </div>
-                        <div class="kpi-lbl">Esta semana</div>
-                    </div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon green"><i class="fas fa-calendar-alt"></i></div>
-                    <div>
-                        <div class="kpi-val" id="kpi-comprasMes">
-                            <span th:text="${#numbers.formatDecimal(comprasMes, 1, 2) + ' €'}">0 €</span>
-                        </div>
-                        <div class="kpi-lbl">Este mes</div>
-                    </div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon green"><i class="fas fa-chart-line"></i></div>
-                    <div>
-                        <div class="kpi-val" id="kpi-comprasAnio">
-                            <span th:text="${#numbers.formatDecimal(comprasAnio, 1, 2) + ' €'}">0 €</span>
-                        </div>
-                        <div class="kpi-lbl">Este año</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ══════════════════════════════════════════
-                 SECCIÓN 2: KPI — CONSUMO / SALIDAS
-            ══════════════════════════════════════════ -->
-            <h6 class="text-uppercase text-muted mb-2 mt-3" style="font-size:.75rem; letter-spacing:1px;">
-                <i class="fas fa-arrow-circle-up mr-1 text-danger"></i> SALIDAS / CONSUMO EN TALLER
-            </h6>
-            <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-icon red"><i class="fas fa-calendar-day"></i></div>
-                    <div>
-                        <div class="kpi-val" id="kpi-consumoHoy">
-                            <span th:text="${#numbers.formatDecimal(consumoHoy, 1, 2) + ' uds'}">0 uds</span>
-                        </div>
-                        <div class="kpi-lbl">Consumido hoy</div>
-                    </div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon red"><i class="fas fa-calendar-week"></i></div>
-                    <div>
-                        <div class="kpi-val" id="kpi-consumoSemana">
-                            <span th:text="${#numbers.formatDecimal(consumoSemana, 1, 2) + ' uds'}">0 uds</span>
-                        </div>
-                        <div class="kpi-lbl">Esta semana</div>
-                    </div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon red"><i class="fas fa-calendar-alt"></i></div>
-                    <div>
-                        <div class="kpi-val" id="kpi-consumoMes">
-                            <span th:text="${#numbers.formatDecimal(consumoMes, 1, 2) + ' uds'}">0 uds</span>
-                        </div>
-                        <div class="kpi-lbl">Este mes</div>
-                    </div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon red"><i class="fas fa-chart-bar"></i></div>
-                    <div>
-                        <div class="kpi-val" id="kpi-consumoAnio">
-                            <span th:text="${#numbers.formatDecimal(consumoAnio, 1, 2) + ' uds'}">0 uds</span>
-                        </div>
-                        <div class="kpi-lbl">Este año</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ══════════════════════════════════════════
-                 SECCIÓN 3: GRÁFICOS
-            ══════════════════════════════════════════ -->
+            <!-- Charts Row -->
             <div class="row">
-                <div class="col-md-8">
+                <!-- Compras vs Consumo -->
+                <div class="col-lg-5 col-md-12 mb-4">
                     <div class="chart-card">
-                        <h6><i class="fas fa-chart-area mr-2 text-primary"></i>Compras vs Consumo — Últimos 7 días</h6>
-                        <canvas id="chartSemanal" height="120"></canvas>
+                        <h6><i class="fas fa-chart-area mr-2 text-primary"></i>Compras vs Consumo</h6>
+                        <div style="height: 250px;">
+                            <canvas id="chartSemanal"></canvas>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+
+                <!-- Top Uso -->
+                <div class="col-lg-3 col-md-6 mb-4">
                     <div class="chart-card">
-                        <h6><i class="fas fa-fire mr-2 text-danger"></i>Top Materiales Usados (mes)</h6>
-                        <canvas id="chartTopConsumo" height="200"></canvas>
+                        <h6><i class="fas fa-fire mr-2 text-danger"></i>Top Uso</h6>
+                        <div style="height: 250px;">
+                            <canvas id="chartTopConsumo"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mercado -->
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="chart-card gold-widget-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="m-0"><i class="fas fa-chart-line mr-2" style="color: #c5a021;"></i>Mercado</h6>
+                            <select id="currencySelector" onchange="changeCurrency(this.value)" 
+                                    style="border: none; background: #f2e8c9; font-size: .65rem; font-weight: 700; border-radius: 4px; color: #4a3f1a; padding: 2px 5px;">
+                                <option value="EUR">EUR (€)</option>
+                                <option value="USD">USD ($)</option>
+                                <option value="GBP">GBP (£)</option>
+                            </select>
+                        </div>
+                        
+                        <div style="display: flex; gap: 4px; margin-bottom: 15px; background: #f2e8c966; padding: 4px; border-radius: 8px; overflow-x: auto; white-space: nowrap;">
+                            <button onclick="switchMetal('XAU')" id="btnXAU" class="metal-tab active">Oro</button>
+                            <button onclick="switchMetal('XAG')" id="btnXAG" class="metal-tab">Plata</button>
+                            <button onclick="switchMetal('XPT')" id="btnXPT" class="metal-tab">Plat.</button>
+                            <button onclick="switchMetal('XPD')" id="btnXPD" class="metal-tab">Palad.</button>
+                            <button onclick="showKilatesView()" id="btnKLT" class="metal-tab">Kilates</button>
+                        </div>
+                        
+                        <div id="metalPriceView">
+                            <div class="row text-center mb-3">
+                                <div class="col-6" style="border-right: 1px solid #f2e8c9;">
+                                    <div id="gramLabel" class="small text-muted mb-1">Gramo (24k)</div>
+                                    <div id="goldGramPrice" class="h5 font-weight-bold mb-0">...</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="small text-muted mb-1">Onza Troy</div>
+                                    <div id="goldOuncePrice" class="h6 font-weight-bold mb-0">...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="kilatesContainer" class="p-3 rounded mb-3" style="background: white; border: 1px solid #f2e8c9; display:none; font-size: .85rem; box-shadow: inset 0 0 5px rgba(0,0,0,0.02);">
+                            <div class="d-flex justify-content-between border-bottom pb-2 mb-2 font-weight-bold text-dark">
+                                <span>Kilates</span><span>Precio/g</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 border-bottom border-light"><span>18k (750)</span><span id="price18k" class="font-weight-bold">...</span></div>
+                            <div class="d-flex justify-content-between py-1 border-bottom border-light"><span>14k (585)</span><span id="price14k" class="font-weight-bold">...</span></div>
+                            <div class="d-flex justify-content-between py-1"><span>9k (375)</span><span id="price9k" class="font-weight-bold">...</span></div>
+                        </div>
+
+                        <div id="metalChartContainer" style="height: 120px;">
+                            <canvas id="metalTrendChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════
-                 SECCIÓN 4: COMPRA RÁPIDA + SALIDA RÁPIDA
-            ══════════════════════════════════════════ -->
+            <!-- Quick Forms Row -->
             <div class="row">
-                <!-- Compra rápida -->
-                <div class="col-md-6">
-                    <div class="quick-form">
-                        <h6 class="font-weight-bold mb-3"><i class="fas fa-cart-plus mr-2 text-success"></i>Registrar Entrada Rápida</h6>
+                <div class="col-md-6 mb-4">
+                    <div class="quick-form" style="border-left: 4px solid #28a745;">
+                        <h6 class="text-success font-weight-bold mb-3"><i class="fas fa-cart-plus mr-2"></i>Registrar Entrada Rápida</h6>
                         <form th:action="@{/inventario/compras/guardar}" method="post">
                             <div class="form-row">
                                 <div class="form-group col-md-5">
                                     <label class="small font-weight-bold">Material</label>
-                                    <select name="productoId" id="selectMaterialEntrada" class="form-control form-control-sm" required>
+                                    <select name="productoId" class="form-control form-control-sm" required>
                                         <option value="">Seleccionar...</option>
-                                        <option th:each="p : ${productos}"
-                                                th:value="${p.id}" th:text="${p.nombre + ' (' + p.codigo + ')'}"></option>
+                                        <option th:each="p : ${productos}" th:value="${p.id}" th:text="${p.nombre + ' (' + p.codigo + ')'}"></option>
                                     </select>
                                 </div>
                                 <div class="form-group col-md-3">
-                                    <label class="small font-weight-bold">Cantidad</label>
+                                    <label class="small font-weight-bold">Cant.</label>
                                     <input type="number" name="cantidad" step="0.01" min="0.01" class="form-control form-control-sm" required placeholder="0.00"/>
                                 </div>
                                 <div class="form-group col-md-4">
@@ -341,8 +262,7 @@
                                     <label class="small font-weight-bold">Proveedor</label>
                                     <select name="proveedorId" class="form-control form-control-sm">
                                         <option value="">Sin proveedor</option>
-                                        <option th:each="pv : ${proveedores}"
-                                                th:value="${pv.nproveedor}" th:text="${pv.vnombre}"></option>
+                                        <option th:each="pv : ${proveedores}" th:value="${pv.nproveedor}" th:text="${pv.vnombre}"></option>
                                     </select>
                                 </div>
                                 <div class="form-group col-md-4">
@@ -350,31 +270,26 @@
                                     <input type="text" name="numAlbaran" class="form-control form-control-sm" placeholder="Opcional"/>
                                 </div>
                                 <div class="form-group col-md-3 d-flex align-items-end">
-                                    <button type="submit" class="btn btn-success btn-sm w-100">
-                                        <i class="fas fa-plus mr-1"></i> Registrar
-                                    </button>
+                                    <button type="submit" class="btn btn-success btn-xs btn-block py-2 font-weight-bold" style="font-size: .7rem;">REGISTRAR</button>
                                 </div>
                             </div>
                         </form>
                     </div>
                 </div>
-
-                <!-- Salida rápida -->
-                <div class="col-md-6">
-                    <div class="quick-form" style="background:linear-gradient(135deg,#dc354510,#c8283610);">
-                        <h6 class="font-weight-bold mb-3"><i class="fas fa-minus-circle mr-2 text-danger"></i>Registrar Salida / Consumo</h6>
+                <div class="col-md-6 mb-4">
+                    <div class="quick-form" style="border-left: 4px solid #dc3545;">
+                        <h6 class="text-danger font-weight-bold mb-3"><i class="fas fa-minus-circle mr-2"></i>Registrar Salida / Consumo</h6>
                         <form th:action="@{/inventario/salida}" method="post">
                             <div class="form-row">
                                 <div class="form-group col-md-5">
                                     <label class="small font-weight-bold">Material</label>
-                                    <select name="productoId" id="selectMaterialSalida" class="form-control form-control-sm" required>
+                                    <select name="productoId" class="form-control form-control-sm" required>
                                         <option value="">Seleccionar...</option>
-                                        <option th:each="p : ${productos}"
-                                                th:value="${p.id}" th:text="${p.nombre + ' (stock: ' + p.cantidad + ')'}"></option>
+                                        <option th:each="p : ${productos}" th:value="${p.id}" th:text="${p.nombre + ' (' + p.cantidad + ' uds)'}"></option>
                                     </select>
                                 </div>
                                 <div class="form-group col-md-3">
-                                    <label class="small font-weight-bold">Cantidad</label>
+                                    <label class="small font-weight-bold">Cant.</label>
                                     <input type="number" name="cantidad" step="0.01" min="0.01" class="form-control form-control-sm" required placeholder="0.00"/>
                                 </div>
                                 <div class="form-group col-md-4">
@@ -383,20 +298,17 @@
                                         <option value="">Opcional...</option>
                                         <option th:each="ped : ${pedidos}" 
                                                 th:value="${'#' + ped.npedido}" 
-                                                th:text="${'#' + ped.npedido + (ped.ref != null && !ped.ref.isEmpty() ? ' [' + ped.ref + ']' : '') + ' - ' + ped.cliente?.nombre + ' ' + ped.cliente?.apellido}"></option>
+                                                th:text="${'#' + ped.npedido + (ped.ref != null && !ped.ref.isEmpty() ? ' [' + ped.ref + ']' : '')}"></option>
                                     </select>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-9">
                                     <label class="small font-weight-bold">Motivo</label>
-                                    <input type="text" name="motivo" class="form-control form-control-sm" placeholder="Ej: Reparación anillo, soldadura..."/>
+                                    <input type="text" name="motivo" class="form-control form-control-sm" placeholder="Ej: Reparación, soldadura..."/>
                                 </div>
                                 <div class="form-group col-md-3 d-flex align-items-end">
-                                    <button type="submit" class="btn btn-danger btn-sm w-100"
-                                            onclick="return confirm('¿Confirmar salida de stock?');">
-                                        <i class="fas fa-minus mr-1"></i> Salida
-                                    </button>
+                                    <button type="submit" class="btn btn-danger btn-xs btn-block py-2 font-weight-bold" style="font-size: .7rem;" onclick="return confirm('¿Confirmar salida?');">SALIDA</button>
                                 </div>
                             </div>
                         </form>
@@ -404,202 +316,112 @@
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════
-                 SECCIÓN 5: PANELES INFERIORES
-            ══════════════════════════════════════════ -->
+            <!-- Tables Row -->
             <div class="row">
-                <!-- Stock bajo -->
-                <div class="col-md-4">
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h6><i class="fas fa-exclamation-triangle text-warning mr-2"></i>Stock Bajo (&lt;5 uds)</h6>
-                            <span class="badge badge-warning" th:text="${stockBajo.size()}">0</span>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="panel" style="border-top: 3px solid #007bff;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="m-0"><i class="fas fa-exclamation-triangle mr-2 text-primary"></i>Stock Bajo</h6>
+                            <a th:href="@{/materiales/listarMaterial}" class="btn btn-xs btn-link p-0 small font-weight-bold shadow-none text-primary">Ver todos</a>
                         </div>
-                        <div th:if="${#lists.isEmpty(stockBajo)}" class="text-center text-muted py-3">
-                            <i class="fas fa-check-circle text-success fa-2x"></i>
-                            <p class="mt-2 mb-0">Todo el stock está bien</p>
-                        </div>
-                        <table th:unless="${#lists.isEmpty(stockBajo)}" class="table table-sm mb-0">
-                            <tbody>
-                            <tr th:each="p : ${stockBajo}"
-                                th:classappend="${p.cantidad <= 0 ? 'stock-row danger' : 'stock-row warning'}">
-                                <td>
-                                    <span class="font-weight-bold d-block" th:text="${p.nombre}"></span>
-                                    <small class="text-muted" th:text="${p.codigo}"></small>
-                                </td>
-                                <td class="text-right">
-                                    <span class="badge" th:classappend="${p.cantidad <= 0 ? 'badge-danger' : 'badge-warning'}"
-                                          th:text="${p.cantidad + ' uds'}"></span>
-                                </td>
-                                <td>
-                                    <a th:href="@{/materiales/form(id=${p.id})}" class="btn btn-xs btn-outline-primary" title="Reponer">
-                                        <i class="fas fa-plus"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Últimas compras -->
-                <div class="col-md-4">
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h6><i class="fas fa-shopping-cart text-success mr-2"></i>Últimas Compras</h6>
-                            <a th:href="@{/inventario/compras}" class="btn btn-xs btn-outline-primary btn-sm">Ver todas</a>
-                        </div>
-                        <div th:if="${#lists.isEmpty(ultimasCompras)}" class="text-center text-muted py-3">Sin compras registradas</div>
-                        <table th:unless="${#lists.isEmpty(ultimasCompras)}" class="table table-sm mb-0">
-                            <tbody>
-                            <tr th:each="c : ${ultimasCompras}">
-                                <td>
-                                    <span class="font-weight-bold d-block small" th:text="${c.producto?.nombre}"></span>
-                                    <small class="text-muted" th:text="${#temporals.format(c.fechaCompra, 'dd/MM HH:mm')}"></small>
-                                </td>
-                                <td class="text-right">
-                                    <span class="badge badge-success" th:text="${'+' + c.cantidad + ' uds'}"></span>
-                                    <div class="small text-muted" th:text="${#numbers.formatDecimal(c.precioTotal, 1, 2) + ' €'}"></div>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Últimos movimientos -->
-                <div class="col-md-4">
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h6><i class="fas fa-exchange-alt text-info mr-2"></i>Últimos Movimientos</h6>
-                        </div>
-                        <div th:if="${#lists.isEmpty(ultimosMovimientos)}" class="text-center text-muted py-3">Sin movimientos</div>
-                        <table th:unless="${#lists.isEmpty(ultimosMovimientos)}" class="table table-sm mb-0">
-                            <tbody>
-                            <tr th:each="m : ${ultimosMovimientos}">
-                                <td>
-                                    <span class="font-weight-bold d-block small" th:text="${m.producto?.nombre}"></span>
-                                    <small class="text-muted" th:text="${#temporals.format(m.fecha, 'dd/MM HH:mm')}"></small>
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge"
-                                          th:classappend="${m.tipo.name() == 'ENTRADA' ? 'badge-entrada' : (m.tipo.name() == 'SALIDA' ? 'badge-salida' : 'badge-ajuste')}"
-                                          th:text="${m.tipo}"></span>
-                                </td>
-                                <td class="text-right small"
-                                    th:text="${(m.tipo.name() == 'ENTRADA' ? '+' : '-') + m.cantidad + ' uds'}"></td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ══════════════════════════════════════════════
-                 SECCIÓN 6: SALDO POR LOTE (JOYERÍA)
-            ══════════════════════════════════════════════ -->
-            <div th:if="${!#lists.isEmpty(lotesActivos)}" class="row mt-2">
-                <div class="col-12">
-                    <div class="panel">
-                        <div class="panel-header">
-                            <h6>
-                                <i class="fas fa-gem mr-2" style="color:#00b894"></i>Saldo de Lotes de Material Noble
-                                <small class="text-muted font-weight-normal ml-2">(lotes con peso disponible)</small>
-                            </h6>
-                            <a th:href="@{/inventario/compras}" class="btn btn-xs btn-outline-primary btn-sm">Ver todos</a>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0">
-                                <thead class="thead-light">
-                                    <tr>
-                                        <th>Código Lote</th>
-                                        <th>Material</th>
-                                        <th>Tipo / Pureza</th>
-                                        <th class="text-center">Peso Disponible</th>
-                                        <th class="text-center">% Restante</th>
-                                        <th class="text-right">Valor Ref.</th>
-                                    </tr>
-                                </thead>
+                        <div th:if="${#lists.isEmpty(stockBajo)}" class="text-center py-3 text-muted">Todo correcto</div>
+                        <div th:unless="${#lists.isEmpty(stockBajo)}" style="max-height: 250px; overflow-y: auto;">
+                            <table class="table table-sm">
                                 <tbody>
-                                    <tr th:each="lote : ${lotesActivos}">
-                                        <td><span class="badge-lote" th:text="${lote.codigoLote}"></span></td>
-                                        <td>
-                                            <span class="font-weight-bold small" th:text="${lote.producto?.nombre}"></span>
-                                        </td>
-                                        <td>
-                                            <span th:if="${lote.tipoMaterial != null}"
-                                                  th:class="${'badge badge-tipo-' + lote.tipoMaterial + ' mr-1'}"
-                                                  th:text="${lote.tipoMaterial}"></span>
-                                            <span th:if="${lote.pureza != null}" class="badge badge-secondary"
-                                                  th:text="${lote.pureza}"></span>
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="font-weight-bold"
-                                                  th:text="${#numbers.formatDecimal(lote.pesoActualGr, 1, 3) + ' g'}"></span>
-                                            <!-- Barra de peso -->
-                                            <div th:if="${lote.pesoInicialGr > 0}" class="peso-gauge">
-                                                <div class="peso-gauge-fill"
-                                                     th:classappend="${(lote.pesoActualGr / lote.pesoInicialGr) < 0.2 ? 'low' : ''}"
-                                                     th:style="${'width:' + #numbers.formatDecimal(lote.pesoActualGr * 100 / lote.pesoInicialGr, 1, 0) + '%'}">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <span th:if="${lote.pesoInicialGr > 0}"
-                                                  th:text="${#numbers.formatDecimal(lote.pesoActualGr * 100 / lote.pesoInicialGr, 1, 1) + ' %'}"></span>
-                                        </td>
-                                        <td class="text-right small">
-                                            <span th:if="${lote.producto?.precioPorGramo != null}"
-                                                  th:text="${#numbers.formatDecimal(lote.pesoActualGr * lote.producto.precioPorGramo, 1, 2) + ' €'}"></span>
-                                            <span th:if="${lote.producto?.precioPorGramo == null}" class="text-muted">—</span>
-                                        </td>
+                                    <tr th:each="p : ${stockBajo}" th:classappend="${p.cantidad <= 0 ? 'stock-row danger' : 'stock-row warning'}">
+                                        <td th:text="${p.nombre}"></td>
+                                        <td class="text-right"><span class="badge badge-warning" th:text="${p.cantidad + ' uds'}"></span></td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- ══════════════════════════════════════════════
-                 SECCIÓN 7: ÓRDENES DE PRODUCCIÓN EN PROCESO
-            ══════════════════════════════════════════════ -->
-            <div th:if="${!#lists.isEmpty(ordenesEnProceso)}" class="row mt-2">
-                <div class="col-12">
-                    <div class="panel" style="border-left: 4px solid #fd7e14;">
-                        <div class="panel-header">
-                            <h6>
-                                <i class="fas fa-fire mr-2 text-warning"></i>Órdenes de Producción en Proceso
-                                <span class="badge badge-warning ml-2" th:text="${ordenesEnProceso.size()}">0</span>
-                            </h6>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="panel" style="border-top: 3px solid #28a745;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="m-0"><i class="fas fa-shopping-basket mr-2 text-success"></i>Compras</h6>
+                            <a th:href="@{/inventario/compras}" class="btn btn-xs btn-link p-0 small font-weight-bold shadow-none text-success">Historial</a>
                         </div>
-                        <table class="table table-sm table-hover mb-0">
-                            <thead class="thead-light">
-                                <tr>
-                                    <th>Inicio</th>
-                                    <th>Descripción</th>
-                                    <th class="text-center">Peso Entrada</th>
-                                    <th>Pedido</th>
-                                    <th>Operario</th>
-                                </tr>
-                            </thead>
+                        <table class="table table-sm">
                             <tbody>
-                                <tr th:each="op : ${ordenesEnProceso}">
-                                    <td class="small" th:text="${#temporals.format(op.fechaInicio, 'dd/MM HH:mm')}"></td>
-                                    <td><span class="font-weight-bold" th:text="${op.descripcion}"></span></td>
-                                    <td class="text-center">
-                                        <span class="badge badge-info"
-                                              th:text="${#numbers.formatDecimal(op.pesoEntradaGr, 1, 3) + ' g'}"></span>
-                                    </td>
+                                <tr th:each="c : ${ultimasCompras}">
                                     <td>
-                                        <span th:if="${op.pedidoId != null}" class="small"
-                                              th:text="${'#' + op.pedidoId}"></span>
-                                        <span th:if="${op.pedidoId == null}" class="text-muted small">—</span>
+                                        <div class="font-weight-bold small" th:text="${c.producto?.nombre}"></div>
+                                        <div class="text-muted small" th:text="${#temporals.format(c.fechaCompra, 'dd/MM')}"></div>
                                     </td>
-                                    <td><small class="text-muted" th:text="${op.usuarioRegistro}"></small></td>
+                                    <td class="text-right text-success small" th:text="${'+' + c.cantidad}"></td>
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="panel" style="border-top: 3px solid #dc3545;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="m-0"><i class="fas fa-exchange-alt mr-2 text-danger"></i>Movimientos</h6>
+                            <a th:href="@{/materiales/listarMaterial}" class="btn btn-xs btn-link p-0 small font-weight-bold shadow-none text-danger">Ver todo</a>
+                        </div>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr th:each="m : ${ultimosMovimientos}">
+                                    <td>
+                                        <div class="font-weight-bold small" th:text="${m.producto?.nombre}"></div>
+                                        <div class="text-muted small" th:text="${#temporals.format(m.fecha, 'dd/MM')}"></div>
+                                    </td>
+                                    <td class="text-right small" th:classappend="${m.tipo.name() == 'ENTRADA' ? 'text-success' : 'text-danger'}" 
+                                        th:text="${(m.tipo.name() == 'ENTRADA' ? '+' : '-') + m.cantidad}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lotes Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="panel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="m-0"><i class="fas fa-layer-group mr-2 text-info"></i>Saldos por Lote (Metal en Taller)</h6>
+                            <a th:href="@{/materiales/listarMaterial}" class="btn btn-xs btn-link p-0 small font-weight-bold shadow-none text-info">Ver todos</a>
+                        </div>
+                        
+                        <!-- Vista Tabla (Tablets y Desktop) -->
+                        <div class="table-responsive d-none d-md-block">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Lote</th>
+                                        <th>Material</th>
+                                        <th>Fecha Compra</th>
+                                        <th class="text-right">Peso Actual</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="lote : ${lotesActivos}">
+                                        <td><span class="badge-lote" th:text="${lote.codigoLote}"></span></td>
+                                        <td th:text="${lote.producto?.nombre}"></td>
+                                        <td th:text="${#temporals.format(lote.fechaCompra, 'dd/MM/yyyy')}"></td>
+                                        <td class="text-right font-weight-bold" th:text="${#numbers.formatDecimal(lote.pesoActualGr, 1, 2) + ' g'}"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Vista Tarjetas (Móvil) -->
+                        <div class="d-md-none">
+                            <div th:each="lote : ${lotesActivos}" class="p-3 mb-2 rounded border" style="background:#f9f9f9;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge-lote" th:text="${lote.codigoLote}"></span>
+                                    <span class="font-weight-bold text-info" th:text="${#numbers.formatDecimal(lote.pesoActualGr, 1, 2) + ' g'}"></span>
+                                </div>
+                                <div class="small">
+                                    <div class="text-dark font-weight-bold" th:text="${lote.producto?.nombre}"></div>
+                                    <div class="text-muted" th:text="${'Comprado el ' + #temporals.format(lote.fechaCompra, 'dd/MM/yy')}"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -612,119 +434,224 @@
 </div>
 
 <div layout:fragment="script">
-    <!-- Chart.js desde CDN (local cache) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script th:inline="javascript">
-        // ── Datos server-side ──
-        const labels7d  = /*[[${labels7d}]]*/  [];
-        const topConsumoData = /*[[${topConsumo}]]*/ [];
+        const currentCurrency = 'EUR';
+        let currentMetal = 'XAU';
+        let metalsData = null;
+        let trendChart = null;
+        let priceHistory = JSON.parse(localStorage.getItem('metals_history') || '{}');
 
-        // ── Reloj en tiempo real ──
-        function actualizarReloj() {
-            const now = new Date();
-            document.getElementById('liveTime').textContent =
-                now.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        function getFormatter() {
+            const curr = document.getElementById('currencySelector').value;
+            return new Intl.NumberFormat('es-ES', { style: 'currency', currency: curr, minimumFractionDigits: 2 });
         }
-        setInterval(actualizarReloj, 1000);
-        actualizarReloj();
 
-        // ── Gráfico semanal ──
+        async function fetchMetals() {
+            try {
+                const curr = document.getElementById('currencySelector').value;
+                const res = await fetch('/inventario/api/metals?currency=' + curr + '&symbol=' + currentMetal);
+                const json = await res.json();
+                
+                if (json.success && json.data) {
+                    if (!metalsData) metalsData = {};
+                    Object.assign(metalsData, json.data);
+                } else if (json.price_per_gram) { 
+                    if (!metalsData) metalsData = {};
+                    metalsData[currentMetal] = json;
+                }
+                
+                updateMetalUI();
+            } catch(e) { console.error('Error fetching metals', e); }
+        }
+
+        function switchMetal(symbol) {
+            currentMetal = symbol;
+            document.querySelectorAll('.metal-tab').forEach(b => b.classList.remove('active'));
+            const btn = document.getElementById('btn' + symbol);
+            if (btn) btn.classList.add('active');
+            
+            // Mostrar precios y gráfico por defecto para metales
+            document.getElementById('metalPriceView').style.display = 'block';
+            document.getElementById('metalChartContainer').style.display = 'block';
+            document.getElementById('kilatesContainer').style.display = 'none';
+            
+            fetchMetals();
+        }
+
+        function showKilatesView() {
+            document.querySelectorAll('.metal-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById('btnKLT').classList.add('active');
+            
+            // Vista específica de Kilates
+            document.getElementById('metalPriceView').style.display = 'none';
+            document.getElementById('metalChartContainer').style.display = 'none';
+            document.getElementById('kilatesContainer').style.display = 'block';
+            
+            // Aseguramos que tenemos datos de Oro (XAU) para los cálculos
+            if (!metalsData || !metalsData['XAU']) {
+                currentMetal = 'XAU';
+                fetchMetals();
+            } else {
+                updateMetalUI();
+            }
+        }
+
+        function changeCurrency(val) {
+            fetchMetals();
+        }
+
+        function saveToHistory(symbol, priceGram, priceOunce) {
+            const curr = document.getElementById('currencySelector').value;
+            if (!priceHistory[curr]) priceHistory[curr] = {};
+            if (!priceHistory[curr][symbol]) priceHistory[curr][symbol] = [];
+            
+            const now = new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+            const last = priceHistory[curr][symbol][priceHistory[curr][symbol].length - 1];
+            if (last && last.priceGram === priceGram) return;
+
+            priceHistory[curr][symbol].push({ priceGram, priceOunce, time: now });
+            if (priceHistory[curr][symbol].length > 5) priceHistory[curr][symbol].shift();
+            localStorage.setItem('metals_history', JSON.stringify(priceHistory));
+        }
+
+        function updateTrendChart() {
+            const ctx = document.getElementById('metalTrendChart').getContext('2d');
+            const curr = document.getElementById('currencySelector').value;
+            const history = (priceHistory[curr] && priceHistory[curr][currentMetal]) || [];
+            
+            const labels = history.map(h => h.time);
+            const dataGram = history.map(h => h.priceGram);
+            const dataOunce = history.map(h => h.priceOunce);
+
+            if (trendChart) {
+                trendChart.data.labels = labels;
+                trendChart.data.datasets[0].data = dataGram;
+                trendChart.data.datasets[1].data = dataOunce;
+                trendChart.update();
+            } else {
+                trendChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'Gramo', data: dataGram, backgroundColor: '#c5a021', borderRadius: 4, order: 2 },
+                            { label: 'Onza', data: dataOunce, borderColor: '#dc3545', borderWidth: 2, type: 'line', tension: 0.4, pointRadius: 3, yAxisID: 'yOunce', order: 1 }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+                        scales: { 
+                            x: { 
+                                display: true,
+                                grid: { color: '#f2f2f2' },
+                                ticks: { font: { size: 9 } }
+                            }, 
+                            y: { 
+                                display: true,
+                                position: 'left',
+                                beginAtZero: false,
+                                grid: { color: '#f2f2f2' },
+                                title: { display: true, text: 'gr', font: { size: 10, weight: 'bold' } },
+                                ticks: { font: { size: 9 } }
+                            },
+                            yOunce: {
+                                display: true,
+                                position: 'right',
+                                beginAtZero: false,
+                                grid: { drawOnChartArea: false },
+                                title: { display: true, text: 'oz', font: { size: 10, weight: 'bold' } },
+                                ticks: { font: { size: 9 } }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function updateMetalUI() {
+            if (!metalsData || !metalsData[currentMetal]) return;
+            const m = metalsData[currentMetal];
+            
+            // Si el backend devolvió un error (success: false)
+            if (m.success === false) {
+                console.error("API Error:", m.error);
+                return;
+            }
+
+            const fmt = getFormatter();
+            
+            // Mapeo seguro de campos según respuesta de Gem Logic
+            const priceGram = m.price_per_gram || m.price_gram || 0;
+            const priceOunce = m.price_per_troy_ounce || m.price_ounce || 0;
+
+            document.getElementById('goldGramPrice').innerText = fmt.format(priceGram);
+            document.getElementById('goldOuncePrice').innerText = fmt.format(priceOunce);
+            
+            saveToHistory(currentMetal, priceGram, priceOunce);
+            updateTrendChart();
+
+            // Actualizar etiqueta del gramo (solo 24k para oro)
+            const gramLabel = document.getElementById('gramLabel');
+            if (currentMetal === 'XAU') {
+                gramLabel.innerText = 'Gramo (24k)';
+            } else {
+                gramLabel.innerText = 'Gramo';
+            }
+
+            // Actualizar kilates (siempre basado en XAU si tenemos los datos)
+            if (metalsData['XAU']) {
+                const goldData = metalsData['XAU'];
+                const goldPrice = goldData.price_per_gram || goldData.price_gram || 0;
+                document.getElementById('price18k').innerText = fmt.format(goldPrice * 0.75);
+                document.getElementById('price14k').innerText = fmt.format(goldPrice * 0.585);
+                document.getElementById('price9k').innerText = fmt.format(goldPrice * 0.375);
+            }
+        }
+
+        // ── Gráfico Semanal ──
         (async function() {
             const res = await fetch('/inventario/api/grafico7d');
             const data = await res.json();
             new Chart(document.getElementById('chartSemanal'), {
                 type: 'bar',
                 data: {
-                    labels: data.labels.map(d => {
-                        const dt = new Date(d);
-                        return dt.toLocaleDateString('es-ES', {weekday:'short', day:'numeric'});
-                    }),
+                    labels: data.labels.map(d => new Date(d).toLocaleDateString('es-ES', {weekday:'short', day:'numeric'})),
                     datasets: [
-                        {
-                            label: 'Compras (€)',
-                            data: data.compras,
-                            backgroundColor: 'rgba(40,167,69,0.6)',
-                            borderColor: '#28a745',
-                            borderWidth: 1,
-                            borderRadius: 4
-                        },
-                        {
-                            label: 'Consumo (uds)',
-                            data: data.consumo,
-                            backgroundColor: 'rgba(220,53,69,0.6)',
-                            borderColor: '#dc3545',
-                            borderWidth: 1,
-                            borderRadius: 4,
-                            type: 'line',
-                            tension: 0.4,
-                            yAxisID: 'y1'
-                        }
+                        { label: 'Compras (€)', data: data.compras, backgroundColor: '#82ca9d', borderColor: '#5eb37d', borderWidth: 1, borderRadius: 4, order: 2 },
+                        { label: 'Consumo (uds)', data: data.consumo, backgroundColor: '#f67b7b', borderColor: '#dc3545', borderWidth: 2, type: 'line', tension: 0.4, pointRadius: 4, pointBackgroundColor: '#dc3545', yAxisID: 'y1', order: 1 }
                     ]
                 },
                 options: {
-                    responsive: true,
+                    responsive: true, maintainAspectRatio: false,
                     interaction: { mode: 'index', intersect: false },
-                    plugins: { legend: { position: 'top' } },
+                    plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } },
                     scales: {
-                        y:  { type: 'linear', position: 'left',  title: { display: true, text: '€' } },
-                        y1: { type: 'linear', position: 'right', title: { display: true, text: 'uds' }, grid: { drawOnChartArea: false } }
+                        y: { type: 'linear', position: 'left', title: { display: true, text: '€', font: { weight: 'bold' } }, grid: { color: '#f0f0f0' } },
+                        y1: { type: 'linear', position: 'right', title: { display: true, text: 'uds', font: { weight: 'bold' } }, grid: { drawOnChartArea: false }, beginAtZero: true }
                     }
                 }
             });
         })();
 
-        // ── Gráfico top consumo (donut) ──
+        // ── Top Consumo ──
         (function() {
+            const topConsumoData = /*[[${topConsumo}]]*/ [];
             if (!topConsumoData || topConsumoData.length === 0) return;
-            const labels = topConsumoData.map(r => r[1]);
-            const values = topConsumoData.map(r => parseFloat(r[2]));
-            const colors = ['#dc3545','#fd7e14','#ffc107','#28a745','#17a2b8','#6f42c1','#e83e8c','#343a40'];
             new Chart(document.getElementById('chartTopConsumo'), {
                 type: 'doughnut',
                 data: {
-                    labels: labels,
-                    datasets: [{ data: values, backgroundColor: colors.slice(0, labels.length), borderWidth: 2 }]
+                    labels: topConsumoData.map(r => r[1]),
+                    datasets: [{ data: topConsumoData.map(r => parseFloat(r[2])), backgroundColor: ['#dc3545','#fd7e14','#ffc107','#28a745','#17a2b8'], borderWidth: 2 }]
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { font: { size: 11 } } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } }, cutout: '65%' }
             });
         })();
 
-        // ── Polling KPI cada 60 segundos ──
-        async function refreshKpi() {
-            try {
-                const res  = await fetch('/inventario/api/kpi');
-                const data = await res.json();
-
-                const fmt = (v, suffix) => (v || 0).toFixed(2) + ' ' + suffix;
-
-                document.getElementById('kpi-comprasHoy').textContent    = fmt(data.comprasHoy,    '€');
-                document.getElementById('kpi-comprasSemana').textContent = fmt(data.comprasSemana, '€');
-                document.getElementById('kpi-comprasMes').textContent    = fmt(data.comprasMes,    '€');
-                document.getElementById('kpi-comprasAnio').textContent   = fmt(data.comprasAnio,   '€');
-
-                document.getElementById('kpi-consumoHoy').textContent    = fmt(data.consumoHoy,    'uds');
-                document.getElementById('kpi-consumoSemana').textContent = fmt(data.consumoSemana, 'uds');
-                document.getElementById('kpi-consumoMes').textContent    = fmt(data.consumoMes,    'uds');
-                document.getElementById('kpi-consumoAnio').textContent   = fmt(data.consumoAnio,   'uds');
-
-                const badge = document.getElementById('alertaStockBadge');
-                const num   = data.stockBajoCount || 0;
-                if (num > 0) {
-                    badge.style.display = 'inline';
-                    document.getElementById('alertaStockNum').textContent = num;
-                } else {
-                    badge.style.display = 'none';
-                }
-            } catch(e) { console.warn('KPI refresh error', e); }
-        }
-        setInterval(refreshKpi, 60000);
+        fetchMetals();
+        setInterval(fetchMetals, 300000);
     </script>
 </div>
-
 </body>
 </html>
