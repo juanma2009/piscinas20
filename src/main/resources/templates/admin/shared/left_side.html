@@ -261,7 +261,9 @@
                     url: '/notifications/count', // Endpoint to fetch notification count
                     method: 'GET',
                     success: function (data) {
-                        $('#notificationCount').text(data);
+                        if (typeof data !== 'string' || !data.toString().trim().startsWith('<')) {
+                            $('#notificationCount').text(data);
+                        }
                     },
                     error: function (error) {
                         console.error('Error fetching notification count:', error);

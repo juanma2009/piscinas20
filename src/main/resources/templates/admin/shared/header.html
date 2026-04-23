@@ -116,7 +116,11 @@ html, body {
                 url: '/notifications/count',
                 method: 'GET',
                 success: function (data) {
-                    $('.navbar-badge').text(data);
+                    if (typeof data !== 'string' || !data.toString().trim().startsWith('<')) {
+                        $('.navbar-badge').text(data);
+                    } else {
+                        console.warn("Received HTML instead of count. Session likely expired.");
+                    }
                 },
                 error: function (error) {
                     console.error('Error fetching notification count:', error);
