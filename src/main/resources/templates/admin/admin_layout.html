@@ -68,20 +68,48 @@
         }
 
         @media (max-width: 768px) {
-            .main-sidebar, .left-side, .sidebar {
-                display: none !important;
-            }
-            .content-wrapper {
+            .content-wrapper, .main-header {
                 margin-left: 0 !important;
             }
+        }
+
+        /* 🚀 SPA Transitions */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .ajax-content-loaded {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        #mainContent {
+            transition: opacity 0.2s ease;
+        }
+        
+        #mainContent.loading {
+            opacity: 0.5;
+            pointer-events: none;
         }
     </style>
 </head>
 
-<body class="sidebar-mini layout-fixed control-sidebar-slide-open">
+<body class="sidebar-mini layout-fixed layout-navbar-fixed control-sidebar-slide-open">
 <script>
-    // Evitar el "rebote" de hold-transition quitando la clase inmediatamente
-    document.body.classList.remove('hold-transition');
+    // 1. Inmediatamente aplicar el estado del sidebar antes del renderizado para evitar flasheos
+    (function() {
+        const isLandscapeTablet = window.innerWidth <= 1450 && window.innerWidth > window.innerHeight;
+        const manualSidebarState = localStorage.getItem('sidebar-state');
+        
+        // Si es tablet o si el usuario lo cerró manualmente antes, aplicar colapso
+        if (manualSidebarState === 'collapsed' || (manualSidebarState === null && isLandscapeTablet)) {
+            document.body.classList.add('sidebar-collapse');
+        } else if (manualSidebarState === 'expanded') {
+            document.body.classList.remove('sidebar-collapse');
+        }
+        
+        // Evitar el "rebote" de hold-transition quitando la clase inmediatamente
+        document.body.classList.remove('hold-transition');
+    })();
 </script>
 <div class="wrapper">
 
@@ -95,8 +123,10 @@
     <div class="content-wrapper">
         <div class="container-fluid">
             <div id="mainContent" class="content">
-                <div id="contentFragment" layout:fragment="content">
-                    <!-- Aquí va tu contenido -->
+                <div id="spa-main-wrapper">
+                    <div id="contentFragment" layout:fragment="content">
+                        <!-- Aquí va tu contenido -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -112,45 +142,212 @@
 
 <!-- ✅ JS del layout (UNA sola vez) -->
 <script>
-    // Navegación AJAX
-    $(document).on("click", "a.ajax-link", function (e) {
-        e.preventDefault();
-        const url = $(this).attr("href");
+    // ==========================================
+    // 🚀 GLOBAL SPA NAVIGATION (Seamless UI)
+    // ==========================================
+    (function() {
+        const $container = $("#mainContent");
+        
+        function loadContent(url, pushState = true) {
+            $container.addClass("loading");
+            
+            // Simular carga con spinner si tarda más de 200ms
+            const spinnerTimer = setTimeout(() => {
+                if ($container.hasClass("loading")) {
+                    $container.html('<div id="spa-main-wrapper"><div class="text-center p-5 mt-5"><i class="fas fa-circle-notch fa-spin fa-3x text-primary"></i><p class="mt-3 text-muted">Cargando sección...</p></div></div>');
+                }
+            }, 250);
 
-        $("#mainContent").html(
-            '<div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-3x"></i><br>Cargando...</div>'
-        );
+            // Usar $.ajax manual para poder parsear y ejecutar scripts contenidos
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function(response) {
+                    clearTimeout(spinnerTimer);
+                    $container.removeClass("loading").addClass("ajax-content-loaded");
+                    
+                    // Parsear el nuevo documento (true permite scripts)
+                    const $parsed = $($.parseHTML(response, document, true));
+                    
+                    // Buscar los wrappers estables en la respuesta
+                    const $newContent = $parsed.find('#spa-main-wrapper').length ? $parsed.find('#spa-main-wrapper') : $parsed.filter('#spa-main-wrapper');
+                    const $newScripts = $parsed.find('#spa-script-wrapper').length ? $parsed.find('#spa-script-wrapper') : $parsed.filter('#spa-script-wrapper');
+                    
+                    // Si no encontramos el contenedor (puede ser una página sin layout), recargar normalmente
+                    if ($newContent.length === 0) {
+                        window.location.href = url;
+                        return;
+                    }
 
-        $("#mainContent").load(url + " #contentFragment", function (response, status) {
-            if (status === "error") {
-                $("#mainContent").html("<div class='alert alert-danger'>Error al cargar esta sección.</div>");
+                    // 1. Inyectar nuevo contenido (reemplaza el interior del wrapper estable)
+                    $('#spa-main-wrapper').html($newContent.html());
+                    
+                    // Inyectar y ejecutar nuevos scripts
+                    if ($newScripts.length > 0) {
+                        $('#spa-script-wrapper').empty().append($newScripts.contents());
+                    }
+
+                    // 2. Actualizar URL y Título
+                    if (pushState) {
+                        history.pushState({ url: url }, "", url);
+                    }
+                    const pageTitle = response.match(/<title>([^<]+)<\/title>/);
+                    if (pageTitle && pageTitle[1]) document.title = pageTitle[1];
+
+                    // 3. Re-inicializar componentes Globales
+                    if (window.initAutoDataTables) window.initAutoDataTables("#spa-main-wrapper");
+                    if (window.initAutoCollapseSidebar) window.initAutoCollapseSidebar();
+                    if (window.SessionMonitor) window.SessionMonitor.reset();
+                    
+                    if ($.fn.layout) $('body').layout('fix');
+                    
+                    // 4. Scroll al inicio y actualizar Sidebar
+                    window.scrollTo(0, 0);
+                    $(".nav-sidebar .nav-link").removeClass("active");
+                    $(`.nav-sidebar a[href="${url}"]`).addClass("active").parents('.nav-item').addClass('menu-open').children('.nav-link').addClass('active');
+
+                    // Fin animación
+                    setTimeout(() => $container.removeClass("ajax-content-loaded"), 500);
+                },
+                error: function(xhr) {
+                    clearTimeout(spinnerTimer);
+                    $container.removeClass("loading");
+                    if (xhr.status === 401 || xhr.status === 403) {
+                        window.location.reload(); // Dejar que Spring Security redirija al login
+                    } else {
+                        $container.html('<div class="alert alert-danger m-3"><h4><i class="icon fas fa-ban"></i> Error</h4> No se pudo cargar la página. Código: ' + xhr.status + '</div>');
+                    }
+                }
+            });
+        }
+
+        // Interceptar clicks en TODA la aplicación
+        $(document).on("click", "a", function (e) {
+            const href = $(this).attr("href");
+            const target = $(this).attr("target");
+            
+            // Exclusiones: Enlaces externos, anclas, javascript, logout, o marcados con data-ajax="false"
+            if (!href || href === "#" || href.startsWith("javascript:") || href.startsWith("mailto:") || 
+                href.includes("logout") || target === "_blank" || $(this).data("ajax") === false ||
+                href.startsWith("http") && !href.includes(window.location.host)) {
                 return;
             }
-            // ✅ re-init automático SOLO para tablas "auto"
-            if (window.initAutoDataTables) window.initAutoDataTables("#mainContent");
-        });
-    });
 
-    // Carga normal
+            e.preventDefault();
+            loadContent(href);
+        });
+
+        // Manejar botones de atrás/adelante del navegador
+        window.onpopstate = function(event) {
+            if (event.state && event.state.url) {
+                loadContent(event.state.url, false);
+            } else {
+                // Si no hay estado, cargar la URL actual sin pushState
+                loadContent(window.location.pathname, false);
+            }
+        };
+    })();
+
+    // ==========================================
+    // 🛡️ SESSION MONITORING (Auto logout warning)
+    // ==========================================
+    const SessionMonitor = (function() {
+        const timeoutSecs = 1000; // Match server timeout (application.properties)
+        const warningSecs = 900;  // Warn at 15 minutes
+        let idleTimer;
+        let warningTimer;
+
+        function startTimer() {
+            clearTimeout(idleTimer);
+            clearTimeout(warningTimer);
+            
+            // Set timer for the warning
+            idleTimer = setTimeout(showWarning, warningSecs * 1000);
+        }
+
+        function showWarning() {
+            window.mostrarConfirmacion(
+                "¡Sesión a punto de caducar!",
+                "Tu sesión se cerrará pronto por inactividad. ¿Deseas continuar conectado?"
+            ).then(confirmed => {
+                if (confirmed) {
+                    refreshSession();
+                } else {
+                    window.location.href = "/logout";
+                }
+            });
+
+            // If no action is taken within the remaining time, force logout
+            const remainingSecs = timeoutSecs - warningSecs;
+            warningTimer = setTimeout(() => {
+                window.location.href = "/login?logout=timeout";
+            }, remainingSecs * 1000);
+        }
+
+        function refreshSession() {
+            clearTimeout(warningTimer);
+            fetch('/api/session-ping')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        startTimer(); // Restart the cycle
+                    }
+                })
+                .catch(err => {
+                    console.error("Session refresh failed", err);
+                    window.location.href = "/login?error=session_expired";
+                });
+        }
+
+        return {
+            init: startTimer,
+            reset: function() {
+                startTimer();
+                // Si el modal estaba abierto (por una carga lenta o inactividad previa), cerrarlo
+                $('#sessionWarningModal').modal('hide');
+            }
+        };
+    })();
+
     $(function () {
         if (window.initAutoDataTables) window.initAutoDataTables(document);
         initDynamicMobileFAB();
         initAutoCollapseSidebar();
+        
+        // Iniciar monitoreo de sesión
+        SessionMonitor.init();
+    });
+
+    // Resetear timer en navegación AJAX
+    $(document).on("ajaxComplete", function() {
+        SessionMonitor.reset();
     });
 
     // ==========================================
     // 🛠️ AUTO COLLAPSE SIDEBAR (Landscape/Tablets)
     // ==========================================
+    // ==========================================
+    // 🛠️ AUTO COLLAPSE & PERSISTENCE (Sidebar)
+    // ==========================================
     function initAutoCollapseSidebar() {
+        // Escuchar eventos de AdminLTE para persistir la elección del usuario
+        $(document).on('collapsed.lte.pushmenu', function() {
+            localStorage.setItem('sidebar-state', 'collapsed');
+        });
+        $(document).on('shown.lte.pushmenu', function() {
+            localStorage.setItem('sidebar-state', 'expanded');
+        });
+
         function checkOrientation() {
-            // Si es landscape en móviles grandes o tablets (menor a 1024px)
-            if (window.innerWidth <= 1024 && window.innerWidth > window.innerHeight) {
-                $('body').addClass('sidebar-collapse').removeClass('sidebar-open');
+            // Solo auto-colapsar si el usuario NO ha guardado una preferencia manual aún
+            if (!localStorage.getItem('sidebar-state')) {
+                if (window.innerWidth <= 1450 && window.innerWidth > window.innerHeight) {
+                    $('body').addClass('sidebar-collapse').removeClass('sidebar-open');
+                }
             }
         }
         
-        // Revisar al cargar y al rotar la pantalla
-        checkOrientation();
+        // Revisar al rotar la pantalla
         $(window).on('resize orientationchange', checkOrientation);
     }
 
@@ -337,8 +534,11 @@
     </div>
 </div>
 
-<!-- Footer scripts slot -->
-<div layout:fragment="script"></div>
+<!-- Footer scripts slot estático para SPA -->
+<div id="spa-script-wrapper">
+    <div layout:fragment="script"></div>
+</div>
+
 
 </body>
 </html>
